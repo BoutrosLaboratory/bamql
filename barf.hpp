@@ -80,7 +80,6 @@ virtual llvm::Value *branchValue();
 /**
  * A syntax node for logical disjunction (OR).
  */
-class and_node : public short_circuit_node {
 class or_node : public short_circuit_node {
 public:
 or_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node>);
