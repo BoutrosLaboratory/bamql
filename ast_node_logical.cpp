@@ -6,21 +6,26 @@ barf::short_circuit_node::short_circuit_node(std::shared_ptr<ast_node>left, std:
 }
 
 llvm::Value *barf::short_circuit_node::generate(llvm::IRBuilder<> builder, llvm::Value *read) {
-	auto left_value = this->left->generate(builder, read);
-	auto short_circuit_value = builder.CreateICmpEQ(left_value, this->branchValue());
-
+	/* Create two basic blocks for the possibly executed right-hand expression and the final block. */
 	auto function = builder.GetInsertBlock()->getParent();
 	auto next_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", function);
 	auto merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
+	/* Generate the left expression in the current block. */
+	auto left_value = this->left->generate(builder, read);
+	auto short_circuit_value = builder.CreateICmpEQ(left_value, this->branchValue());
+	/* If short circuiting, jump to the final block, otherwise, do the right-hand expression. */
 	builder.CreateCondBr(short_circuit_value, merge_block, next_block);
 	auto original_block = builder.GetInsertBlock();
 
-	builder.SetInsertPoint(merge_block);
+	/* Generate the right-hand expression, then jump to the final block.*/
+	builder.SetInsertPoint(next_block);
 	auto right_value = this->right->generate(builder, read);
 	builder.CreateBr(merge_block);
 	next_block = builder.GetInsertBlock();
 
+	/* Merge from the above paths, selecting the correct value through a PHI node. */
+	builder.SetInsertPoint(merge_block);
 	auto phi = builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
 	phi->addIncoming(left_value, original_block);
 	phi->addIncoming(right_value, next_block);
