@@ -6,21 +6,24 @@ barf::short_circuit_node::short_circuit_node(std::shared_ptr<ast_node>left, std:
 }
 
 llvm::Value *barf::short_circuit_node::generate(llvm::IRBuilder<> builder, llvm::Value *read) {
-	auto first = this->left->generate(builder, read);
-  auto short_circuit = builder.CreateICmpEQ(first, this->branchValue());
-	auto function = builder.GetInsertBlock()->getParent();
-	auto next = llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", function);
-	auto merge = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
+	auto left_value = this->left->generate(builder, read);
+  auto short_circuit_value = builder.CreateICmpEQ(left_value, this->branchValue());
 
-  builder.CreateCondBr(short_circuit, merge, next);
-	auto original = builder.GetInsertBlock();
-	builder.SetInsertPoint(merge);
-	auto second = this->right->generate(builder, read);
-	builder.CreateBr(merge);
-	next = builder.GetInsertBlock();
+	auto function = builder.GetInsertBlock()->getParent();
+	auto next_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", function);
+	auto merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
+
+  builder.CreateCondBr(short_circuit_value, merge_block, next_block);
+	auto original_block = builder.GetInsertBlock();
+
+	builder.SetInsertPoint(merge_block);
+	auto right_value = this->right->generate(builder, read);
+	builder.CreateBr(merge_block);
+	next_block = builder.GetInsertBlock();
+
 	auto phi = builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
-	phi->addIncoming(first, original);
-	phi->addIncoming(second, merge);
+	phi->addIncoming(left_value, original_block);
+	phi->addIncoming(right_value, next_block);
 	return phi;
 }	
 
