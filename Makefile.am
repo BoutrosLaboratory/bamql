@@ -9,6 +9,7 @@ library_include_HEADERS = barf.hpp
 #man1_MANS = barf.1 barf-compile.1
 
 libbarf_la_CPPFLAGS = \
+	-std=c++11 \
 	$(LLVM_CPPFLAGS) \
 	$(NULL)
 libbarf_la_LIBS = \
@@ -20,8 +21,8 @@ libbarf_la_LDFLAGS = \
 	-no-undefined \
 	$(NULL)
 libbarf_la_SOURCES = \
+	ast_node_logical.cpp \
 	runtime.cpp \
-	compiler.cpp \
 	$(NULL)
 
 runtime.bc: runtime.c
