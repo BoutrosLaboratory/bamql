@@ -10,7 +10,7 @@ namespace barf {
  * A predicate that checks of the read is paired.
  */
 class is_paired_node : public ast_node {
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read) {
+	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
 		auto function = define_is_paired(module);
 		return builder.CreateCall(function, read);
 	}
@@ -26,7 +26,7 @@ static std::shared_ptr<ast_node> parse_is_paired(std::string input, int&index) t
  * A predicate that always return true.
  */
 class true_node : public ast_node {
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read) {
+	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
 		return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 	}
 };
@@ -53,5 +53,13 @@ llvm::Type *getBamType(llvm::Module *module) {
 		define___dummy__(module);
 	}
 	return module->getTypeByName("struct.bam1_t");
+}
+
+llvm::Type *getBamHeaderType(llvm::Module *module) {
+	auto struct_bam1_t = module->getTypeByName("struct.bam_hdr_t");
+	if (struct_bam1_t == nullptr) {
+		define___dummy__(module);
+	}
+	return module->getTypeByName("struct.bam_hdr_t");
 }
 }

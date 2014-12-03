@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <htslib/sam.h>
 
-void __dummy__(bam1_t *read) {
+void __dummy__(bam_hdr_t *header, bam1_t *read) {
 }
 
 /*

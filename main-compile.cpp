@@ -38,8 +38,7 @@ int main(int argc, char *const *argv) {
 
 	auto module = new llvm::Module(name, llvm::getGlobalContext());
 
-	auto bam1_type = barf::getBamType(module);
-	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction("filter",llvm::Type::getInt1Ty(llvm::getGlobalContext()), llvm::PointerType::get(bam1_type, 0), nullptr));
+	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction("filter",llvm::Type::getInt1Ty(llvm::getGlobalContext()), llvm::PointerType::get(barf::getBamHeaderType(module), 0), llvm::PointerType::get(barf::getBamType(module), 0), nullptr));
 
 	std::shared_ptr<barf::ast_node> ast;
 	try {
