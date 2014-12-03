@@ -22,7 +22,7 @@ llvm::Type *getBamHeaderType(llvm::Module *module);
  */
 class parse_error : public std::runtime_error {
 public:
-parse_error(size_t offset, std::string what);
+parse_error(size_t index, std::string what);
 /**
  * The position in the parse string where the error occured.
  */

@@ -22,6 +22,7 @@ libbarf_la_LDFLAGS = \
 	$(NULL)
 libbarf_la_SOURCES = \
 	ast_node_logical.cpp \
+	parser_misc.cpp \
 	predicates.cpp \
 	$(NULL)
 
