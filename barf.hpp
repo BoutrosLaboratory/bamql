@@ -17,11 +17,13 @@ size_t index;
 class ast_node;
 typedef std::function<std::shared_ptr<ast_node>(std::string input, int&index) throw (parse_error)> predicate;
 
-std::map<std::string, predicate> getDefaultPredicates();
+typedef std::map<std::string, predicate> predicate_map;
+
+predicate_map getDefaultPredicates();
 
 class ast_node {
 public:
-static std::shared_ptr<ast_node> parse(std::string input, std::map<std::string, predicate> predicates);
+static std::shared_ptr<ast_node> parse(std::string input, predicate_map predicates);
 
 virtual llvm::Value *generate(llvm::IRBuilder<> builder, llvm::Value *read) = 0;
 };
