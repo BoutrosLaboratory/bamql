@@ -81,6 +81,15 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
+	auto entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", filter_func);
+	llvm::IRBuilder<> builder(entry);
+	auto args = filter_func->arg_begin();
+	auto header_value = args++;
+	header_value->setName("header");
+	auto read_value = args++;
+	read_value->setName("read");
+	builder.CreateRet(ast->generate(module, builder, header_value, read_value));
+
 	auto engine = llvm::EngineBuilder(module).create();
 
 	union {
