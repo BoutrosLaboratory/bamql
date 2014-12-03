@@ -42,6 +42,21 @@ barf_LDADD = \
 	$(LLVM_LIBS) \
 	$(NULL)
 
+barf_compile_SOURCES = \
+	main-compile.cpp \
+	$(NULL)
+barf_compile_CPPFLAGS = \
+	-std=c++11 \
+	$(LLVM_CPPFLAGS) -fexceptions \
+	$(NULL)
+barf_compile_LDFLAGS =\
+	$(LLVM_LDFLAGS) \
+	$(NULL)
+barf_compile_LDADD = \
+	libbarf.la \
+	$(LLVM_LIBS) \
+	$(NULL)
+
 runtime.bc: runtime.c
 	clang -c -emit-llvm -o $@ $<
 
