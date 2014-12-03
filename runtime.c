@@ -1,4 +1,6 @@
+#include <fnmatch.h>
 #include <stdbool.h>
+#include <string.h>
 #include <htslib/sam.h>
 
 void __dummy__(bam_hdr_t *header, bam1_t *read) {
@@ -20,4 +22,16 @@ void __dummy__(bam_hdr_t *header, bam1_t *read) {
 bool is_paired(bam1_t *read)
 {
 	return BAM_FPAIRED & read->core.flag;
+}
+
+bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *name) {
+	if (read->core.tid < 0 || read->core.tid >= header->n_targets)
+		return false;
+
+	const char *real_name = header->target_name[read->core.tid];
+
+	if (strncasecmp("chr", real_name, 3) == 0) {
+		real_name += 3;
+	}
+	return fnmatch(name, real_name, 0) == 0;
 }
