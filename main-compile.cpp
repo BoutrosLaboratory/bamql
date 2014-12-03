@@ -1,7 +1,11 @@
 #include <unistd.h>
+#include <fstream>
 #include <iostream>
+#include <sstream>
+#include <system_error>
 #include <llvm/IR/Module.h>
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/Support/raw_ostream.h>
 #include "barf.hpp"
 
 int main(int argc, char *const *argv) {
@@ -58,10 +62,12 @@ int main(int argc, char *const *argv) {
 	} else {
 		output_filename << output;
 	}
-	std::filebuf fb;
-	fb.open(output_file.str(), std::ios::out);
-	std::ostream out_data(&fb);
-	llvm::WriteBitcodeToFile(module, out_data);
-	fb.close();
+	std::string error;
+	llvm::raw_fd_ostream out_data(output_filename.str().c_str(), error);
+	if (error.length() > 0) {
+		std::cerr << error << std::endl;
+	} else {
+		llvm::WriteBitcodeToFile(module, out_data);
+	}
 	return 0;
 }
