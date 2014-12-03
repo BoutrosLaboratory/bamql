@@ -30,7 +30,7 @@ runtime.bc: runtime.c
 
 runtime.inc: runtime.bc
 	echo -e "#include <llvm/IR/IRBuilder.h>\n#include <llvm/IR/Module.h>\nusing namespace llvm;\nnamespace barf {" > $@
-	for each in $$(llvm-nm -g -P $< | cut -f 1 -d " "); do llc -march=cpp -cppfname=generate_$${each} --cppfor=$${each} -cppgen=inline -o - $< >> $@; done
+	llc -march=cpp -cppgen=functions -o - $< | sed 's/ExternalLinkage/InternalLinkage/g' >> $@
 	echo "}" >> $@
 
 predicates.cpp: runtime.inc
