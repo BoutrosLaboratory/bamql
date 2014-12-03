@@ -45,4 +45,13 @@ predicate_map getDefaultPredicates() {
 		{std::string("true"), parse_true}
 	};
 }
+
+
+llvm::Type *getBamType(llvm::Module *module) {
+	auto struct_bam1_t = module->getTypeByName("struct.bam1_t");
+	if (struct_bam1_t == nullptr) {
+		define___dummy__(module);
+	}
+	return module->getTypeByName("struct.bam1_t");
+}
 }

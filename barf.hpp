@@ -8,6 +8,11 @@
 namespace barf {
 
 /**
+ * Get the LLVM type for a BAM read.
+ */
+llvm::Type *getBamType(llvm::Module *module);
+
+/**
  * The exception thrown when a parse error occurs.
  */
 class parse_error : public std::runtime_error {

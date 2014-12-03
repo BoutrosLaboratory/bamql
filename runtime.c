@@ -1,6 +1,9 @@
 #include <stdbool.h>
 #include <htslib/sam.h>
 
+void __dummy__(bam1_t *read) {
+}
+
 /*
  * This file contains the “runtime” library for BARF.
  *
