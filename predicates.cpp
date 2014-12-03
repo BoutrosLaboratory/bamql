@@ -26,6 +26,7 @@ static std::shared_ptr<ast_node> parse_check_chromosome(std::string input, int&i
 	if (input[index] != '(') {
 		throw new parse_error(index, "Expected `('.");
 	}
+	index++;
 	parse_space(input, index);
 	auto str = parse_str(input, index, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
 	if (str.compare(0, 3, "chr") == 0) {
@@ -35,6 +36,7 @@ static std::shared_ptr<ast_node> parse_check_chromosome(std::string input, int&i
 	if (input[index] != ')') {
 		throw new parse_error(index, "Expected `('.");
 	}
+	index++;
 	if (str.compare("23") || str.compare("X") || str.compare("x")) {
 		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("23"), std::make_shared<check_chromosome_node>("x") );
 	}
