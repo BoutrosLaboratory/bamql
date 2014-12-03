@@ -22,16 +22,18 @@ libbarf_la_LDFLAGS = \
 	$(NULL)
 libbarf_la_SOURCES = \
 	ast_node_logical.cpp \
-	runtime.cpp \
+	predicates.cpp \
 	$(NULL)
 
 runtime.bc: runtime.c
 	clang -c -emit-llvm -o $@ $<
 
-runtime.cpp: runtime.bc
+runtime.inc: runtime.bc
 	echo -e "#include <llvm/IR/IRBuilder.h>\n#include <llvm/IR/Module.h>\nusing namespace llvm;\nnamespace barf {" > $@
 	for each in $$(llvm-nm -g -P $< | cut -f 1 -d " "); do llc -march=cpp -cppfname=generate_$${each} --cppfor=$${each} -cppgen=inline -o - $< >> $@; done
 	echo "}" >> $@
+
+predicates.cpp: runtime.inc
 
 EXTRA_DIST = \
 	barf.hpp \
@@ -40,5 +42,5 @@ EXTRA_DIST = \
 
 CLEANFILES = \
 	runtime.bc \
-	runtime.cpp \
+	runtime.inc \
 	$(NULL)

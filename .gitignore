@@ -24,5 +24,5 @@ m4/ltversion.m4
 m4/lt~obsolete.m4
 missing
 runtime.bc
-runtime.cpp
+runtime.inc
 stamp-h1
