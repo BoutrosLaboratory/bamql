@@ -25,6 +25,23 @@ libbarf_la_SOURCES = \
 	predicates.cpp \
 	$(NULL)
 
+barf_SOURCES = \
+	main-run.cpp \
+	$(NULL)
+barf_CPPFLAGS = \
+	-std=c++11 \
+	$(HTS_CFLAGS) \
+	$(LLVM_CPPFLAGS) -fexceptions \
+	$(NULL)
+barf_LDFLAGS =\
+	$(LLVM_LDFLAGS) \
+	$(NULL)
+barf_LDADD = \
+	libbarf.la \
+	$(HTS_LIBS) \
+	$(LLVM_LIBS) \
+	$(NULL)
+
 runtime.bc: runtime.c
 	clang -c -emit-llvm -o $@ $<
 
