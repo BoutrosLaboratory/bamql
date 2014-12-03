@@ -7,13 +7,13 @@ barf::short_circuit_node::short_circuit_node(std::shared_ptr<ast_node>left, std:
 
 llvm::Value *barf::short_circuit_node::generate(llvm::IRBuilder<> builder, llvm::Value *read) {
 	auto left_value = this->left->generate(builder, read);
-  auto short_circuit_value = builder.CreateICmpEQ(left_value, this->branchValue());
+	auto short_circuit_value = builder.CreateICmpEQ(left_value, this->branchValue());
 
 	auto function = builder.GetInsertBlock()->getParent();
 	auto next_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", function);
 	auto merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
-  builder.CreateCondBr(short_circuit_value, merge_block, next_block);
+	builder.CreateCondBr(short_circuit_value, merge_block, next_block);
 	auto original_block = builder.GetInsertBlock();
 
 	builder.SetInsertPoint(merge_block);
@@ -25,7 +25,7 @@ llvm::Value *barf::short_circuit_node::generate(llvm::IRBuilder<> builder, llvm:
 	phi->addIncoming(left_value, original_block);
 	phi->addIncoming(right_value, next_block);
 	return phi;
-}	
+}
 
 barf::and_node::and_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node>right) : short_circuit_node(left, right) {
 }

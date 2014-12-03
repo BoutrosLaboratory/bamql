@@ -1,0 +1,1 @@
+-linux -T bam1_t
