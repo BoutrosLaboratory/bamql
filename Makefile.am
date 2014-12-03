@@ -10,7 +10,7 @@ library_include_HEADERS = barf.hpp
 
 libbarf_la_CPPFLAGS = \
 	-std=c++11 \
-	$(LLVM_CPPFLAGS) \
+	$(LLVM_CPPFLAGS) -fexceptions \
 	$(NULL)
 libbarf_la_LIBS = \
 	$(LLVM_LIBS) \
