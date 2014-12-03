@@ -1,20 +1,18 @@
 #pragma once
+#include <map>
 #include <memory>
 #include <llvm/IR/IRBuilder.h>
 namespace barf {
-class predicate;
+class ast_node;
+typedef std::shared_ptr<ast_node> (*predicate)(std::string input, int&index);
+
+std::map<std::string, predicate> getDefaultPredicates();
 
 class ast_node {
 public:
-static std::shared_ptr<ast_node> parse(std::string input, std::vector<predicate> predicates);
+static std::shared_ptr<ast_node> parse(std::string input, std::map<std::string, predicate> predicates);
 
 virtual llvm::Value *generate(llvm::IRBuilder<> builder, llvm::Value *read) = 0;
-};
-
-class predicate {
-public:
-const std::string name() const;
-std::shared_ptr<ast_node> parse(std::string input, int&index);
 };
 
 class short_circuit_node : public ast_node {
