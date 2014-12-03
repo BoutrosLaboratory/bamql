@@ -5,14 +5,14 @@ barf::short_circuit_node::short_circuit_node(std::shared_ptr<ast_node>left, std:
 	this->right = right;
 }
 
-llvm::Value *barf::short_circuit_node::generate(llvm::IRBuilder<> builder, llvm::Value *read) {
+llvm::Value *barf::short_circuit_node::generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read) {
 	/* Create two basic blocks for the possibly executed right-hand expression and the final block. */
 	auto function = builder.GetInsertBlock()->getParent();
 	auto next_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", function);
 	auto merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
 	/* Generate the left expression in the current block. */
-	auto left_value = this->left->generate(builder, read);
+	auto left_value = this->left->generate(module, builder, read);
 	auto short_circuit_value = builder.CreateICmpEQ(left_value, this->branchValue());
 	/* If short circuiting, jump to the final block, otherwise, do the right-hand expression. */
 	builder.CreateCondBr(short_circuit_value, merge_block, next_block);
@@ -20,7 +20,7 @@ llvm::Value *barf::short_circuit_node::generate(llvm::IRBuilder<> builder, llvm:
 
 	/* Generate the right-hand expression, then jump to the final block.*/
 	builder.SetInsertPoint(next_block);
-	auto right_value = this->right->generate(builder, read);
+	auto right_value = this->right->generate(module, builder, read);
 	builder.CreateBr(merge_block);
 	next_block = builder.GetInsertBlock();
 
@@ -47,8 +47,8 @@ llvm::Value *barf::or_node::branchValue() {
 barf::not_node::not_node(std::shared_ptr<ast_node>expr) {
 	this->expr = expr;
 }
-llvm::Value *barf::not_node::generate(llvm::IRBuilder<> builder, llvm::Value *read) {
-	llvm::Value *result = this->expr->generate(builder, read);
+llvm::Value *barf::not_node::generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read) {
+	llvm::Value *result = this->expr->generate(module, builder, read);
 	return builder.CreateNot(result);
 }
 
@@ -58,7 +58,7 @@ barf::conditional_node::conditional_node(std::shared_ptr<ast_node>condition, std
 	this->else_part = else_part;
 }
 
-llvm::Value *barf::conditional_node::generate(llvm::IRBuilder<> builder, llvm::Value *read) {
+llvm::Value *barf::conditional_node::generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read) {
 	/* Create three blocks: one for the “then”, one for the “else” and one for the final. */
 	auto function = builder.GetInsertBlock()->getParent();
 	auto then_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
@@ -66,19 +66,19 @@ llvm::Value *barf::conditional_node::generate(llvm::IRBuilder<> builder, llvm::V
 	auto merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
 	/* Compute the conditional argument and then decide to which block to jump. */
-	auto conditional_result = condition->generate(builder, read);
+	auto conditional_result = condition->generate(module, builder, read);
 	builder.CreateCondBr(conditional_result, then_block, else_block);
 
 	/* Generate the “then” block. */
 	builder.SetInsertPoint(then_block);
-	auto then_result = then_part->generate(builder, read);
+	auto then_result = then_part->generate(module, builder, read);
 	/* Jump to the final block. */
 	builder.CreateBr(merge_block);
 	then_block = builder.GetInsertBlock();
 
 	/* Generate the “else” block. */
 	builder.SetInsertPoint(else_block);
-	auto else_result = else_part->generate(builder, read);
+	auto else_result = else_part->generate(module, builder, read);
 	/* Jump to the final block. */
 	builder.CreateBr(merge_block);
 	else_block = builder.GetInsertBlock();

@@ -10,7 +10,7 @@ namespace barf {
  * A predicate that always return true.
  */
 class true_node : public ast_node {
-	virtual llvm::Value *generate(llvm::IRBuilder<> builder, llvm::Value *read) {
+	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read) {
 		return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 	}
 };
