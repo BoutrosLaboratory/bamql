@@ -10,6 +10,7 @@ namespace barf {
  * A predicate that checks of the read is paired.
  */
 class is_paired_node : public ast_node {
+	public:
 	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
 		auto function = define_is_paired(module);
 		return builder.CreateCall(function, read);
@@ -21,11 +22,11 @@ static std::shared_ptr<ast_node> parse_is_paired(std::string input, int&index) t
 	return result;
 }
 
-
 /**
  * A predicate that always return true.
  */
 class true_node : public ast_node {
+	public:
 	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
 		return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 	}
