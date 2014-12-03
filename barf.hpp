@@ -1,10 +1,21 @@
 #pragma once
+#include <exception>
+#include <functional>
 #include <map>
 #include <memory>
 #include <llvm/IR/IRBuilder.h>
 namespace barf {
+
+class parse_error : public std::runtime_error {
+public:
+parse_error(size_t offset, std::string what);
+size_t where();
+private:
+size_t index;
+};
+
 class ast_node;
-typedef std::shared_ptr<ast_node> (*predicate)(std::string input, int&index);
+typedef std::function<std::shared_ptr<ast_node>(std::string input, int&index) throw (parse_error)> predicate;
 
 std::map<std::string, predicate> getDefaultPredicates();
 
@@ -51,8 +62,8 @@ std::shared_ptr<ast_node>then_part;
 std::shared_ptr<ast_node>else_part;
 };
 
-int parse_int(std::string input, int& index);
-double parse_double(std::string input, int& index);
-std::string parse_str(std::string input, int& index);
+int parse_int(std::string input, int& index) throw (parse_error);
+double parse_double(std::string input, int& index) throw (parse_error);
+std::string parse_str(std::string input, int& index, std::string accept_chars, bool reject=false) throw (parse_error);
 void parse_space(std::string input, int& index);
 }
