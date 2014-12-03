@@ -21,7 +21,7 @@ class check_chromosome_node : public ast_node {
 	std::string name;
 };
 
-static std::shared_ptr<ast_node> parse_check_chromosome(std::string input, int&index) throw (parse_error) {
+static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input, size_t&index) throw (parse_error) {
 	parse_space(input, index);
 	if (input[index] != '(') {
 		throw new parse_error(index, "Expected `('.");
@@ -62,7 +62,7 @@ class is_paired_node : public ast_node {
 	}
 };
 
-static std::shared_ptr<ast_node> parse_is_paired(std::string input, int&index) throw (parse_error) {
+static std::shared_ptr<ast_node> parse_is_paired(const std::string& input, size_t&index) throw (parse_error) {
 	static auto result = std::make_shared<is_paired_node>();
 	return result;
 }
@@ -77,7 +77,7 @@ class true_node : public ast_node {
 	}
 };
 
-static std::shared_ptr<ast_node> parse_true(std::string input, int&index) throw (parse_error) {
+static std::shared_ptr<ast_node> parse_true(const std::string& input, size_t&index) throw (parse_error) {
 	static auto result = std::make_shared<true_node>();
 	return result;
 }

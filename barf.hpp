@@ -36,7 +36,7 @@ class ast_node;
 /**
  * A predicate is a function that parses a named predicate, and, upon success, returns a syntax node.
  */
-typedef std::function<std::shared_ptr<ast_node>(std::string input, int&index) throw (parse_error)> predicate;
+typedef std::function<std::shared_ptr<ast_node>(const std::string& input, size_t&index) throw (parse_error)> predicate;
 
 /**
  * A collection of predicates, where the name is the keyword in the query indicating which predicate is selected.
@@ -122,20 +122,20 @@ std::shared_ptr<ast_node>else_part;
 /**
  * A function to parse a valid non-empty integer.
  */
-int parse_int(std::string input, int& index) throw (parse_error);
+int parse_int(const std::string& input, size_t& index) throw (parse_error);
 /**
  * A function to parse a valid non-empty floating point value.
  */
-double parse_double(std::string input, int& index) throw (parse_error);
+double parse_double(const std::string input, size_t& index) throw (parse_error);
 /**
  * A function to parse a non-empty string.
  * @param accept_chars: A list of valid characters that may be present in the string.
  * @param reject: If true, this inverts the meaning of `accept_chars`, accepting any character execpt those listed.
  */
-std::string parse_str(std::string input, int& index, std::string accept_chars, bool reject=false) throw (parse_error);
+std::string parse_str(const std::string& input, size_t& index, const std::string& accept_chars, bool reject=false) throw (parse_error);
 /**
  * Consume whitespace in the parse stream.
  * @returns: true if any whitespace was consumed.
  */
-bool parse_space(std::string input, int& index);
+bool parse_space(const std::string& input, size_t& index);
 }
