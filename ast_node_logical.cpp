@@ -59,26 +59,31 @@ barf::conditional_node::conditional_node(std::shared_ptr<ast_node>condition, std
 }
 
 llvm::Value *barf::conditional_node::generate(llvm::IRBuilder<> builder, llvm::Value *read) {
-	auto conditional_result = condition->generate(builder, read);
-
+	/* Create three blocks: one for the “then”, one for the “else” and one for the final. */
 	auto function = builder.GetInsertBlock()->getParent();
-
 	auto then_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
 	auto else_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "else", function);
 	auto merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
+	/* Compute the conditional argument and then decide to which block to jump. */
+	auto conditional_result = condition->generate(builder, read);
 	builder.CreateCondBr(conditional_result, then_block, else_block);
 
+	/* Generate the “then” block. */
 	builder.SetInsertPoint(then_block);
 	auto then_result = then_part->generate(builder, read);
+	/* Jump to the final block. */
 	builder.CreateBr(merge_block);
 	then_block = builder.GetInsertBlock();
 
+	/* Generate the “else” block. */
 	builder.SetInsertPoint(else_block);
 	auto else_result = else_part->generate(builder, read);
+	/* Jump to the final block. */
 	builder.CreateBr(merge_block);
 	else_block = builder.GetInsertBlock();
 
+	/* Get the two results and select the correct one using a PHI node. */
 	builder.SetInsertPoint(merge_block);
 	auto phi = builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
 	phi->addIncoming(then_result, then_block);
