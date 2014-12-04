@@ -52,6 +52,21 @@ static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input
 
 
 /**
+ * A predicate that always returns false.
+ */
+class false_node : public ast_node {
+	public:
+	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+		return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+	}
+};
+
+static std::shared_ptr<ast_node> parse_false(const std::string& input, size_t&index) throw (parse_error) {
+	static auto result = std::make_shared<false_node>();
+	return result;
+}
+
+/**
  * A predicate that checks of the read is paired.
  */
 class is_paired_node : public ast_node {
@@ -68,7 +83,7 @@ static std::shared_ptr<ast_node> parse_is_paired(const std::string& input, size_
 }
 
 /**
- * A predicate that always return true.
+ * A predicate that always returns true.
  */
 class true_node : public ast_node {
 	public:
@@ -88,6 +103,7 @@ static std::shared_ptr<ast_node> parse_true(const std::string& input, size_t&ind
 predicate_map getDefaultPredicates() {
 	return  {
 		{std::string("chr"), parse_check_chromosome},
+		{std::string("false"), parse_false},
 		{std::string("is_paired"), parse_is_paired},
 		{std::string("true"), parse_true}
 	};
