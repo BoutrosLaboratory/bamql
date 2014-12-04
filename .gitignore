@@ -10,6 +10,8 @@ Makefile.in
 aclocal.m4
 ar-lib
 autom4te.cache
+barf
+barf-compile
 compile
 config.*
 configure
