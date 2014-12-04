@@ -37,14 +37,14 @@ static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input
 		throw new parse_error(index, "Expected `('.");
 	}
 	index++;
-	if (str.compare("23") || str.compare("X") || str.compare("x")) {
+	if (str.compare("23") == 0 || str.compare("X")  == 0|| str.compare("x") == 0) {
 		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("23"), std::make_shared<check_chromosome_node>("x") );
 	}
 
-	if (str.compare("24") || str.compare("Y") || str.compare("y")) {
+	if (str.compare("24") == 0 || str.compare("Y") == 0 || str.compare("y") == 0) {
 		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("24"), std::make_shared<check_chromosome_node>("y") );
 	}
-	if (str.compare("25") || str.compare("M") || str.compare("m")) {
+	if (str.compare("25") == 0 || str.compare("M") == 0 || str.compare("m") == 0) {
 		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("25"), std::make_shared<check_chromosome_node>("m") );
 	}
 	return std::make_shared<check_chromosome_node>(str);
@@ -87,6 +87,7 @@ static std::shared_ptr<ast_node> parse_true(const std::string& input, size_t&ind
  */
 predicate_map getDefaultPredicates() {
 	return  {
+		{std::string("chr"), parse_check_chromosome},
 		{std::string("is_paired"), parse_is_paired},
 		{std::string("true"), parse_true}
 	};
