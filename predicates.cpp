@@ -13,7 +13,7 @@ class check_chromosome_node : public ast_node {
 	public:
 	check_chromosome_node(std::string name_) : name(name_) {
 	}
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
+	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 		auto function = define_check_chromosome(module);
 		return builder.CreateCall3(function, read, header, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
 	}
@@ -56,7 +56,7 @@ static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input
  */
 class is_paired_node : public ast_node {
 	public:
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
+	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 		auto function = define_is_paired(module);
 		return builder.CreateCall(function, read);
 	}
@@ -72,7 +72,7 @@ static std::shared_ptr<ast_node> parse_is_paired(const std::string& input, size_
  */
 class true_node : public ast_node {
 	public:
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
+	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 		return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 	}
 };

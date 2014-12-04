@@ -1,11 +1,11 @@
 #include "barf.hpp"
 
-barf::short_circuit_node::short_circuit_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node>) {
+barf::short_circuit_node::short_circuit_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node> right) {
 	this->left = left;
 	this->right = right;
 }
 
-llvm::Value *barf::short_circuit_node::generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
+llvm::Value *barf::short_circuit_node::generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 	/* Create two basic blocks for the possibly executed right-hand expression and the final block. */
 	auto function = builder.GetInsertBlock()->getParent();
 	auto next_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", function);
@@ -47,7 +47,7 @@ llvm::Value *barf::or_node::branchValue() {
 barf::not_node::not_node(std::shared_ptr<ast_node>expr) {
 	this->expr = expr;
 }
-llvm::Value *barf::not_node::generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
+llvm::Value *barf::not_node::generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 	llvm::Value *result = this->expr->generate(module, builder, read, header);
 	return builder.CreateNot(result);
 }
@@ -58,7 +58,7 @@ barf::conditional_node::conditional_node(std::shared_ptr<ast_node>condition, std
 	this->else_part = else_part;
 }
 
-llvm::Value *barf::conditional_node::generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) {
+llvm::Value *barf::conditional_node::generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 	/* Create three blocks: one for the “then”, one for the “else” and one for the final. */
 	auto function = builder.GetInsertBlock()->getParent();
 	auto then_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);

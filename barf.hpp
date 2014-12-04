@@ -62,7 +62,7 @@ static std::shared_ptr<ast_node> parse(const std::string &input, predicate_map p
  * @param read: A reference to the BAM read.
  * @returns: A boolean value indicating success or failure of this node.
  */
-virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) = 0;
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) = 0;
 };
 
 /**
@@ -71,7 +71,7 @@ virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, l
 class short_circuit_node : public ast_node {
 public:
 short_circuit_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node>);
-virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header);
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
 /**
  * The value that causes short circuting.
  */
@@ -102,7 +102,7 @@ virtual llvm::Value *branchValue();
 class not_node : public ast_node {
 public:
 not_node(std::shared_ptr<ast_node>expr);
-virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header);
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
 private:
 std::shared_ptr<ast_node>expr;
 };
@@ -112,7 +112,7 @@ std::shared_ptr<ast_node>expr;
 class conditional_node : public ast_node {
 public:
 conditional_node(std::shared_ptr<ast_node>condition, std::shared_ptr<ast_node>then_part, std::shared_ptr<ast_node> else_part);
-virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header);
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
 private:
 std::shared_ptr<ast_node>condition;
 std::shared_ptr<ast_node>then_part;
