@@ -35,12 +35,11 @@ namespace barf {
 			throw parse_error(index, "Empty predicate.");
 		}
 
-		std::shared_ptr<ast_node> node;
 		if (predicates.count(predicate_name)) {
-			node = predicates[predicate_name](input, index);
-			parse_space(input, index);
+			return predicates[predicate_name](input, index);
+		} else {
+			throw parse_error(index, "Unkown predicate.");
 		}
-		return node;
 	}
 
 	static std::shared_ptr<ast_node> parse_and(const std::string &input, size_t &index, predicate_map predicates) {
