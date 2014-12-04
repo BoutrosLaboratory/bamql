@@ -78,5 +78,6 @@ int main(int argc, char *const *argv) {
 	} else {
 		llvm::WriteBitcodeToFile(module, out_data);
 	}
+	delete module;
 	return 0;
 }
