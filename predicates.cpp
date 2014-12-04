@@ -16,7 +16,7 @@ class is_paired_node : public ast_node {
 	}
 };
 
-static std::shared_ptr<ast_node> parse_is_paired(std::string input, int&index) throw (parse_error) {
+static std::shared_ptr<ast_node> parse_is_paired(const std::string &input, int&index) throw (parse_error) {
 	static auto result = std::make_shared<is_paired_node>();
 	return result;
 }
@@ -31,7 +31,7 @@ class true_node : public ast_node {
 	}
 };
 
-static std::shared_ptr<ast_node> parse_true(std::string input, int&index) throw (parse_error) {
+static std::shared_ptr<ast_node> parse_true(const std::string &input, int&index) throw (parse_error) {
 	static auto result = std::make_shared<true_node>();
 	return result;
 }
