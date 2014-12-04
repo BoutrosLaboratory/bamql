@@ -6,7 +6,7 @@ AM_PROG_AR
 AC_PROG_CXX_C_O
 AC_PROG_LIBTOOL
 
-AX_LLVM([core executionengine])
+AX_LLVM([core executionengine bitwriter])
 PKG_CHECK_MODULES(HTS, [ htslib ], [], [
 	ORIGINAL_CFLAGS="$CPPFLAGS"
 	ORIGINAL_LIBS="$LIBS"

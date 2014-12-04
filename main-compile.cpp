@@ -1,7 +1,11 @@
 #include <unistd.h>
+#include <fstream>
 #include <iostream>
+#include <sstream>
+#include <system_error>
 #include <llvm/IR/Module.h>
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/Support/raw_ostream.h>
 #include "barf.hpp"
 
 int main(int argc, char *const *argv) {
@@ -38,8 +42,7 @@ int main(int argc, char *const *argv) {
 
 	auto module = new llvm::Module(name, llvm::getGlobalContext());
 
-	auto bam1_type = barf::getBamType(module);
-	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction("filter",llvm::Type::getInt1Ty(llvm::getGlobalContext()), llvm::PointerType::get(bam1_type, 0), nullptr));
+	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction("filter",llvm::Type::getInt1Ty(llvm::getGlobalContext()), llvm::PointerType::get(barf::getBamHeaderType(module), 0), llvm::PointerType::get(barf::getBamType(module), 0), nullptr));
 
 	std::shared_ptr<barf::ast_node> ast;
 	try {
@@ -53,16 +56,27 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
+	auto entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", filter_func);
+	llvm::IRBuilder<> builder(entry);
+	auto args = filter_func->arg_begin();
+	auto header_value = args++;
+	header_value->setName("header");
+	auto read_value = args++;
+	read_value->setName("read");
+	builder.CreateRet(ast->generate(module, builder, header_value, read_value));
+
 	std::stringstream output_filename;
 	if (output == nullptr) {
 		output_filename << name << ".bc";
 	} else {
 		output_filename << output;
 	}
-	std::filebuf fb;
-	fb.open(output_file.str(), std::ios::out);
-	std::ostream out_data(&fb);
-	llvm::WriteBitcodeToFile(module, out_data);
-	fb.close();
+	std::string error;
+	llvm::raw_fd_ostream out_data(output_filename.str().c_str(), error);
+	if (error.length() > 0) {
+		std::cerr << error << std::endl;
+	} else {
+		llvm::WriteBitcodeToFile(module, out_data);
+	}
 	return 0;
 }

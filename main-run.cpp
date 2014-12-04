@@ -65,8 +65,7 @@ int main(int argc, char *const *argv) {
 
 	auto module = new llvm::Module("barf", llvm::getGlobalContext());
 
-	auto bam1_type = barf::getBamType(module);
-	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction("filter",llvm::Type::getInt1Ty(llvm::getGlobalContext()), llvm::PointerType::get(bam1_type, 0), nullptr));
+	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction("filter",llvm::Type::getInt1Ty(llvm::getGlobalContext()), llvm::PointerType::get(barf::getBamHeaderType(module), 0), llvm::PointerType::get(barf::getBamType(module), 0), nullptr));
 
 	std::shared_ptr<barf::ast_node> ast;
 	try {
@@ -82,10 +81,19 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
+	auto entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", filter_func);
+	llvm::IRBuilder<> builder(entry);
+	auto args = filter_func->arg_begin();
+	auto header_value = args++;
+	header_value->setName("header");
+	auto read_value = args++;
+	read_value->setName("read");
+	builder.CreateRet(ast->generate(module, builder, header_value, read_value));
+
 	auto engine = llvm::EngineBuilder(module).create();
 
 	union {
-		bool (*func)(bam1_t*);
+		bool (*func)(bam_hdr_t*, bam1_t*);
 		void *ptr;
 	} result;
 	result.ptr = engine->getPointerToFunction(filter_func);
@@ -102,7 +110,7 @@ int main(int argc, char *const *argv) {
 
 	bam1_t *read = bam_init1();
 	while(sam_read1(input, header, read) == 0) {
-		if ((*result.func)(read)) {
+		if ((*result.func)(header, read)) {
 			accept_count++;
 			if (accept != nullptr)
 				sam_write1(accept, header, read);

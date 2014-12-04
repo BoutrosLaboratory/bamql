@@ -51,7 +51,8 @@ namespace barf {
 			parse_space(input, index);
 		}
 		while(items.size() > 0) {
-			node = std::make_shared<and_node>(items.pop_back(), node);
+			node = std::make_shared<and_node>(items.back(), node);
+			items.pop_back();
 		}
 		return node;
 	}
@@ -67,7 +68,8 @@ namespace barf {
 			parse_space(input, index);
 		}
 		while(items.size() > 0) {
-			node = std::make_shared<or_node>(items.pop_back(), node);
+			node = std::make_shared<or_node>(items.back(), node);
+			items.pop_back();
 		}
 		return node;
 	}
@@ -84,7 +86,7 @@ namespace barf {
 		else {
 			return cond_part;
 		}
-		if (input[*index] == ':') {
+		if (input[index] == ':') {
 			else_part = parse_or(input, index, predicates);
 		} else {
 			throw parse_error(index, "Ternary operator has no ':'.");
@@ -95,13 +97,13 @@ namespace barf {
 	/**
 	 * Parse a string into a syntax tree using the built-in logical operations and the predicates provided.
 	 */
-	std::shared_ptr<ast_node> barf::ast_node::parse(const std::string &input, predicate_map predicates) throw(parse_error) {
-		size_t *index = 0;
+	std::shared_ptr<ast_node> ast_node::parse(const std::string &input, predicate_map predicates) throw(parse_error) {
+		size_t index = 0;
 		std::shared_ptr<ast_node> node = parse_conditional(input, index, predicates);
 
 		// OUTERMOST check string is fully consumed
-		if (*index != input.length() - 1) {
-			throw parse_error(*index, "Reached end of input before completing parsing.");
+		if (index != input.length() - 1) {
+			throw parse_error(index, "Reached end of input before completing parsing.");
 		}
 		return node;
 	}

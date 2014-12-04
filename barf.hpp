@@ -13,11 +13,16 @@ namespace barf {
 llvm::Type *getBamType(llvm::Module *module);
 
 /**
+ * Get the LLVM type for a BAM header.
+ */
+llvm::Type *getBamHeaderType(llvm::Module *module);
+
+/**
  * The exception thrown when a parse error occurs.
  */
 class parse_error : public std::runtime_error {
 public:
-parse_error(size_t offset, std::string what);
+parse_error(size_t index, std::string what);
 /**
  * The position in the parse string where the error occured.
  */
@@ -51,13 +56,13 @@ public:
 /**
  * Parse a string into a syntax tree using the built-in logical operations and the predicates provided.
  */
-static std::shared_ptr<ast_node> parse(std::string input, predicate_map predicates);
+static std::shared_ptr<ast_node> parse(const std::string &input, predicate_map predicates) throw (parse_error);
 /**
  * Render this syntax node to LLVM.
  * @param read: A reference to the BAM read.
  * @returns: A boolean value indicating success or failure of this node.
  */
-virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read) = 0;
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header) = 0;
 };
 
 /**
@@ -66,7 +71,7 @@ virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, l
 class short_circuit_node : public ast_node {
 public:
 short_circuit_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node>);
-virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read);
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header);
 /**
  * The value that causes short circuting.
  */
@@ -97,7 +102,7 @@ virtual llvm::Value *branchValue();
 class not_node : public ast_node {
 public:
 not_node(std::shared_ptr<ast_node>expr);
-virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read);
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header);
 private:
 std::shared_ptr<ast_node>expr;
 };
@@ -107,7 +112,7 @@ std::shared_ptr<ast_node>expr;
 class conditional_node : public ast_node {
 public:
 conditional_node(std::shared_ptr<ast_node>condition, std::shared_ptr<ast_node>then_part, std::shared_ptr<ast_node> else_part);
-virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read);
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<> builder, llvm::Value *read, llvm::Value *header);
 private:
 std::shared_ptr<ast_node>condition;
 std::shared_ptr<ast_node>then_part;
@@ -117,20 +122,20 @@ std::shared_ptr<ast_node>else_part;
 /**
  * A function to parse a valid non-empty integer.
  */
-int parse_int(std::string input, size_t &index) throw (parse_error);
+int parse_int(const std::string& input, size_t& index) throw (parse_error);
 /**
  * A function to parse a valid non-empty floating point value.
  */
-double parse_double(std::string input, size_t &index) throw (parse_error);
+double parse_double(const std::string input, size_t& index) throw (parse_error);
 /**
  * A function to parse a non-empty string.
  * @param accept_chars: A list of valid characters that may be present in the string.
  * @param reject: If true, this inverts the meaning of `accept_chars`, accepting any character execpt those listed.
  */
-std::string parse_str(std::string input, size_t &index, std::string accept_chars, bool reject=false) throw (parse_error);
+std::string parse_str(const std::string& input, size_t& index, const std::string& accept_chars, bool reject=false) throw (parse_error);
 /**
  * Consume whitespace in the parse stream.
  * @returns: true if any whitespace was consumed.
  */
-bool parse_space(std::string input, size_t &index);
+bool parse_space(const std::string& input, size_t& index);
 }
