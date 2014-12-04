@@ -11,13 +11,16 @@ namespace barf {
 			throw parse_error(index, "Reached end of input before completing parsing.");
 		}
 		if (input[index] == '!') {
+			index++;
 			return std::make_shared<not_node>(parse_terminal(input, index, predicates));
 		}
 		if (input[index] == '(') {
+			index++;
 			size_t brace_index = index;
 			auto node = parse_conditional(input, index, predicates);
 			parse_space(input, index);
 			if (index < input.length() && input[index] == ')') {
+				index++;
 				return node;
 			} else {
 				throw parse_error(brace_index, "Open brace has no matching closing brace.");
@@ -27,7 +30,7 @@ namespace barf {
 		while(index < input.length() && (input[index] >= 'a' && input[index] <'z' || input[index] =='_' )){
 			index++;
 		}
-		std::string predicate_name = input.substr(start, index - start - 1);
+		std::string predicate_name = input.substr(start, index - start);
 		if (predicate_name.empty()) {
 			throw parse_error(index, "Empty predicate.");
 		}
@@ -46,6 +49,7 @@ namespace barf {
 		std::shared_ptr<ast_node> node = parse_terminal(input, index, predicates);
 		parse_space(input, index);
 		while (index < input.length() && input[index] == '&') {
+			index++;
 			items.push_back(node);
 			node = parse_terminal(input, index, predicates);
 			parse_space(input, index);
@@ -63,6 +67,7 @@ namespace barf {
 		std::shared_ptr<ast_node> node = parse_and(input, index, predicates);
 		parse_space(input, index);
 		while (index < input.length() && input[index] == '|') {
+			index++;
 			items.push_back(node);
 			node = parse_and(input, index, predicates);
 			parse_space(input, index);
@@ -79,14 +84,16 @@ namespace barf {
 
 		cond_part = parse_or(input, index, predicates);
 		parse_space(input, index);
-		if (input[index] == '?') {
+		if (index < input.length() && input[index] == '?') {
+			index++;
 			if_part = parse_or(input, index, predicates);
 			parse_space(input, index);
 		}
 		else {
 			return cond_part;
 		}
-		if (input[index] == ':') {
+		if (index < input.length() && input[index] == ':') {
+			index++;
 			else_part = parse_or(input, index, predicates);
 		} else {
 			throw parse_error(index, "Ternary operator has no ':'.");
@@ -101,9 +108,10 @@ namespace barf {
 		size_t index = 0;
 		std::shared_ptr<ast_node> node = parse_conditional(input, index, predicates);
 
+		parse_space(input, index);
 		// OUTERMOST check string is fully consumed
-		if (index != input.length() - 1) {
-			throw parse_error(index, "Reached end of input before completing parsing.");
+		if (index != input.length()) {
+			throw parse_error(index, "Junk at end of input.");
 		}
 		return node;
 	}
