@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "barf.hpp"
 namespace barf {
 parse_error::parse_error(size_t index, std::string what) : std::runtime_error(what) {
@@ -19,7 +20,16 @@ int parse_int(const std::string& input, size_t& index) throw (parse_error) {
 	}
 	return accumulator;
 }
-double parse_double(const std::string& input, size_t& index) throw (parse_error);
+double parse_double(const std::string& input, size_t& index) throw (parse_error) {
+	size_t start = index;
+	char* end_ptr = nullptr;
+	auto result = strtod(input.c_str() + start, &end_ptr);
+	index = end_ptr - input.c_str();
+	if (index == start) {
+		throw new parse_error(index, "Expected floating point number.");
+	}
+	return result;
+}
 std::string parse_str(const std::string& input, size_t& index, const std::string& accept_chars, bool reject) throw (parse_error) {
 	size_t start = index;
 	while(index < input.length() && ((accept_chars.find(input[index]) != std::string::npos) ^ reject)) {
