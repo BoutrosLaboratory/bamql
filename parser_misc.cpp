@@ -38,7 +38,7 @@ std::string parse_str(const std::string& input, size_t& index, const std::string
 	if (start == index) {
 		throw new parse_error(start, "Unexpected character.");
 	}
-	return input.substr(start, index);
+	return input.substr(start, index - start);
 }
 bool parse_space(const std::string& input, size_t& index) {
 	size_t start = index;
