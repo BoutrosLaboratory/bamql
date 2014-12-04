@@ -12,11 +12,15 @@ int main(int argc, char *const *argv) {
 	const char *name = "barf";
 	char *output = nullptr;
 	bool help = false;
+	bool dump = false;
 	int c;
 
-	while ((c = getopt (argc, argv, "hn:o:")) != -1) {
+	while ((c = getopt (argc, argv, "dhn:o:")) != -1) {
 		switch (c)
 		{
+		case 'd':
+			dump = true;
+			break;
 		case 'n':
 			name = optarg;
 			break;
@@ -64,6 +68,10 @@ int main(int argc, char *const *argv) {
 	auto read_value = args++;
 	read_value->setName("read");
 	builder.CreateRet(ast->generate(module, builder, header_value, read_value));
+
+	if (dump) {
+		module->dump();
+	}
 
 	std::stringstream output_filename;
 	if (output == nullptr) {
