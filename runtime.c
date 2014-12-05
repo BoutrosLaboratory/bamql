@@ -35,3 +35,12 @@ bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *name) {
 	}
 	return fnmatch(name, real_name, 0) == 0;
 }
+
+bool check_read_group(bam1_t *read, const char *name)
+{
+	uint8_t const *read_group = bam_aux_get(read, "RG");
+	if (read_group == NULL) {
+		return false;
+	}
+	return fnmatch(name, (const char *)read_group, 0) == 0;
+}

@@ -50,6 +50,36 @@ static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input
 	return std::make_shared<check_chromosome_node>(str);
 }
 
+/**
+ * A predicate that checks of the read group name.
+ */
+class check_read_group_node : public ast_node {
+	public:
+	check_read_group_node(std::string name_) : name(name_) {
+	}
+	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+		auto function = define_check_read_group(module);
+		return builder.CreateCall2(function, read, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
+	}
+	private:
+	std::string name;
+};
+
+static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input, size_t&index) throw (parse_error) {
+	parse_space(input, index);
+	if (input[index] != '(') {
+		throw new parse_error(index, "Expected `('.");
+	}
+	index++;
+	parse_space(input, index);
+	auto str = parse_str(input, index, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_*?");
+	parse_space(input, index);
+	if (input[index] != ')') {
+		throw new parse_error(index, "Expected `('.");
+	}
+	index++;
+	return std::make_shared<check_read_group_node>(str);
+}
 
 /**
  * A predicate that always returns false.
@@ -105,6 +135,7 @@ predicate_map getDefaultPredicates() {
 		{std::string("chr"), parse_check_chromosome},
 		{std::string("false"), parse_false},
 		{std::string("is_paired"), parse_is_paired},
+		{std::string("read_group"), parse_check_read_group},
 		{std::string("true"), parse_true}
 	};
 }
