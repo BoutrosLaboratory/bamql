@@ -10,15 +10,15 @@ namespace barf {
  * A predicate that checks of the chromosome name.
  */
 class check_chromosome_node : public ast_node {
-	public:
-	check_chromosome_node(std::string name_) : name(name_) {
-	}
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-		auto function = define_check_chromosome(module);
-		return builder.CreateCall3(function, read, header, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
-	}
-	private:
-	std::string name;
+public:
+check_chromosome_node(std::string name_) : name(name_) {
+}
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+	auto function = define_check_chromosome(module);
+	return builder.CreateCall3(function, read, header, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
+}
+private:
+std::string name;
 };
 
 static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input, size_t&index) throw (parse_error) {
@@ -54,15 +54,15 @@ static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input
  * A predicate that checks of the read group name.
  */
 class check_read_group_node : public ast_node {
-	public:
-	check_read_group_node(std::string name_) : name(name_) {
-	}
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-		auto function = define_check_read_group(module);
-		return builder.CreateCall2(function, read, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
-	}
-	private:
-	std::string name;
+public:
+check_read_group_node(std::string name_) : name(name_) {
+}
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+	auto function = define_check_read_group(module);
+	return builder.CreateCall2(function, read, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
+}
+private:
+std::string name;
 };
 
 static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input, size_t&index) throw (parse_error) {
@@ -85,10 +85,10 @@ static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input
  * A predicate that always returns false.
  */
 class false_node : public ast_node {
-	public:
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-		return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
-	}
+public:
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+	return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+}
 };
 
 static std::shared_ptr<ast_node> parse_false(const std::string& input, size_t&index) throw (parse_error) {
@@ -100,11 +100,11 @@ static std::shared_ptr<ast_node> parse_false(const std::string& input, size_t&in
  * A predicate that checks of the read is paired.
  */
 class is_paired_node : public ast_node {
-	public:
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-		auto function = define_is_paired(module);
-		return builder.CreateCall(function, read);
-	}
+public:
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+	auto function = define_is_paired(module);
+	return builder.CreateCall(function, read);
+}
 };
 
 static std::shared_ptr<ast_node> parse_is_paired(const std::string& input, size_t&index) throw (parse_error) {
@@ -116,10 +116,10 @@ static std::shared_ptr<ast_node> parse_is_paired(const std::string& input, size_
  * A predicate that always returns true.
  */
 class true_node : public ast_node {
-	public:
-	virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-		return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
-	}
+public:
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+	return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+}
 };
 
 static std::shared_ptr<ast_node> parse_true(const std::string& input, size_t&index) throw (parse_error) {
@@ -131,12 +131,12 @@ static std::shared_ptr<ast_node> parse_true(const std::string& input, size_t&ind
  * All the predicates known to the system.
  */
 predicate_map getDefaultPredicates() {
-	return  {
-		{std::string("chr"), parse_check_chromosome},
-		{std::string("false"), parse_false},
-		{std::string("is_paired"), parse_is_paired},
-		{std::string("read_group"), parse_check_read_group},
-		{std::string("true"), parse_true}
+	return {
+		       {std::string("chr"), parse_check_chromosome},
+		       {std::string("false"), parse_false},
+		       {std::string("is_paired"), parse_is_paired},
+		       {std::string("read_group"), parse_check_read_group},
+		       {std::string("true"), parse_true}
 	};
 }
 

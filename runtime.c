@@ -3,7 +3,8 @@
 #include <string.h>
 #include <htslib/sam.h>
 
-void __dummy__(bam_hdr_t *header, bam1_t *read) {
+void __dummy__(bam_hdr_t * header, bam1_t *read)
+{
 }
 
 /*
@@ -24,7 +25,8 @@ bool is_paired(bam1_t *read)
 	return BAM_FPAIRED & read->core.flag;
 }
 
-bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *name) {
+bool check_chromosome(bam1_t *read, bam_hdr_t * header, const char *name)
+{
 	if (read->core.tid < 0 || read->core.tid >= header->n_targets)
 		return false;
 
