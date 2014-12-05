@@ -72,13 +72,21 @@ static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input
 	}
 	index++;
 	parse_space(input, index);
-	auto str = parse_str(input, index, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_*?");
+	auto name_start = index;
+	/* This insanity is brought to you by samtools's sam_tview.c */
+	while (index < input.length() && input[index] >= '!' && input[index] <= '~' && (index > name_start || input[index] != '=')) {
+		index++;
+	}
+	if (name_start == index) {
+		throw new parse_error(index, "Expected valid read group name.");
+	}
+	auto name_length = index - name_start;
 	parse_space(input, index);
 	if (input[index] != ')') {
 		throw new parse_error(index, "Expected `('.");
 	}
 	index++;
-	return std::make_shared<check_read_group_node>(str);
+	return std::make_shared<check_read_group_node>(input.substr(name_start, name_length));
 }
 
 /**
