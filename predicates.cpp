@@ -95,7 +95,7 @@ static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input
 class false_node : public ast_node {
 public:
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-	return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+	return llvm::ConstantInt::getFalse(llvm::getGlobalContext());
 }
 };
 
