@@ -4,6 +4,9 @@ namespace barf {
 
 static std::shared_ptr<ast_node> parse_conditional(const std::string &input, size_t &index, predicate_map predicates);
 
+/**
+ * Handle terminal operators (final step in the recursive descent)
+ */
 static std::shared_ptr<ast_node> parse_terminal(const std::string &input, size_t &index, predicate_map predicates) {
 
 	parse_space(input, index);
@@ -42,6 +45,9 @@ static std::shared_ptr<ast_node> parse_terminal(const std::string &input, size_t
 	}
 }
 
+/**
+ * Handle and operators (third step in the recursive descent)
+ */
 static std::shared_ptr<ast_node> parse_and(const std::string &input, size_t &index, predicate_map predicates) {
 	std::vector<std::shared_ptr<ast_node>> items;
 
@@ -60,6 +66,9 @@ static std::shared_ptr<ast_node> parse_and(const std::string &input, size_t &ind
 	return node;
 }
 
+/**
+ * Handle or operators (second step in the recursive descent)
+ */
 static std::shared_ptr<ast_node> parse_or(const std::string &input, size_t &index, predicate_map predicates) {
 	std::vector<std::shared_ptr<ast_node>> items;
 
@@ -78,6 +87,9 @@ static std::shared_ptr<ast_node> parse_or(const std::string &input, size_t &inde
 	return node;
 }
 
+/**
+ * Handle conditional operators (first step in the recursive descent)
+ */
 static std::shared_ptr<ast_node> parse_conditional(const std::string &input, size_t &index, predicate_map predicates) {
 	std::shared_ptr<ast_node> cond_part, if_part, else_part;
 
@@ -107,8 +119,9 @@ std::shared_ptr<ast_node> ast_node::parse(const std::string &input, predicate_ma
 	size_t index = 0;
 	std::shared_ptr<ast_node> node = parse_conditional(input, index, predicates);
 
+
 	parse_space(input, index);
-	// OUTERMOST check string is fully consumed
+	// check string is fully consumed
 	if (index != input.length()) {
 		throw parse_error(index, "Junk at end of input.");
 	}
