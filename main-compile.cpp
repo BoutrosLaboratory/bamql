@@ -99,7 +99,7 @@ int main(int argc, char *const *argv) {
 		llvm::WriteBitcodeToFile(module, out_data);
 	}
 	// Write the header file to stdout.
-	std::cout << "#include <stdbool.h>\n#include<htslib/sam.h>\nextern bool " << filter << "(bam_hdr_t*, bam1_t*)" << std::endl;
+	std::cout << "#include <stdbool.h>\n#include<htslib/sam.h>\nextern bool " << name << "(bam_hdr_t*, bam1_t*)" << std::endl;
 	delete module;
 	return 0;
 }
