@@ -76,7 +76,7 @@ static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input
 	parse_space(input, index);
 	auto name_start = index;
 	/* This insanity is brought to you by samtools's sam_tview.c */
-	while (index < input.length() && input[index] >= '!' && input[index] <= '~' && (index > name_start || input[index] != '=')) {
+	while (index < input.length() && input[index] >= '!' && input[index] <= '~' && input[index] != ')' && (index > name_start || input[index] != '=')) {
 		index++;
 	}
 	if (name_start == index) {
