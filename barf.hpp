@@ -138,4 +138,8 @@ std::string parse_str(const std::string& input, size_t& index, const std::string
  * @returns: true if any whitespace was consumed.
  */
 bool parse_space(const std::string& input, size_t& index);
+/**
+ * Consume the specified character with optional whitespace before and after.
+ */
+void parse_char_in_space(const std::string& input, size_t& index, char c) throw (parse_error);
 }

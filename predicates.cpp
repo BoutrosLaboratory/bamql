@@ -22,21 +22,15 @@ std::string name;
 };
 
 static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input, size_t&index) throw (parse_error) {
-	parse_space(input, index);
-	if (input[index] != '(') {
-		throw new parse_error(index, "Expected `('.");
-	}
-	index++;
-	parse_space(input, index);
+	parse_char_in_space(input, index, '(');
+
 	auto str = parse_str(input, index, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_*?");
 	if (str.compare(0, 3, "chr") == 0) {
 		throw new parse_error(index, "Chromosome names must not start with `chr'.");
 	}
-	parse_space(input, index);
-	if (input[index] != ')') {
-		throw new parse_error(index, "Expected `('.");
-	}
-	index++;
+
+	parse_char_in_space(input, index, ')');
+
 	// If we are dealing with a chromosome that goes by many names, match all of them.
 	if (str.compare("23") == 0 || str.compare("X")  == 0|| str.compare("x") == 0) {
 		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("23"), std::make_shared<check_chromosome_node>("x") );
@@ -68,12 +62,8 @@ std::string name;
 };
 
 static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input, size_t&index) throw (parse_error) {
-	parse_space(input, index);
-	if (input[index] != '(') {
-		throw parse_error(index, "Expected `('.");
-	}
-	index++;
-	parse_space(input, index);
+	parse_char_in_space(input, index, '(');
+
 	auto name_start = index;
 	/* This insanity is brought to you by samtools's sam_tview.c */
 	while (index < input.length() && input[index] >= '!' && input[index] <= '~' && input[index] != ')' && (index > name_start || input[index] != '=')) {
@@ -83,11 +73,9 @@ static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input
 		throw parse_error(index, "Expected valid read group name.");
 	}
 	auto name_length = index - name_start;
-	parse_space(input, index);
-	if (input[index] != ')') {
-		throw parse_error(index, "Expected `)'.");
-	}
-	index++;
+
+	parse_char_in_space(input, index, ')');
+
 	return std::make_shared<check_read_group_node>(input.substr(name_start, name_length));
 }
 

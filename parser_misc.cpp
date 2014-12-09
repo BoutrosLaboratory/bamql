@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <sstream>
 #include "barf.hpp"
 namespace barf {
 parse_error::parse_error(size_t index, std::string what) : std::runtime_error(what) {
@@ -46,5 +47,15 @@ bool parse_space(const std::string& input, size_t& index) {
 		index++;
 	}
 	return start != index;
+}
+void parse_char_in_space(const std::string& input, size_t& index, char c) throw (parse_error) {
+	parse_space(input, index);
+	if (index >= input.length() || input[index] != c) {
+		std::ostringstream err_text;
+		err_text << "Expected `" << c << "'.";
+		throw parse_error(index, err_text.str());
+	}
+	index++;
+	parse_space(input, index);
 }
 }
