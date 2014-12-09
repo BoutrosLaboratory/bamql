@@ -112,7 +112,7 @@ int main(int argc, char *const *argv) {
 	// Open the input file.
 	input = hts_open(argv[optind + 1], binary ? "rb" : "r");
 	if (input == nullptr) {
-		perror(input);
+		perror(argv[optind + 1]);
 		delete engine;
 		return 1;
 	}
