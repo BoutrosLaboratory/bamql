@@ -70,7 +70,7 @@ std::string name;
 static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input, size_t&index) throw (parse_error) {
 	parse_space(input, index);
 	if (input[index] != '(') {
-		throw new parse_error(index, "Expected `('.");
+		throw parse_error(index, "Expected `('.");
 	}
 	index++;
 	parse_space(input, index);
@@ -80,12 +80,12 @@ static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input
 		index++;
 	}
 	if (name_start == index) {
-		throw new parse_error(index, "Expected valid read group name.");
+		throw parse_error(index, "Expected valid read group name.");
 	}
 	auto name_length = index - name_start;
 	parse_space(input, index);
 	if (input[index] != ')') {
-		throw new parse_error(index, "Expected `('.");
+		throw parse_error(index, "Expected `)'.");
 	}
 	index++;
 	return std::make_shared<check_read_group_node>(input.substr(name_start, name_length));
