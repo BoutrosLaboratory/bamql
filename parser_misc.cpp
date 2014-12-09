@@ -17,7 +17,7 @@ int parse_int(const std::string& input, size_t& index) throw (parse_error) {
 		index++;
 	}
 	if (start == index) {
-		throw new parse_error(start, "Expected integer.");
+		throw parse_error(start, "Expected integer.");
 	}
 	return accumulator;
 }
@@ -27,7 +27,7 @@ double parse_double(const std::string& input, size_t& index) throw (parse_error)
 	auto result = strtod(input.c_str() + start, &end_ptr);
 	index = end_ptr - input.c_str();
 	if (index == start) {
-		throw new parse_error(index, "Expected floating point number.");
+		throw parse_error(index, "Expected floating point number.");
 	}
 	return result;
 }
@@ -37,7 +37,7 @@ std::string parse_str(const std::string& input, size_t& index, const std::string
 		index++;
 	}
 	if (start == index) {
-		throw new parse_error(start, "Unexpected character.");
+		throw parse_error(start, "Unexpected character.");
 	}
 	return input.substr(start, index - start);
 }
