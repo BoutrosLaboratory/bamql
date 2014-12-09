@@ -1,0 +1,72 @@
+.\" Authors: Paul Boutros and Lab Members
+.TH barf_queries 7 "Dec 2014" "1.0" "MISCELLANEOUS"
+BARF filters SAM or BAM files using a simple query language that is more expressive than the
+.B view
+options available in
+.BR samtools (1).
+
+The language consists of logical connectives, specifically and, or, not, and a ternary if, and predicates that match properties of the read. Expressions may be grouped using parentheses.
+
+.SH LOGICAL CONNECTIVES
+The logical connectives are presented in order from lowest precedence to highest precedence.
+
+.SS TERNARY IF
+cond \fB?\fR then \fB:\fR else
+
+If \fIcond\fR is satisifed, this expression will only be satisifed if \fIthen\fR is satisfied. If \fIcond\fR is not satisified, then this expression will only be satisified if \fIelse\fR is satisifed.
+
+.SS DISJUNCTION (OR)
+expr \fB|\fR expr
+
+Is satisfied if at least one operand is satisifed.
+
+.SS CONJUNCTION (AND)
+expr \fB&\fR expr
+
+Is satisfied only if 
+
+.SS NEGATION (NOT)
+\fB!\fR expr
+
+Is satisfied if \fIexpr\R is not satisfied.
+
+.SH PREDICATES
+The predicates are grouped based on function.
+
+.SS BAM FLAGS
+.B is_paired
+
+Is satisfied if the read is marked as paired. That is, this read was part of paired-end sequencing, rather than single-end sequencing.
+
+.SS MAPPING INFORMATION
+\fBchr(\fRglob\fB)\fR
+
+Matches the chromosome name to which the read is mapped. Chromosome names should not start with \fBchr\fR, as that will be automatically checked. Moreover, some human chromosome have differing names have differeing names; both are checked. The known rules are:
+
+.TP X == 23
+.TP Y == 24
+.TP M == 25
+
+Also, case is ignored. Additionally, the chromosome is matched using
+.BR glob (7).
+
+.SS OTHER READ INFORMATION
+\fBread_group(\fRglob\fB)\fR
+
+Matches the read group, if specified in the input. The read group may be specified using
+.BR glob (7)
+to match multiple read groups. 
+
+.SS MISCELLANEOUS
+
+.B true
+
+Always satisfied.
+
+.B false
+
+Never satisfied.
+.SH SEE ALSO
+.BR barf (1),
+.BR barf-compile (1),
+.BR samtools (1).

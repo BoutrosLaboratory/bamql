@@ -1,0 +1,40 @@
+.\" Authors: Paul Boutros and Lab Members
+.TH barf 1 "Dec 2014" "1.0" "USER COMMANDS"
+.SH NAME 
+barf \- Filter SAM/BAM files easily
+.SH SYNOPSIS
+.B barf
+[
+.B \-b
+] [
+.B \-o 
+.I accepted_output.bam
+] [
+.B \-O
+.I rejected_output.bam
+]
+.I input.bam
+.I query
+.SH DESCRIPTION
+BARF filters SAM or BAM files using a simple query language that is more expressive than the
+.B view
+options available in
+.BR samtools (1).
+The query language is described in
+.BR barf_queries (7).
+
+.SH OPTIONS
+.TP
+\-b
+Opens the input as BAM format, rather than SAM format.
+.TP
+\-o accepted_output.bam
+Any reads which are accepted by the query, that is, for which the query is true, will be placed in this file. If omitted, the number of queries will be tallied, but discarded
+.TP
+\-O rejected_output.bam
+Any reads which are rejected by the query, that is, for which the query is false, will be placed in this file. If omitted, the number of queries will be tallied, but discarded
+.TP
+.SH SEE ALSO
+.BR barf-compile (1),
+.BR barf_queries (7),
+.BR samtools (1).

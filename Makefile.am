@@ -6,7 +6,8 @@ library_includedir=$(includedir)/barf
 library_include_HEADERS = barf.hpp
 #pkgconfigdir = $(libdir)/pkgconfig
 #pkgconfig_DATA = barf.pc
-#man1_MANS = barf.1 barf-compile.1
+man1_MANS = barf.1 barf-compile.1
+man7_MANS = barf_queries.7
 
 libbarf_la_CPPFLAGS = \
 	-std=c++11 \
