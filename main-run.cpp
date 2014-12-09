@@ -8,10 +8,13 @@
 
 #define hts_close0(x) if (x != nullptr) x = (hts_close(x), nullptr)
 
+/**
+ * Use LLVM to compile a query, JIT it, and run it over a BAM file.
+ */
 int main(int argc, char *const *argv) {
-	htsFile *input = nullptr;
-	htsFile *accept = nullptr;
-	htsFile *reject = nullptr;
+	htsFile *input = nullptr; // The file holding the BAM reads to be filtered.
+	htsFile *accept = nullptr; // The file where reads matching the query will be placed.
+	htsFile *reject = nullptr; // The file where reads not matching the query will be placed.
 	bool binary = false;
 	bool help = false;
 	int c;
@@ -49,7 +52,11 @@ int main(int argc, char *const *argv) {
 		}
 	}
 	if (help) {
-		std::cout << "This is where the help goes." << std::endl;
+		std::cout << argv[0] << "[-b] [-o accepted_reads.bam] [-O rejected_reads.bam] query input.bam" << std::endl;
+		std::cout << "Filter a BAM/SAM file based on the provided query. For details, see the man page." << std::endl;
+		std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)." << std::endl;
+		std::cout << "\t-o\tThe output file for reads that pass the query." << std::endl;
+		std::cout << "\t-O\tThe output file for reads that fail the query." << std::endl;
 		hts_close0(accept);
 		hts_close0(reject);
 		return 0;
@@ -63,10 +70,12 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
+	// Create a new LLVM module and our function
 	auto module = new llvm::Module("barf", llvm::getGlobalContext());
 
 	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction("filter",llvm::Type::getInt1Ty(llvm::getGlobalContext()), llvm::PointerType::get(barf::getBamHeaderType(module), 0), llvm::PointerType::get(barf::getBamType(module), 0), nullptr));
 
+	// Parse the input query.
 	std::shared_ptr<barf::ast_node> ast;
 	try {
 		ast = barf::ast_node::parse(std::string(argv[optind]), barf::getDefaultPredicates());
@@ -81,6 +90,7 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
+	// Generate the LLVM code from the query.
 	auto entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", filter_func);
 	llvm::IRBuilder<> builder(entry);
 	auto args = filter_func->arg_begin();
@@ -90,6 +100,7 @@ int main(int argc, char *const *argv) {
 	read_value->setName("read");
 	builder.CreateRet(ast->generate(module, builder, header_value, read_value));
 
+	// Create a JIT and convert the generated code to a callable function pointer.
 	auto engine = llvm::EngineBuilder(module).create();
 
 	union {
@@ -98,16 +109,25 @@ int main(int argc, char *const *argv) {
 	} result;
 	result.ptr = engine->getPointerToFunction(filter_func);
 
+	// Open the input file.
 	input = hts_open(argv[optind + 1], binary ? "rb" : "r");
+	if (input == nullptr) {
+		perror(input);
+		delete engine;
+		return 1;
+	}
 
 	size_t accept_count = 0;
 	size_t reject_count = 0;
+
+	// Copy the header to the output.
 	bam_hdr_t *header = sam_hdr_read(input);
 	if (accept != nullptr )
 		sam_hdr_write(accept, header);
 	if (reject != nullptr )
 		sam_hdr_write(reject, header);
 
+	// Cycle through all the reads.
 	bam1_t *read = bam_init1();
 	while(sam_read1(input, header, read) == 0) {
 		if ((*result.func)(header, read)) {
@@ -126,7 +146,7 @@ int main(int argc, char *const *argv) {
 	hts_close0(accept);
 	hts_close0(reject);
 
-	std::cout << "Accepted: " << accept_count << std::endl << "Rejected: " <<reject_count << std::endl;
+	std::cout << "Accepted: " << accept_count << std::endl << "Rejected: " << reject_count << std::endl;
 
 	return 0;
 }

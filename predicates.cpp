@@ -37,6 +37,7 @@ static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input
 		throw new parse_error(index, "Expected `('.");
 	}
 	index++;
+	// If we are dealing with a chromosome that goes by many names, match all of them.
 	if (str.compare("23") == 0 || str.compare("X")  == 0|| str.compare("x") == 0) {
 		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("23"), std::make_shared<check_chromosome_node>("x") );
 	}
@@ -47,6 +48,7 @@ static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input
 	if (str.compare("25") == 0 || str.compare("M") == 0 || str.compare("m") == 0) {
 		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("25"), std::make_shared<check_chromosome_node>("m") );
 	}
+	// otherwise, just match the provided chromosome.
 	return std::make_shared<check_chromosome_node>(str);
 }
 

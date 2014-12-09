@@ -41,7 +41,7 @@ static std::shared_ptr<ast_node> parse_terminal(const std::string &input, size_t
 	if (predicates.count(predicate_name)) {
 		return predicates[predicate_name](input, index);
 	} else {
-		throw parse_error(index, "Unkown predicate.");
+		throw parse_error(index, "Unknown predicate.");
 	}
 }
 
