@@ -2,8 +2,8 @@
 #include <iostream>
 #include <htslib/hts.h>
 #include <htslib/sam.h>
-#include <llvm/IR/Module.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/ExecutionEngine/JIT.h>
 #include "barf.hpp"
 
 #define hts_close0(x) if (x != nullptr) x = (hts_close(x), nullptr)
@@ -71,6 +71,7 @@ int main(int argc, char *const *argv) {
 	}
 
 	// Create a new LLVM module and our function
+	LLVMInitializeNativeTarget();
 	auto module = new llvm::Module("barf", llvm::getGlobalContext());
 
 	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction("filter",llvm::Type::getInt1Ty(llvm::getGlobalContext()), llvm::PointerType::get(barf::getBamHeaderType(module), 0), llvm::PointerType::get(barf::getBamType(module), 0), nullptr));
@@ -101,12 +102,16 @@ int main(int argc, char *const *argv) {
 	builder.CreateRet(ast->generate(module, builder, header_value, read_value));
 
 	// Create a JIT and convert the generated code to a callable function pointer.
-	auto engine = llvm::EngineBuilder(module).create();
+	std::string error;
+	auto engine = llvm::EngineBuilder(module).setEngineKind(llvm::EngineKind::JIT).setErrorStr(&error).create();
+	if (engine == NULL) {
+		std::cout << error << std::endl;
+	}
 
 	union {
 		bool (*func)(bam_hdr_t*, bam1_t*);
 		void *ptr;
-	} result;
+	} result = { NULL };
 	result.ptr = engine->getPointerToFunction(filter_func);
 
 	// Open the input file.
