@@ -106,6 +106,9 @@ int main(int argc, char *const *argv) {
 	auto engine = llvm::EngineBuilder(module).setEngineKind(llvm::EngineKind::JIT).setErrorStr(&error).create();
 	if (engine == NULL) {
 		std::cout << error << std::endl;
+		hts_close0(accept);
+		hts_close0(reject);
+		return 1;
 	}
 
 	union {
@@ -119,6 +122,8 @@ int main(int argc, char *const *argv) {
 	if (input == nullptr) {
 		perror(argv[optind + 1]);
 		delete engine;
+		hts_close0(accept);
+		hts_close0(reject);
 		return 1;
 	}
 
