@@ -24,7 +24,7 @@ std::string name;
 static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input, size_t&index) throw (parse_error) {
 	parse_char_in_space(input, index, '(');
 
-	auto str = parse_str(input, index, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_*?");
+	auto str = parse_str(input, index, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_*?.");
 	if (str.compare(0, 3, "chr") == 0) {
 		throw parse_error(index, "Chromosome names must not start with `chr'.");
 	}
