@@ -1,4 +1,4 @@
-AC_INIT([barf], [1.0], [pul.boutros@oicr.on.ca])
+AC_INIT([barf], [1.0], [paul.boutros@oicr.on.ca])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS(config.h)
