@@ -13,7 +13,7 @@ libbarf_la_CPPFLAGS = \
 	-std=c++11 \
 	$(LLVM_CORE_CPPFLAGS) -fexceptions \
 	$(NULL)
-libbarf_la_LIBS = \
+libbarf_la_LIBADD = \
 	$(LLVM_CORE_LIBS) \
 	$(NULL)
 libbarf_la_LDFLAGS = \
