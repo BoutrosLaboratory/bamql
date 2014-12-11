@@ -6,7 +6,9 @@ AM_PROG_AR
 AC_PROG_CXX_C_O
 AC_PROG_LIBTOOL
 
-AX_LLVM([core executionengine bitwriter jit native])
+AX_LLVM(LLVM_CORE, [core])
+AX_LLVM(LLVM_WRITE, [core bitwriter])
+AX_LLVM(LLVM_RUN, [core executionengine jit native])
 PKG_CHECK_MODULES(HTS, [ htslib ], [], [
 	ORIGINAL_CFLAGS="$CPPFLAGS"
 	ORIGINAL_LIBS="$LIBS"

@@ -4,7 +4,7 @@
 #
 # SYNOPSIS
 #
-#   AX_LLVM([llvm-libs])
+#   AX_LLVM([prefix], [llvm-libs])
 #
 # DESCRIPTION
 #
@@ -50,24 +50,21 @@ AC_ARG_WITH([llvm],
 
 	if test "x$want_llvm" = "xyes"; then
 		if test -e "$ac_llvm_config_path"; then
-			LLVM_CPPFLAGS="$($ac_llvm_config_path --cxxflags)"
-			LLVM_LDFLAGS="$($ac_llvm_config_path --ldflags)"
-			LLVM_LIBS="$($ac_llvm_config_path --libs $1) $($ac_llvm_config_path --ldflags)"
+			[$1]_CPPFLAGS="$($ac_llvm_config_path --cxxflags)"
+			[$1]_LDFLAGS="$($ac_llvm_config_path --ldflags)"
+			[$1]_LIBS="$($ac_llvm_config_path --libs $2) $($ac_llvm_config_path --ldflags)"
 
 			AC_REQUIRE([AC_PROG_CXX])
 			CPPFLAGS_SAVED="$CPPFLAGS"
-			CPPFLAGS="$CPPFLAGS $LLVM_CPPFLAGS"
-			export CPPFLAGS
+			CPPFLAGS="$CPPFLAGS $[$1]_CPPFLAGS"
 
 			LDFLAGS_SAVED="$LDFLAGS"
-			LDFLAGS="$LDFLAGS $LLVM_LDFLAGS"
-			export LDFLAGS
+			LDFLAGS="$LDFLAGS $[$1]_LDFLAGS"
 
 			LIBS_SAVED="$LIBS"
-			LIBS="$LIBS $LLVM_LIBS"
-			export LIBS
+			LIBS="$LIBS $[$1]_LIBS"
 
-			AC_CACHE_CHECK(can compile with and link with llvm([$1]),
+			AC_CACHE_CHECK(can compile with and link with llvm([$2]),
 						   ax_cv_llvm,
 		[AC_LANG_PUSH([C++])
 				 AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <llvm/IR/LLVMContext.h>
@@ -82,7 +79,8 @@ AC_ARG_WITH([llvm],
 			fi
 
 			CPPFLAGS="$CPPFLAGS_SAVED"
-		LDFLAGS="$LDFLAGS_SAVED"
+			LDFLAGS="$LDFLAGS_SAVED"
+			LIBS="$LIBS_SAVED"
 		else
 			succeeded=no
 		fi
@@ -91,9 +89,9 @@ AC_ARG_WITH([llvm],
 		if test "$succeeded" != "yes" ; then
 			AC_MSG_ERROR([[We could not detect the llvm libraries make sure that llvm-config is on your path or specified by --with-llvm.]])
 		else
-			AC_SUBST(LLVM_CPPFLAGS)
-			AC_SUBST(LLVM_LDFLAGS)
-			AC_SUBST(LLVM_LIBS)
+			AC_SUBST([$1][_CPPFLAGS])
+			AC_SUBST([$1][_LDFLAGS])
+			AC_SUBST([$1][_LIBS])
 			AC_DEFINE(HAVE_LLVM,,[define if the llvm library is available])
 		fi
 ])
