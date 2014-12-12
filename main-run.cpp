@@ -139,7 +139,7 @@ int main(int argc, char *const *argv) {
 
 	// Cycle through all the reads.
 	bam1_t *read = bam_init1();
-	while(sam_read1(input, header, read) == 0) {
+	while(sam_read1(input, header, read) >= 0) {
 		if ((*result.func)(header, read)) {
 			accept_count++;
 			if (accept != nullptr)
