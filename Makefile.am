@@ -65,7 +65,7 @@ runtime.bc: runtime.c
 
 runtime.inc: runtime.bc
 	echo -e "#include <llvm/IR/IRBuilder.h>\n#include <llvm/IR/Module.h>\nusing namespace llvm;\nnamespace barf {" > $@
-	for each in $$(llvm-nm -g -P $< | cut -f 1 -d " "); do llc -march=cpp -cppfname=define_$${each} --cppfor=$${each} -cppgen=function -o - $< | sed 's/ExternalLinkage/InternalLinkage/g' >> $@; done
+	llc -march=cpp -cppfname=define_runtime --cppfor=__dummy__ -cppgen=contents -o - $< | sed 's/ExternalLinkage/InternalLinkage/g;/setModuleIdentifier/d' >> $@
 	echo "}" >> $@
 
 predicates.cpp: runtime.inc

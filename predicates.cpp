@@ -14,7 +14,7 @@ public:
 check_chromosome_node(std::string name_) : name(name_) {
 }
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-	auto function = define_check_chromosome(module);
+	auto function = module->getFunction("check_chromosome");
 	return builder.CreateCall3(function, read, header, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
 }
 private:
@@ -54,7 +54,7 @@ public:
 check_read_group_node(std::string name_) : name(name_) {
 }
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-	auto function = define_check_read_group(module);
+	auto function = module->getFunction("check_read_group");
 	return builder.CreateCall2(function, read, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
 }
 private:
@@ -100,7 +100,7 @@ static std::shared_ptr<ast_node> parse_false(const std::string& input, size_t&in
 class is_paired_node : public ast_node {
 public:
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-	auto function = define_is_paired(module);
+	auto function = module->getFunction("is_paired");
 	return builder.CreateCall(function, read);
 }
 };
@@ -142,7 +142,7 @@ predicate_map getDefaultPredicates() {
 llvm::Type *getBamType(llvm::Module *module) {
 	auto struct_bam1_t = module->getTypeByName("struct.bam1_t");
 	if (struct_bam1_t == nullptr) {
-		define___dummy__(module);
+		define_runtime(module);
 	}
 	return module->getTypeByName("struct.bam1_t");
 }
@@ -150,7 +150,7 @@ llvm::Type *getBamType(llvm::Module *module) {
 llvm::Type *getBamHeaderType(llvm::Module *module) {
 	auto struct_bam1_t = module->getTypeByName("struct.bam_hdr_t");
 	if (struct_bam1_t == nullptr) {
-		define___dummy__(module);
+		define_runtime(module);
 	}
 	return module->getTypeByName("struct.bam_hdr_t");
 }
