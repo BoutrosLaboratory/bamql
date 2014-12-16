@@ -126,7 +126,7 @@ int parse_int(const std::string& input, size_t& index) throw (parse_error);
 /**
  * A function to parse a valid non-empty floating point value.
  */
-double parse_double(const std::string input, size_t& index) throw (parse_error);
+double parse_double(const std::string& input, size_t& index) throw (parse_error);
 /**
  * A function to parse a non-empty string.
  * @param accept_chars: A list of valid characters that may be present in the string.
