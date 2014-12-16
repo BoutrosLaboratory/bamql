@@ -111,6 +111,34 @@ static std::shared_ptr<ast_node> parse_is_paired(const std::string& input, size_
 }
 
 /**
+ * A predicate that randomly is true.
+ */
+class randomly_node : public ast_node {
+public:
+randomly_node(double probability_) : probability(probability_) {
+}
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+	auto function = module->getFunction("randomly");
+	return builder.CreateCall(function, llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()), probability));
+}
+private:
+double probability;
+};
+
+static std::shared_ptr<ast_node> parse_randomly(const std::string& input, size_t&index) throw (parse_error) {
+	parse_char_in_space(input, index, '(');
+
+	auto probability = parse_double(input, index);
+	if (probability < 0 || probability > 1) {
+		throw parse_error(index, "The provided probability is not probable.");
+	}
+
+	parse_char_in_space(input, index, ')');
+
+	return std::make_shared<randomly_node>(probability);
+}
+
+/**
  * A predicate that always returns true.
  */
 class true_node : public ast_node {
@@ -133,6 +161,7 @@ predicate_map getDefaultPredicates() {
 		       {std::string("chr"), parse_check_chromosome},
 		       {std::string("false"), parse_false},
 		       {std::string("is_paired"), parse_is_paired},
+		       {std::string("random"), parse_randomly},
 		       {std::string("read_group"), parse_check_read_group},
 		       {std::string("true"), parse_true}
 	};

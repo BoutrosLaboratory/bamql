@@ -1,5 +1,6 @@
 #include <fnmatch.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <htslib/sam.h>
 
@@ -45,4 +46,8 @@ bool check_read_group(bam1_t *read, const char *name)
 		return false;
 	}
 	return fnmatch(name, (const char *)read_group, 0) == 0;
+}
+
+bool randomly(double probability) {
+	return probability < drand48();
 }
