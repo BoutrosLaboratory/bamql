@@ -182,20 +182,20 @@ predicate_map getDefaultPredicates() {
 	};
 }
 
+llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
+	auto struct_ty = module->getTypeByName(name);
+	if (struct_ty == nullptr) {
+		define_runtime(module);
+		struct_ty = module->getTypeByName(name);
+	}
+	return struct_ty;
+}
 
 llvm::Type *getBamType(llvm::Module *module) {
-	auto struct_bam1_t = module->getTypeByName("struct.bam1_t");
-	if (struct_bam1_t == nullptr) {
-		define_runtime(module);
-	}
-	return module->getTypeByName("struct.bam1_t");
+	return getRuntimeType(module, "struct.bam1_t");
 }
 
 llvm::Type *getBamHeaderType(llvm::Module *module) {
-	auto struct_bam1_t = module->getTypeByName("struct.bam_hdr_t");
-	if (struct_bam1_t == nullptr) {
-		define_runtime(module);
-	}
-	return module->getTypeByName("struct.bam_hdr_t");
+	return getRuntimeType(module, "struct.bam_hdr_t");
 }
 }
