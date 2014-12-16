@@ -112,6 +112,34 @@ static std::shared_ptr<ast_node> parse(const std::string& input, size_t&index) t
 }
 };
 
+/**
+ * A predicate that is true if the mapping quality is sufficiently good.
+ */
+class mapping_quality_node : public ast_node {
+public:
+mapping_quality_node(double probability_) : probability(probability_) {
+}
+virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+	auto function = module->getFunction("check_mapping_quality");
+	return builder.CreateCall(function, llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), -10 * log(probability)));
+}
+private:
+double probability;
+};
+
+static std::shared_ptr<ast_node> parse_mapping_quality(const std::string& input, size_t&index) throw (parse_error) {
+	parse_char_in_space(input, index, '(');
+
+	auto probability = parse_double(input, index);
+	if (probability <= 0 || probability >= 1) {
+		throw parse_error(index, "The provided probability is not probable.");
+	}
+
+	parse_char_in_space(input, index, ')');
+
+	return std::make_shared<mapping_quality_node>(probability);
+}
+
 
 /**
  * A predicate that randomly is true.
@@ -176,6 +204,7 @@ predicate_map getDefaultPredicates() {
 		       {std::string("failed_qc?"), check_flag<BAM_FQCFAIL>::parse},
 		       {std::string("duplicate?"), check_flag<BAM_FDUP>::parse},
 		       {std::string("supplementary?"), check_flag<BAM_FSUPPLEMENTARY>::parse},
+		       {std::string("mapping_quality"), parse_mapping_quality},
 		       {std::string("random"), parse_randomly},
 		       {std::string("read_group"), parse_check_read_group},
 		       {std::string("true"), parse_true}

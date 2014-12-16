@@ -97,6 +97,10 @@ Matches the chromosome name to which the read is mapped. Chromosome names should
 Also, case is ignored. Additionally, the chromosome is matched using
 .BR glob (7).
 
+\fBmapping_quality(\fRprobability\fB)\fR
+
+Matches the read if the probability of error is less than \fIprobability\fR. The mapping quality is approximated in the SAM format, so this will be imperfect. For clarity, setting the probability to 0 will be so stringent as to reject all reads, while setting it to 1 will be so liberaly as to accept all reads.
+
 .SS OTHER READ INFORMATION
 \fBread_group(\fRglob\fB)\fR
 

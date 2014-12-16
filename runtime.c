@@ -35,6 +35,11 @@ bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *name)
 	return fnmatch(name, real_name, 0) == 0;
 }
 
+bool check_mapping_quality(bam1_t *read, uint8_t quality)
+{
+	return read->core.qual != 255 && read->core.qual >= quality;
+}
+
 bool check_read_group(bam1_t *read, const char *name)
 {
 	uint8_t const *read_group = bam_aux_get(read, "RG");
