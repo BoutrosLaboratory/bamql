@@ -12,7 +12,7 @@ man7_MANS = barf_queries.7
 libbarf_la_CPPFLAGS = \
 	-std=c++11 \
 	$(LLVM_CORE_CPPFLAGS) -fexceptions \
-	$(HTS_CFLAGS) \
+	$(HTS_CFLAGS) -O2 \
 	$(NULL)
 libbarf_la_LIBADD = \
 	$(LLVM_CORE_LIBS) \
@@ -34,7 +34,7 @@ barf_SOURCES = \
 	$(NULL)
 barf_CPPFLAGS = \
 	-std=c++11 \
-	$(HTS_CFLAGS) \
+	$(HTS_CFLAGS) -O2 \
 	$(LLVM_RUN_CPPFLAGS) -fexceptions \
 	$(NULL)
 barf_LDFLAGS =\
@@ -62,7 +62,9 @@ barf_compile_LDADD = \
 	$(NULL)
 
 runtime.bc: runtime.c
-	$(CLANG) -c -emit-llvm -o $@ $(HTS_CFLAGS) $<
+	# For reasons that are totally incomprehensible, LLC will die if -g is
+	# provided, so we strip it out.
+	$(CLANG) -c -emit-llvm -o $@ $$(echo $(HTS_CFLAGS) | sed 's/-g//g') -O2 $<
 
 runtime.inc: runtime.bc
 	echo -e "#include <llvm/IR/IRBuilder.h>\n#include <llvm/IR/Module.h>\nusing namespace llvm;\nnamespace barf {" > $@
