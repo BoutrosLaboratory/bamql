@@ -62,8 +62,8 @@ barf_compile_LDADD = \
 	$(NULL)
 
 runtime.bc: runtime.c
-	# For reasons that are totally incomprehensible, LLC will die if -g is
-	# provided, so we strip it out.
+	## For reasons that are totally incomprehensible, LLC will die if -g is
+	## provided, so we strip it out.
 	$(CLANG) -c -emit-llvm -o $@ $$(echo $(HTS_CFLAGS) | sed 's/-g//g') -O2 $<
 
 runtime.inc: runtime.bc
