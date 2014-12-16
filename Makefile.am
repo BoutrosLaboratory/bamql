@@ -12,6 +12,7 @@ man7_MANS = barf_queries.7
 libbarf_la_CPPFLAGS = \
 	-std=c++11 \
 	$(LLVM_CORE_CPPFLAGS) -fexceptions \
+	$(HTS_CFLAGS) \
 	$(NULL)
 libbarf_la_LIBADD = \
 	$(LLVM_CORE_LIBS) \
@@ -61,7 +62,7 @@ barf_compile_LDADD = \
 	$(NULL)
 
 runtime.bc: runtime.c
-	$(CLANG) -c -emit-llvm -o $@ $<
+	$(CLANG) -c -emit-llvm -o $@ $(HTS_CFLAGS) $<
 
 runtime.inc: runtime.bc
 	echo -e "#include <llvm/IR/IRBuilder.h>\n#include <llvm/IR/Module.h>\nusing namespace llvm;\nnamespace barf {" > $@
