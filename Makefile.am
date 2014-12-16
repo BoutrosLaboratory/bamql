@@ -61,11 +61,11 @@ barf_compile_LDADD = \
 	$(NULL)
 
 runtime.bc: runtime.c
-	clang -c -emit-llvm -o $@ $<
+	$(CLANG) -c -emit-llvm -o $@ $<
 
 runtime.inc: runtime.bc
 	echo -e "#include <llvm/IR/IRBuilder.h>\n#include <llvm/IR/Module.h>\nusing namespace llvm;\nnamespace barf {" > $@
-	llc -march=cpp -cppfname=define_runtime --cppfor=__dummy__ -cppgen=contents -o - $< | sed 's/ExternalLinkage/InternalLinkage/g;/setModuleIdentifier/d' >> $@
+	$(LLC) -march=cpp -cppfname=define_runtime --cppfor=__dummy__ -cppgen=contents -o - $< | sed 's/ExternalLinkage/InternalLinkage/g;/setModuleIdentifier/d' >> $@
 	echo "}" >> $@
 
 predicates.cpp: runtime.inc
