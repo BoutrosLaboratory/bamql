@@ -21,11 +21,12 @@ void __dummy__(bam_hdr_t * header, bam1_t *read)
  * Functions here can have any signatures, but they should almost always return
  * bool. It is also important that they have no state and no side-effects.
  */
-bool check_flag(bam1_t *read, uint16_t flag) {
+bool check_flag(bam1_t *read, uint8_t flag)
+{
 	return flag & read->core.flag;
 }
 
-bool check_chromosome(bam1_t *read, bam_hdr_t * header, const char *name)
+bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *name)
 {
 	if (read->core.tid < 0 || read->core.tid >= header->n_targets)
 		return false;
@@ -47,6 +48,7 @@ bool check_read_group(bam1_t *read, const char *name)
 	return fnmatch(name, (const char *)read_group, 0) == 0;
 }
 
-bool randomly(double probability) {
+bool randomly(double probability)
+{
 	return probability < drand48();
 }

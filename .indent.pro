@@ -1,1 +1,2 @@
 -linux -T bam1_t
+-linux -T bam_hdr_t
