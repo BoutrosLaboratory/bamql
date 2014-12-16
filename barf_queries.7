@@ -73,6 +73,17 @@ This chooses a uniform pseudo-random variable and is satisfied with frequency \f
 .BR drand48 (3)
 if one is inclined to care about such things.
 
+.SH EXAMPLES
+
+Match sequences on chromosome 7 which are from the read group labelled \fBRUN3\fR:
+
+.B "chr(7) && read_group(RUN3)"
+
+Sub-sample for mitochondrial sequences and all the sequences that have matched to chromosomes starting with \fBug\fR.
+
+.B "chr(M) && random(0.2) || chr(ug*)"
+
+
 .SH SEE ALSO
 .BR barf (1),
 .BR barf-compile (1),
