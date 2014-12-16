@@ -21,9 +21,8 @@ void __dummy__(bam_hdr_t * header, bam1_t *read)
  * Functions here can have any signatures, but they should almost always return
  * bool. It is also important that they have no state and no side-effects.
  */
-bool is_paired(bam1_t *read)
-{
-	return BAM_FPAIRED & read->core.flag;
+bool check_flag(bam1_t *read, uint16_t flag) {
+	return flag & read->core.flag;
 }
 
 bool check_chromosome(bam1_t *read, bam_hdr_t * header, const char *name)

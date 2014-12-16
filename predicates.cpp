@@ -1,3 +1,4 @@
+#include <htslib/sam.h>
 #include "barf.hpp"
 
 // This must be included exactly once in only this file!!!
@@ -95,20 +96,22 @@ static std::shared_ptr<ast_node> parse_false(const std::string& input, size_t&in
 }
 
 /**
- * A predicate that checks of the read is paired.
+ * A predicate that checks of the read's flag.
  */
-class is_paired_node : public ast_node {
+template<unsigned int F>
+class check_flag : public ast_node {
 public:
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-	auto function = module->getFunction("is_paired");
-	return builder.CreateCall(function, read);
+	auto function = module->getFunction("check_flag");
+	return builder.CreateCall2(function, read, llvm::ConstantInt::get(llvm::Type::getInt16Ty(llvm::getGlobalContext()), F));
+}
+
+static std::shared_ptr<ast_node> parse(const std::string& input, size_t&index) throw (parse_error) {
+	static auto result = std::make_shared<check_flag<F>>();
+	return result;
 }
 };
 
-static std::shared_ptr<ast_node> parse_is_paired(const std::string& input, size_t&index) throw (parse_error) {
-	static auto result = std::make_shared<is_paired_node>();
-	return result;
-}
 
 /**
  * A predicate that randomly is true.
@@ -157,10 +160,22 @@ static std::shared_ptr<ast_node> parse_true(const std::string& input, size_t&ind
  * All the predicates known to the system.
  */
 predicate_map getDefaultPredicates() {
+
 	return {
 		       {std::string("chr"), parse_check_chromosome},
 		       {std::string("false"), parse_false},
-		       {std::string("is_paired"), parse_is_paired},
+		       {std::string("paired?"), check_flag<BAM_FPAIRED>::parse},
+		       {std::string("proper_pair?"), check_flag<BAM_FPROPER_PAIR>::parse},
+		       {std::string("unmapped?"), check_flag<BAM_FUNMAP>::parse},
+		       {std::string("mate_unmapped?"), check_flag<BAM_FMUNMAP>::parse},
+		       {std::string("mapped_to_reverse?"), check_flag<BAM_FREVERSE>::parse},
+		       {std::string("mate_mapped_to_reverse?"), check_flag<BAM_FMREVERSE>::parse},
+		       {std::string("read1?"), check_flag<BAM_FREAD1>::parse},
+		       {std::string("read2?"), check_flag<BAM_FREAD2>::parse},
+		       {std::string("secondary?"), check_flag<BAM_FSECONDARY>::parse},
+		       {std::string("failed_qc?"), check_flag<BAM_FQCFAIL>::parse},
+		       {std::string("duplicate?"), check_flag<BAM_FDUP>::parse},
+		       {std::string("supplementary?"), check_flag<BAM_FSUPPLEMENTARY>::parse},
 		       {std::string("random"), parse_randomly},
 		       {std::string("read_group"), parse_check_read_group},
 		       {std::string("true"), parse_true}

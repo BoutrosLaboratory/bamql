@@ -28,15 +28,62 @@ Is satisfied only if
 .SS NEGATION (NOT)
 \fB!\fR expr
 
-Is satisfied if \fIexpr\R is not satisfied.
+Is satisfied if \fIexpr\fR is not satisfied.
 
 .SH PREDICATES
 The predicates are grouped based on function.
 
 .SS BAM FLAGS
-.B is_paired
+These predicates match the sequences in the BAM file. For more details, see
+.BR sam (5).
 
-Is satisfied if the read is marked as paired. That is, this read was part of paired-end sequencing, rather than single-end sequencing.
+.B paired?
+
+The read is paired in sequencing.
+
+.B proper_pair?
+
+The read is mapped in a proper pair.
+
+.B unmapped?
+
+The query sequence itself is unmapped.
+
+.B mate_unmapped?
+
+The mate is unmapped.
+
+.B mapped_to_reverse?
+
+The read is mapped to the reverse strand.
+
+.B mate_mapped_to_reverse?
+
+The read's mate is mapped to the reverse strand.
+
+.B read1?
+
+The read is the first read in a pair.
+
+.B read2?
+
+The read is the second read in a pair.
+
+.B secondary?
+
+The alignment is not primary.
+
+.B failed_qc?
+
+The read fails platform/vendor quality checks.
+
+.B duplicate?
+
+The read is either a PCR or an optical duplicate.
+
+.B supplementary?
+
+The alignment is supplementary.
 
 .SS MAPPING INFORMATION
 \fBchr(\fRglob\fB)\fR
