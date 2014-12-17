@@ -99,7 +99,7 @@ int main(int argc, char *const *argv) {
 	header_value->setName("header");
 	auto read_value = args++;
 	read_value->setName("read");
-	builder.CreateRet(ast->generate(module, builder, header_value, read_value));
+	builder.CreateRet(ast->generate(module, builder, read_value, header_value));
 
 	// Create a JIT and convert the generated code to a callable function pointer.
 	std::string error;
