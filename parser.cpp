@@ -33,11 +33,11 @@ static std::shared_ptr<ast_node> parse_terminal(const std::string &input, size_t
 	while(index < input.length() && (input[index] >= 'a' && input[index] <= 'z' || ((index - start) > 0) && (input[index] == '_' || input[index] == '?' || input[index] >= '0' && input[index] <= '9'))) {
 		index++;
 	}
-	std::string predicate_name = input.substr(start, index - start);
-	if (predicate_name.empty()) {
+	if (start == index) {
 		throw parse_error(index, "Empty predicate.");
 	}
 
+	std::string predicate_name = input.substr(start, index - start);
 	if (predicates.count(predicate_name)) {
 		return predicates[predicate_name](input, index);
 	} else {
