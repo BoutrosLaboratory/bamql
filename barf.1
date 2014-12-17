@@ -33,7 +33,12 @@ Any reads which are accepted by the query, that is, for which the query is true,
 .TP
 \-O rejected_output.bam
 Any reads which are rejected by the query, that is, for which the query is false, will be placed in this file. If omitted, the number of queries will be tallied, but discarded
-.TP
+
+.SH EXAMPLE
+This extracts all the reads on chromosome 7:
+
+.B barf -o chromo7.bam -b genome.bam "chr(7)"
+
 .SH SEE ALSO
 .BR barf-compile (1),
 .BR barf_queries (7),

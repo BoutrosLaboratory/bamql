@@ -20,10 +20,10 @@ The language consists of a number of predicates, things which match sequences, a
 
 For example, the following will match sequences on chromosome 7 which are from the read group labelled “RUN3”:
 
-    chr(7) && read_group(RUN3)
+    chr(7) & read_group(RUN3)
 
 The following will take a sub-sample for mitochondrial sequences and all the sequences that have matched to chromosomes starting with “ug”:
 
-    chr(M) && random(0.2) || chr(ug*)
+    chr(M) & random(0.2) | chr(ug*)
 
 The details can be found in the manual page, which can be viewed by typing `man barf_queries` at the command prompt.

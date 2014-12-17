@@ -90,9 +90,12 @@ The alignment is supplementary.
 
 Matches the chromosome name to which the read is mapped. Chromosome names should not start with \fBchr\fR, as that will be automatically checked. Moreover, some human chromosome have differing names have differeing names; both are checked. The known rules are:
 
-.TP X == 23
-.TP Y == 24
-.TP M == 25
+X == 23
+.br
+Y == 24
+.br
+M == 25
+
 
 Also, case is ignored. Additionally, the chromosome is matched using
 .BR glob (7).
@@ -128,12 +131,11 @@ if one is inclined to care about such things.
 
 Match sequences on chromosome 7 which are from the read group labelled \fBRUN3\fR:
 
-.B "chr(7) && read_group(RUN3)"
+.B "chr(7) & read_group(RUN3)"
 
 Sub-sample for mitochondrial sequences and all the sequences that have matched to chromosomes starting with \fBug\fR.
 
-.B "chr(M) && random(0.2) || chr(ug*)"
-
+.B "chr(M) & random(0.2) | chr(ug*)"
 
 .SH SEE ALSO
 .BR barf (1),
