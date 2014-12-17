@@ -22,7 +22,7 @@ bool check_flag(bam1_t *read, uint8_t flag)
 	return flag & read->core.flag;
 }
 
-bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *name)
+bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *pattern)
 {
 	if (read->core.tid < 0 || read->core.tid >= header->n_targets)
 		return false;
@@ -32,7 +32,7 @@ bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *name)
 	if (strncasecmp("chr", real_name, 3) == 0) {
 		real_name += 3;
 	}
-	return fnmatch(name, real_name, 0) == 0;
+	return fnmatch(pattern, real_name, FNM_PATHNAME | FNM_NOESCAPE) == 0;
 }
 
 bool check_mapping_quality(bam1_t *read, uint8_t quality)
@@ -40,13 +40,13 @@ bool check_mapping_quality(bam1_t *read, uint8_t quality)
 	return read->core.qual != 255 && read->core.qual >= quality;
 }
 
-bool check_read_group(bam1_t *read, const char *name)
+bool check_read_group(bam1_t *read, const char *pattern)
 {
 	uint8_t const *read_group = bam_aux_get(read, "RG");
 	if (read_group == NULL) {
 		return false;
 	}
-	return fnmatch(name, (const char *)read_group, 0) == 0;
+	return fnmatch(pattern, (const char *)read_group, FNM_PATHNAME | FNM_NOESCAPE) == 0;
 }
 
 bool randomly(double probability)
