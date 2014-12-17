@@ -8,6 +8,23 @@
 namespace barf {
 
 /**
+ * This helper function puts a string into a global constant and then returns a pointer to it.
+ *
+ * One would think this is trivial, but it isn't.
+ */
+llvm::Value *createString(llvm::Module *module, std::string str) {
+	auto array = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), str);
+	auto global_variable = new llvm::GlobalVariable(*module, llvm::ArrayType::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), str.length() + 1), true, llvm::GlobalValue::PrivateLinkage, 0, ".str");
+	global_variable->setAlignment(1);
+	global_variable->setInitializer(array);
+	auto zero = llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), 0);
+	std::vector<llvm::Value*> indicies;
+	indicies.push_back(zero);
+	indicies.push_back(zero);
+	return llvm::ConstantExpr::getGetElementPtr(global_variable, indicies);
+}
+
+/**
  * A predicate that checks of the chromosome name.
  */
 class check_chromosome_node : public ast_node {
@@ -16,7 +33,7 @@ check_chromosome_node(std::string name_) : name(name_) {
 }
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 	auto function = module->getFunction("check_chromosome");
-	return builder.CreateCall3(function, read, header, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
+	return builder.CreateCall3(function, read, header, createString(module, name));
 }
 private:
 std::string name;
@@ -56,7 +73,7 @@ check_read_group_node(std::string name_) : name(name_) {
 }
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 	auto function = module->getFunction("check_read_group");
-	return builder.CreateCall2(function, read, llvm::ConstantDataArray::getString(llvm::getGlobalContext(), name));
+	return builder.CreateCall2(function, read, createString(module, name));
 }
 private:
 std::string name;
