@@ -79,9 +79,9 @@ int main(int argc, char *const *argv) {
 	// Parse the input query.
 	std::shared_ptr<barf::ast_node> ast;
 	try {
-		ast = barf::ast_node::parse(std::string(argv[optind]), barf::getDefaultPredicates());
+		ast = barf::ast_node::parse(std::string(argv[optind + 1]), barf::getDefaultPredicates());
 	} catch (barf::parse_error e) {
-		std::cerr << "Error: " << e.what() << std::endl << argv[optind] << std::endl;
+		std::cerr << "Error: " << e.what() << std::endl << argv[optind + 1] << std::endl;
 		for(auto i = 0; i < e.where(); i++) {
 			std::cerr << " ";
 		}
@@ -118,9 +118,9 @@ int main(int argc, char *const *argv) {
 	result.ptr = engine->getPointerToFunction(filter_func);
 
 	// Open the input file.
-	input = hts_open(argv[optind + 1], binary ? "rb" : "r");
+	input = hts_open(argv[optind], binary ? "rb" : "r");
 	if (input == nullptr) {
-		perror(argv[optind + 1]);
+		perror(argv[optind]);
 		delete engine;
 		hts_close0(accept);
 		hts_close0(reject);
