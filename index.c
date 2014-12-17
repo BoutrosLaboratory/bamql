@@ -11,6 +11,7 @@ struct barf_iterator {
 	BarfDestroy index_destructor;
 	BarfIteratorNext next;
 	uint32_t state;
+	uint32_t tid;
 	hts_itr_t *iterator;
 };
 
@@ -32,16 +33,16 @@ BarfIterator barf_iterator_new(htsFile *file, BarfDestroy file_destructor, hts_i
 	self->index_destructor = index_destructor;
 	self->next = next;
 	self->state = 0;
+	self->tid = 0;
 	self->iterator = NULL;
 }
 
 bool barf_iterator_next(BarfIterator self, bam1_t *read) {
-	int tid;
-	int begin;
-	int end;
+	uint32_t begin;
+	uint32_t end;
 
 	while (true) {
-		if (self->iterator == NULL && self->next(&self->state, &tid, &begin, &end)) {
+		if (self->iterator == NULL && self->next(&self->state, &self->tid, &begin, &end)) {
 			self->iterator = bam_itr_queryi(self->index, tid, begin, end);
 		}
 
