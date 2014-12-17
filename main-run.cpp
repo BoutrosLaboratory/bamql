@@ -17,9 +17,10 @@ int main(int argc, char *const *argv) {
 	htsFile *reject = nullptr; // The file where reads not matching the query will be placed.
 	bool binary = false;
 	bool help = false;
+	bool verbose = false;
 	int c;
 
-	while ((c = getopt (argc, argv, "bho:O:")) != -1) {
+	while ((c = getopt (argc, argv, "bho:O:v")) != -1) {
 		switch (c)
 		{
 		case 'b':
@@ -41,6 +42,9 @@ int main(int argc, char *const *argv) {
 				perror(optarg);
 				hts_close0(reject);
 			}
+			break;
+		case 'v':
+			verbose = true;
 			break;
 		case '?':
 			fprintf (stderr, "Option -%c is not valid.\n", optopt);
@@ -148,6 +152,9 @@ int main(int argc, char *const *argv) {
 			reject_count++;
 			if (reject != nullptr)
 				sam_write1(reject, header, read);
+		}
+		if (verbose && (accept_count + reject_count) % 1000000 == 0) {
+			std::cout << "So far, Accepted: " << accept_count <<  " Rejected: " << reject_count << std::endl;
 		}
 	}
 	bam_destroy1(read);
