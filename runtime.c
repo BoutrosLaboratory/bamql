@@ -43,10 +43,11 @@ bool check_mapping_quality(bam1_t *read, uint8_t quality)
 bool check_read_group(bam1_t *read, const char *pattern)
 {
 	uint8_t const *read_group = bam_aux_get(read, "RG");
-	if (read_group == NULL) {
+
+	if (read_group == NULL || read_group[0] != 'Z') {
 		return false;
 	}
-	return fnmatch(pattern, (const char *)read_group, FNM_PATHNAME | FNM_NOESCAPE) == 0;
+	return fnmatch(pattern, (const char *)read_group + 1, FNM_PATHNAME | FNM_NOESCAPE) == 0;
 }
 
 bool randomly(double probability)
