@@ -64,37 +64,43 @@ static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input
 	return std::make_shared<check_chromosome_node>(str);
 }
 
+typedef bool (*ValidChar)(char, bool not_first);
+
 /**
- * A predicate that checks of the read group name.
+ * A predicate that checks of name of a string in the BAM auxiliary data.
  */
-class check_read_group_node : public ast_node {
+template<char G1, char G2, ValidChar VC>
+class check_aux_string_node : public ast_node {
 public:
-check_read_group_node(std::string name_) : name(name_) {
+check_aux_string_node(std::string name_) : name(name_) {
 }
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-	auto function = module->getFunction("check_read_group");
-	return builder.CreateCall2(function, read, createString(module, name));
+	auto function = module->getFunction("check_aux_str");
+	return builder.CreateCall4(function, read, createString(module, name), llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), G1), llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), G2) );
 }
-private:
-std::string name;
-};
-
-static std::shared_ptr<ast_node> parse_check_read_group(const std::string& input, size_t&index) throw (parse_error) {
+static std::shared_ptr<ast_node> parse(const std::string& input, size_t&index) throw (parse_error) {
 	parse_char_in_space(input, index, '(');
 
 	auto name_start = index;
 	/* This insanity is brought to you by samtools's sam_tview.c */
-	while (index < input.length() && input[index] >= '!' && input[index] <= '~' && input[index] != ')' && (index > name_start || input[index] != '=')) {
+	while (index < input.length() && input[index] != ')' && VC(input[index], index > name_start)) {
 		index++;
 	}
 	if (name_start == index) {
-		throw parse_error(index, "Expected valid read group name.");
+		throw parse_error(index, "Expected valid identifier.");
 	}
 	auto name_length = index - name_start;
 
 	parse_char_in_space(input, index, ')');
 
-	return std::make_shared<check_read_group_node>(input.substr(name_start, name_length));
+	return std::make_shared<check_aux_string_node<G1, G2, VC>>(input.substr(name_start, name_length));
+}
+private:
+std::string name;
+};
+
+bool read_group_char(char input, bool not_first) {
+	return input >= '!' && input <= '~' && (not_first || input != '=');
 }
 
 /**
@@ -223,7 +229,7 @@ predicate_map getDefaultPredicates() {
 		       {std::string("supplementary?"), check_flag<BAM_FSUPPLEMENTARY>::parse},
 		       {std::string("mapping_quality"), parse_mapping_quality},
 		       {std::string("random"), parse_randomly},
-		       {std::string("read_group"), parse_check_read_group},
+		       {std::string("read_group"), check_aux_string_node<'R', 'G', read_group_char>::parse},
 		       {std::string("true"), parse_true}
 	};
 }

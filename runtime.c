@@ -40,14 +40,15 @@ bool check_mapping_quality(bam1_t *read, uint8_t quality)
 	return read->core.qual != 255 && read->core.qual >= quality;
 }
 
-bool check_read_group(bam1_t *read, const char *pattern)
+bool check_aux_str(bam1_t *read, const char *pattern, char group1, char group2)
 {
-	uint8_t const *read_group = bam_aux_get(read, "RG");
+	char const id[] = { group1, group2 };
+	uint8_t const *value = bam_aux_get(read, id);
 
-	if (read_group == NULL || read_group[0] != 'Z') {
+	if (value == NULL || value[0] != 'Z') {
 		return false;
 	}
-	return fnmatch(pattern, (const char *)read_group + 1, FNM_PATHNAME | FNM_NOESCAPE) == 0;
+	return fnmatch(pattern, (const char *)value + 1, FNM_PATHNAME | FNM_NOESCAPE) == 0;
 }
 
 bool randomly(double probability)
