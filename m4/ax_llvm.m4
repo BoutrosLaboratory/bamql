@@ -28,7 +28,7 @@
 
 AC_DEFUN([AX_LLVM],
 [
-AC_ARG_ENABLE([static-llvm], [compiled against the static LLVM libraries, instead of the shared library.], [enable_static_llvm=yes], [enable_static_llvm=no])
+AC_ARG_ENABLE([static-llvm], [compiled against the static LLVM libraries, instead of the shared library.], [enable_static_llvm=yes])
 AC_ARG_WITH([llvm],
 	AS_HELP_STRING([--with-llvm@<:@=DIR@:>@], [use llvm (default is yes) - it is possible to specify the root directory for llvm (optional)]),
 	[
@@ -53,7 +53,7 @@ AC_ARG_WITH([llvm],
 		if test -e "$ac_llvm_config_path"; then
 			[$1]_CPPFLAGS="$($ac_llvm_config_path --cxxflags)"
 			[$1]_LDFLAGS="$($ac_llvm_config_path --ldflags)"
-			if test "x$enable_static_llvm" != "xno" ; then
+			if test "x$enable_static_llvm" != "xyes" ; then
 				[$1]_LIBS="$($ac_llvm_config_path --libs $2) $($ac_llvm_config_path --ldflags)"
 			else
 				[$1]_LIBS="-lLLVM-$($ac_llvm_config_path --version)"
