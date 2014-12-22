@@ -5,6 +5,7 @@
 #include <system_error>
 #include <llvm/IR/Module.h>
 #include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
 #include "barf.hpp"
 
@@ -91,7 +92,7 @@ int main(int argc, char *const *argv) {
 		output_filename << output;
 	}
 	std::string error;
-	llvm::raw_fd_ostream out_data(output_filename.str().c_str(), error);
+	llvm::raw_fd_ostream out_data(output_filename.str().c_str(), error, llvm::sys::fs::F_None);
 	if (error.length() > 0) {
 		std::cerr << error << std::endl;
 		return 1;
