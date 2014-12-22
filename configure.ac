@@ -2,6 +2,7 @@ AC_INIT([barf], [1.0], [paul.boutros@oicr.on.ca])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS(config.h)
+m4_pattern_allow([AM_PROG_AR])
 AM_PROG_AR
 AC_PROG_CXX_C_O
 AC_PROG_LIBTOOL
