@@ -56,7 +56,7 @@ int main(int argc, char *const *argv) {
 		}
 	}
 	if (help) {
-		std::cout << argv[0] << "[-b] [-o accepted_reads.bam] [-O rejected_reads.bam] query input.bam" << std::endl;
+		std::cout << argv[0] << " [-b] [-o accepted_reads.bam] [-O rejected_reads.bam] input.bam query" << std::endl;
 		std::cout << "Filter a BAM/SAM file based on the provided query. For details, see the man page." << std::endl;
 		std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)." << std::endl;
 		std::cout << "\t-o\tThe output file for reads that pass the query." << std::endl;
