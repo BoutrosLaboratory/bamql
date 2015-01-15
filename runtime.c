@@ -7,9 +7,9 @@
 /*
  * This file contains the “runtime” library for BARF.
  *
- * Every function here will be available in predicates.cpp as
- * define_<function>, which will import this function, with static linkage into
- * the module being build.
+ * Every function here will be available in the generated code after calling
+ * `define_module`.  This allows all these functions to be part of the output
+ * binary, with static linkage.
  *
  * This makes it trivial to root around in HTSlib's structures without having
  * to define them in LLVM.

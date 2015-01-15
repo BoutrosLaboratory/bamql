@@ -82,7 +82,6 @@ static std::shared_ptr<ast_node> parse(const std::string& input, size_t&index) t
 	parse_char_in_space(input, index, '(');
 
 	auto name_start = index;
-	/* This insanity is brought to you by samtools's sam_tview.c */
 	while (index < input.length() && input[index] != ')' && VC(input[index], index > name_start)) {
 		index++;
 	}
@@ -99,6 +98,7 @@ private:
 std::string name;
 };
 
+/* This insanity is brought to you by samtools's sam_tview.c */
 bool read_group_char(char input, bool not_first) {
 	return input >= '!' && input <= '~' && (not_first || input != '=');
 }
