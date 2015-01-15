@@ -14,7 +14,13 @@ namespace barf {
  */
 llvm::Value *createString(llvm::Module *module, std::string str) {
 	auto array = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), str);
-	auto global_variable = new llvm::GlobalVariable(*module, llvm::ArrayType::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), str.length() + 1), true, llvm::GlobalValue::PrivateLinkage, 0, ".str");
+	auto global_variable = new llvm::GlobalVariable(
+		*module,
+		llvm::ArrayType::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), str.length() + 1),
+		true,
+		llvm::GlobalValue::PrivateLinkage,
+		0,
+		".str");
 	global_variable->setAlignment(1);
 	global_variable->setInitializer(array);
 	auto zero = llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), 0);
@@ -76,7 +82,12 @@ check_aux_string_node(std::string name_) : name(name_) {
 }
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 	auto function = module->getFunction("check_aux_str");
-	return builder.CreateCall4(function, read, createString(module, name), llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), G1), llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), G2) );
+	return builder.CreateCall4(
+		function,
+		read,
+		createString(module, name),
+		llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), G1),
+		llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()), G2));
 }
 static std::shared_ptr<ast_node> parse(const std::string& input, size_t&index) throw (parse_error) {
 	parse_char_in_space(input, index, '(');

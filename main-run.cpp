@@ -78,7 +78,12 @@ int main(int argc, char *const *argv) {
 	LLVMInitializeNativeTarget();
 	auto module = new llvm::Module("barf", llvm::getGlobalContext());
 
-	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction("filter",llvm::Type::getInt1Ty(llvm::getGlobalContext()), llvm::PointerType::get(barf::getBamHeaderType(module), 0), llvm::PointerType::get(barf::getBamType(module), 0), nullptr));
+	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
+		"filter",
+		llvm::Type::getInt1Ty(llvm::getGlobalContext()),
+		llvm::PointerType::get(barf::getBamHeaderType(module), 0),
+		llvm::PointerType::get(barf::getBamType(module), 0),
+		nullptr));
 
 	// Parse the input query.
 	std::shared_ptr<barf::ast_node> ast;
