@@ -4,9 +4,31 @@
 #include <htslib/sam.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/JIT.h>
+#include <sys/stat.h>
 #include "barf.hpp"
 
 #define hts_close0(x) if (x != nullptr) x = (hts_close(x), nullptr)
+
+/**
+ * We are given two arguments on the command line, which our user is almost
+ * certainly likely to get wrong. Rather than force them to do the USB plug
+ * thing of flipping it over three times, figure out which is the file and
+ * which is the query.
+ */
+bool figure_out_arguments(char *const *args, char **out_file, char **out_query) {
+	struct stat buf;
+	if (stat(args[0], &buf) == 0) {
+		*out_file  = args[0];
+		*out_query  = args[1];
+		return true;
+	}
+	if (stat(args[1], &buf) == 0) {
+		*out_file  = args[1];
+		*out_query  = args[0];
+		return true;
+	}
+	return false;
+}
 
 /**
  * Use LLVM to compile a query, JIT it, and run it over a BAM file.
@@ -74,6 +96,16 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
+	char *query_text;
+	char *bam_filename;
+	if (!figure_out_arguments(argv + optind, &bam_filename, &query_text)) {
+		std::cerr << "The file supplied does not exist." << std::endl;
+
+		hts_close0(accept);
+		hts_close0(reject);
+		return 1;
+	}
+
 	// Create a new LLVM module and our function
 	LLVMInitializeNativeTarget();
 	auto module = new llvm::Module("barf", llvm::getGlobalContext());
@@ -88,9 +120,9 @@ int main(int argc, char *const *argv) {
 	// Parse the input query.
 	std::shared_ptr<barf::ast_node> ast;
 	try {
-		ast = barf::ast_node::parse(std::string(argv[optind + 1]), barf::getDefaultPredicates());
+		ast = barf::ast_node::parse(std::string(query_text), barf::getDefaultPredicates());
 	} catch (barf::parse_error e) {
-		std::cerr << "Error: " << e.what() << std::endl << argv[optind + 1] << std::endl;
+		std::cerr << "Error: " << e.what() << std::endl << query_text << std::endl;
 		for(auto i = 0; i < e.where(); i++) {
 			std::cerr << " ";
 		}
@@ -127,7 +159,7 @@ int main(int argc, char *const *argv) {
 	result.ptr = engine->getPointerToFunction(filter_func);
 
 	// Open the input file.
-	input = hts_open(argv[optind], binary ? "rb" : "r");
+	input = hts_open(bam_filename, binary ? "rb" : "r");
 	if (input == nullptr) {
 		perror(argv[optind]);
 		delete engine;
