@@ -13,12 +13,12 @@ The logical connectives are presented in order from lowest precedence to highest
 .SS TERNARY IF
 cond \fB?\fR then \fB:\fR else
 
-If \fIcond\fR is satisifed, this expression will only be satisifed if \fIthen\fR is satisfied. If \fIcond\fR is not satisified, then this expression will only be satisified if \fIelse\fR is satisifed.
+If \fIcond\fR is satisfied, this expression will only be satisfied if \fIthen\fR is satisfied. If \fIcond\fR is not satisfied, then this expression will only be satisfied if \fIelse\fR is satisfied.
 
 .SS DISJUNCTION (OR)
 expr \fB|\fR expr
 
-Is satisfied if at least one operand is satisifed.
+Is satisfied if at least one operand is satisfied.
 
 .SS CONJUNCTION (AND)
 expr \fB&\fR expr
@@ -88,7 +88,7 @@ The alignment is supplementary.
 .SS MAPPING INFORMATION
 \fBchr(\fRglob\fB)\fR
 
-Matches the chromosome name to which the read is mapped. Chromosome names should not start with \fBchr\fR, as that will be automatically checked. Moreover, some human chromosome have differing names have differeing names; both are checked. The known rules are:
+Matches the chromosome name to which the read is mapped. Chromosome names should not start with \fBchr\fR, as that will be automatically checked. Moreover, some human chromosome have differing names have differing names; both are checked. The known rules are:
 
 X == 23
 .br
@@ -102,7 +102,7 @@ Also, case is ignored. Additionally, the chromosome is matched using
 
 \fBmapping_quality(\fRprobability\fB)\fR
 
-Matches the read if the probability of error is less than \fIprobability\fR. The mapping quality is approximated in the SAM format, so this will be imperfect. For clarity, setting the probability to 0 will be so stringent as to reject all reads, while setting it to 1 will be so liberaly as to accept all reads.
+Matches the read if the probability of error is less than \fIprobability\fR. The mapping quality is approximated in the SAM format, so this will be imperfect. For clarity, setting the probability to 0 will be so stringent as to reject all reads, while setting it to 1 will be so liberally as to accept all reads.
 
 .SS OTHER READ INFORMATION
 \fBread_group(\fRglob\fB)\fR

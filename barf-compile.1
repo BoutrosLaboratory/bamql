@@ -22,13 +22,13 @@ options available in
 The query language is described in
 .BR barf_queries (7).
 
-This compiler allows generating object code useable from C or C++ to perform the same filtering as a query. The generated code follows C convetions, to match
+This compiler allows generating object code usable from C or C++ to perform the same filtering as a query. The generated code follows C convections, to match
 .B HTSLib
 which also must be included. On standard output, a sample header file will be generated.
 
 To make use of this function,
 .IP 1.
-Compile the query to LLVM bitcode with the desired function name.
+Compile the query to LLVM bit-code with the desired function name.
 .IP 2.
 Write a header file based on the output suitable to your needs. It is likely that a well-placed function signature is all that is needed.
 .IP 3.
@@ -40,14 +40,14 @@ Compile the C program as usual.
 .IP 5.
 Link, using
 .BR llvm-ld (1)
-the generated bitcode from the first step, all the object code from the C program, and appropriate flags for the
+the generated bit-code from the first step, all the object code from the C program, and appropriate flags for the
 .B HTSLib
 library.
 
 .SH OPTIONS
 .TP
 \-d
-Dump the LLVM bitcode to the console for inspection. This is only useful if the generated code is broken.
+Dump the LLVM bit-code to the console for inspection. This is only useful if the generated code is broken.
 .TP
 \-n name
 The name of the generated function. If none is specified, it will be
