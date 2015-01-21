@@ -33,19 +33,21 @@ llvm::Value *createString(llvm::Module *module, std::string str) {
 /**
  * A predicate that checks of the chromosome name.
  */
+template<bool mate>
 class check_chromosome_node : public ast_node {
 public:
 check_chromosome_node(std::string name_) : name(name_) {
 }
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 	auto function = module->getFunction("check_chromosome");
-	return builder.CreateCall3(function, read, header, createString(module, name));
+	return builder.CreateCall4(function,
+		read,
+		header,
+		createString(module, name),
+		mate ? llvm::ConstantInt::getTrue(llvm::getGlobalContext()) : llvm::ConstantInt::getFalse(llvm::getGlobalContext()));
 }
-private:
-std::string name;
-};
 
-static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input, size_t&index) throw (parse_error) {
+static std::shared_ptr<ast_node> parse(const std::string& input, size_t&index) throw (parse_error) {
 	parse_char_in_space(input, index, '(');
 
 	auto str = parse_str(input, index, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_*?.");
@@ -57,18 +59,22 @@ static std::shared_ptr<ast_node> parse_check_chromosome(const std::string& input
 
 	// If we are dealing with a chromosome that goes by many names, match all of them.
 	if (str.compare("23") == 0 || str.compare("X")  == 0|| str.compare("x") == 0) {
-		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("23"), std::make_shared<check_chromosome_node>("x") );
+		return std::make_shared<or_node>(std::make_shared<check_chromosome_node<mate>>("23"), std::make_shared<check_chromosome_node<mate>>("x") );
 	}
 
 	if (str.compare("24") == 0 || str.compare("Y") == 0 || str.compare("y") == 0) {
-		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("24"), std::make_shared<check_chromosome_node>("y") );
+		return std::make_shared<or_node>(std::make_shared<check_chromosome_node<mate>>("24"), std::make_shared<check_chromosome_node<mate>>("y") );
 	}
 	if (str.compare("25") == 0 || str.compare("M") == 0 || str.compare("m") == 0) {
-		return std::make_shared<or_node>(std::make_shared<check_chromosome_node>("25"), std::make_shared<check_chromosome_node>("m") );
+		return std::make_shared<or_node>(std::make_shared<check_chromosome_node<mate>>("25"), std::make_shared<check_chromosome_node<mate>>("m") );
 	}
 	// otherwise, just match the provided chromosome.
-	return std::make_shared<check_chromosome_node>(str);
+	return std::make_shared<check_chromosome_node<mate>>(str);
 }
+
+private:
+std::string name;
+};
 
 typedef bool (*ValidChar)(char, bool not_first);
 
@@ -224,7 +230,8 @@ static std::shared_ptr<ast_node> parse_true(const std::string& input, size_t&ind
 predicate_map getDefaultPredicates() {
 
 	return {
-		       {std::string("chr"), parse_check_chromosome},
+		       {std::string("chr"), check_chromosome_node<false>::parse},
+		       {std::string("mate_chr"), check_chromosome_node<true>::parse},
 		       {std::string("false"), parse_false},
 		       {std::string("paired?"), check_flag<BAM_FPAIRED>::parse},
 		       {std::string("proper_pair?"), check_flag<BAM_FPROPER_PAIR>::parse},

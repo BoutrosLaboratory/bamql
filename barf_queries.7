@@ -104,6 +104,10 @@ Also, case is ignored. Additionally, the chromosome is matched using
 
 Matches the read if the probability of error is less than \fIprobability\fR. The mapping quality is approximated in the SAM format, so this will be imperfect. For clarity, setting the probability to 0 will be so stringent as to reject all reads, while setting it to 1 will be so liberally as to accept all reads.
 
+\fBmate_chr(\fRglob\fB)\fR
+
+This works identically to \fBchr\fR, but on the chromosome of the mate pair, if one exists.
+
 .SS OTHER READ INFORMATION
 \fBread_group(\fRglob\fB)\fR
 

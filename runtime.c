@@ -22,12 +22,13 @@ bool check_flag(bam1_t *read, uint8_t flag)
 	return flag & read->core.flag;
 }
 
-bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *pattern)
+bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *pattern, bool mate)
 {
-	if (read->core.tid < 0 || read->core.tid >= header->n_targets)
+	int32_t chr_id = mate ? read->core.mtid : read->core.tid;
+	if (chr_id < 0 || chr_id >= header->n_targets)
 		return false;
 
-	const char *real_name = header->target_name[read->core.tid];
+	const char *real_name = header->target_name[chr_id];
 
 	if (strncasecmp("chr", real_name, 3) == 0) {
 		real_name += 3;
