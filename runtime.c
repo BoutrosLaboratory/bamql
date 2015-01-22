@@ -17,7 +17,7 @@
  * Functions here can have any signatures, but they should almost always return
  * bool. It is also important that they have no state and no side-effects.
  */
-bool check_flag(bam1_t *read, uint8_t flag)
+bool check_flag(bam1_t *read, uint16_t flag)
 {
 	return flag & read->core.flag;
 }
