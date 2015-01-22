@@ -69,9 +69,10 @@ int main(int argc, char *const *argv) {
 	bool binary = false;
 	bool help = false;
 	bool verbose = false;
+	bool ignore_index = false;
 	int c;
 
-	while ((c = getopt (argc, argv, "bho:O:v")) != -1) {
+	while ((c = getopt (argc, argv, "bhIo:O:v")) != -1) {
 		switch (c)
 		{
 		case 'b':
@@ -79,6 +80,9 @@ int main(int argc, char *const *argv) {
 			break;
 		case 'h':
 			help = true;
+			break;
+		case 'I':
+			ignore_index = true;
 			break;
 		case 'o':
 			accept = hts_open(optarg, "wb");
@@ -110,6 +114,7 @@ int main(int argc, char *const *argv) {
 		std::cout << argv[0] << " [-b] [-o accepted_reads.bam] [-O rejected_reads.bam] input.bam query" << std::endl;
 		std::cout << "Filter a BAM/SAM file based on the provided query. For details, see the man page." << std::endl;
 		std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)." << std::endl;
+		std::cout << "\t-I\tDo not use the index, even if it exists." << std::endl;
 		std::cout << "\t-o\tThe output file for reads that pass the query." << std::endl;
 		std::cout << "\t-O\tThe output file for reads that fail the query." << std::endl;
 		hts_close0(accept);
@@ -193,7 +198,7 @@ int main(int argc, char *const *argv) {
 
 	data_collector stats(result.func, verbose);
 	// Decide if we can use an index.
-	hts_idx_t *index = hts_idx_load(bam_filename, HTS_FMT_BAI);
+	hts_idx_t *index = ignore_index ? nullptr : hts_idx_load(bam_filename, HTS_FMT_BAI);
 	union {
 		index_function func;
 		void *ptr;
