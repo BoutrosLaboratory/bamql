@@ -8,7 +8,35 @@
 #include "barf.hpp"
 
 #define hts_close0(x) if (x != nullptr) x = (hts_close(x), nullptr)
+typedef bool (*filter_function)(bam_hdr_t*, bam1_t*);
 
+class data_collector {
+public:
+data_collector(filter_function f, bool verbose_) : filter(f), verbose(verbose_) {
+}
+void process_read(bam_hdr_t *header, bam1_t *read, htsFile *accept, htsFile *reject) {
+	if (filter(header, read)) {
+		accept_count++;
+		if (accept != nullptr)
+			sam_write1(accept, header, read);
+	} else {
+		reject_count++;
+		if (reject != nullptr)
+			sam_write1(reject, header, read);
+	}
+	if (verbose && (accept_count + reject_count) % 1000000 == 0) {
+		std::cout << "So far, Accepted: " << accept_count <<  " Rejected: " << reject_count << std::endl;
+	}
+}
+void write_summary() {
+	std::cout << "Accepted: " << accept_count << std::endl << "Rejected: " << reject_count << std::endl;
+}
+private:
+filter_function filter;
+size_t accept_count = 0;
+size_t reject_count = 0;
+bool verbose;
+};
 /**
  * We are given two arguments on the command line, which our user is almost
  * certainly likely to get wrong. Rather than force them to do the USB plug
@@ -140,7 +168,7 @@ int main(int argc, char *const *argv) {
 	}
 
 	union {
-		bool (*func)(bam_hdr_t*, bam1_t*);
+		filter_function func;
 		void *ptr;
 	} result = { NULL };
 	result.ptr = engine->getPointerToFunction(filter_func);
@@ -155,9 +183,6 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
-	size_t accept_count = 0;
-	size_t reject_count = 0;
-
 	// Copy the header to the output.
 	bam_hdr_t *header = sam_hdr_read(input);
 	if (accept != nullptr )
@@ -168,26 +193,17 @@ int main(int argc, char *const *argv) {
 	// Cycle through all the reads.
 	bam1_t *read = bam_init1();
 	while(sam_read1(input, header, read) >= 0) {
-		if ((*result.func)(header, read)) {
-			accept_count++;
-			if (accept != nullptr)
-				sam_write1(accept, header, read);
-		} else {
-			reject_count++;
-			if (reject != nullptr)
-				sam_write1(reject, header, read);
-		}
-		if (verbose && (accept_count + reject_count) % 1000000 == 0) {
-			std::cout << "So far, Accepted: " << accept_count <<  " Rejected: " << reject_count << std::endl;
-		}
+		stats.process_read(header, read, accept, reject);
 	}
+	stats.write_summary();
 	bam_destroy1(read);
 
 	hts_close0(input);
 	hts_close0(accept);
 	hts_close0(reject);
+	bam_hdr_destroy(header);
 
-	std::cout << "Accepted: " << accept_count << std::endl << "Rejected: " << reject_count << std::endl;
+	delete engine;
 
 	return 0;
 }
