@@ -68,7 +68,7 @@ runtime.bc: runtime.c
 
 runtime.inc: runtime.bc
 	echo -e "#include <llvm/IR/IRBuilder.h>\n#include <llvm/IR/Module.h>\nusing namespace llvm;\nnamespace barf {" > $@
-	$(LLC) -march=cpp -cppfname=define_runtime --cppfor=__dummy__ -cppgen=contents -o - $< | sed 's/ExternalLinkage/InternalLinkage/g;/setModuleIdentifier/d' >> $@
+	$(LLC) -march=cpp -cppfname=define_runtime --cppfor=__dummy__ -cppgen=contents -o - $< | sed '/setModuleIdentifier/d' >> $@
 	echo "}" >> $@
 
 predicates.cpp: runtime.inc
