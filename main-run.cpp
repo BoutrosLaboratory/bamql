@@ -106,17 +106,6 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
-	// Create a new LLVM module and our function
-	LLVMInitializeNativeTarget();
-	auto module = new llvm::Module("barf", llvm::getGlobalContext());
-
-	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
-		"filter",
-		llvm::Type::getInt1Ty(llvm::getGlobalContext()),
-		llvm::PointerType::get(barf::getBamHeaderType(module), 0),
-		llvm::PointerType::get(barf::getBamType(module), 0),
-		nullptr));
-
 	// Parse the input query.
 	std::shared_ptr<barf::ast_node> ast;
 	try {
@@ -132,19 +121,17 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
-	// Generate the LLVM code from the query.
-	auto entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", filter_func);
-	llvm::IRBuilder<> builder(entry);
-	auto args = filter_func->arg_begin();
-	auto header_value = args++;
-	header_value->setName("header");
-	auto read_value = args++;
-	read_value->setName("read");
-	builder.CreateRet(ast->generate(module, builder, read_value, header_value));
+	// Create a new LLVM module and our function
+	LLVMInitializeNativeTarget();
+	auto module = new llvm::Module("barf", llvm::getGlobalContext());
+
+	auto filter_func = ast->create_filter_function(module, "filter");
 
 	// Create a JIT and convert the generated code to a callable function pointer.
 	std::string error;
-	auto engine = llvm::EngineBuilder(module).setEngineKind(llvm::EngineKind::JIT).setErrorStr(&error).create();
+	std::vector<std::string> attrs;
+	attrs.push_back("-avx"); // The AVX support (auto-vectoring) should be disabled since the JIT isn't smart enough to detect this, even though there is a detection routine.
+	auto engine = llvm::EngineBuilder(module).setEngineKind(llvm::EngineKind::JIT).setErrorStr(&error).setMAttrs(attrs).create();
 	if (engine == NULL) {
 		std::cout << error << std::endl;
 		hts_close0(accept);

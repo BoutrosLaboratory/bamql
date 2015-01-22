@@ -52,15 +52,6 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
-	// Create a new LLVM module and our function
-	auto module = new llvm::Module(name, llvm::getGlobalContext());
-
-	auto filter_func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
-		name,
-		llvm::Type::getInt1Ty(llvm::getGlobalContext()),
-		llvm::PointerType::get(barf::getBamHeaderType(module), 0),
-		llvm::PointerType::get(barf::getBamType(module), 0), nullptr));
-
 	// Parse the input query.
 	std::shared_ptr<barf::ast_node> ast;
 	try {
@@ -74,15 +65,10 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
-	// Generate the LLVM code from the query.
-	auto entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", filter_func);
-	llvm::IRBuilder<> builder(entry);
-	auto args = filter_func->arg_begin();
-	auto header_value = args++;
-	header_value->setName("header");
-	auto read_value = args++;
-	read_value->setName("read");
-	builder.CreateRet(ast->generate(module, builder, read_value, header_value));
+	// Create a new LLVM module and our function
+	auto module = new llvm::Module(name, llvm::getGlobalContext());
+
+	auto filter_func = ast->create_filter_function(module, name);
 
 	if (dump) {
 		module->dump();

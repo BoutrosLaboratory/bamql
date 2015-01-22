@@ -68,6 +68,13 @@ static std::shared_ptr<ast_node> parse(const std::string &input, predicate_map p
  * @returns: A boolean value indicating success or failure of this node.
  */
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) = 0;
+/**
+ * Generate the LLVM function from the query.
+ */
+llvm::Function *create_filter_function(llvm::Module *module, llvm::StringRef name);
+
+private:
+llvm::Function *create_function(llvm::Module *module, llvm::StringRef name, llvm::StringRef param_name, llvm::Type *param_type, barf::generate_member member);
 };
 
 /**
