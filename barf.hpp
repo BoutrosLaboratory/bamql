@@ -48,6 +48,10 @@ typedef std::map<std::string, predicate> predicate_map;
  */
 predicate_map getDefaultPredicates();
 
+class ast_node;
+
+typedef llvm::Value *(barf::ast_node::* generate_member)(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
+
 /**
  * An abstract syntax node representing a predicate or logical operation.
  */
@@ -60,6 +64,7 @@ static std::shared_ptr<ast_node> parse(const std::string &input, predicate_map p
 /**
  * Render this syntax node to LLVM.
  * @param read: A reference to the BAM read.
+ * @param header: A reference to the BAM header.
  * @returns: A boolean value indicating success or failure of this node.
  */
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) = 0;
@@ -77,6 +82,7 @@ virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, 
  */
 virtual llvm::Value *branchValue() = 0;
 private:
+llvm::Value *generate_generic(generate_member member, llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *param, llvm::Value *header);
 std::shared_ptr<ast_node>left;
 std::shared_ptr<ast_node>right;
 };
@@ -114,6 +120,7 @@ public:
 conditional_node(std::shared_ptr<ast_node>condition, std::shared_ptr<ast_node>then_part, std::shared_ptr<ast_node> else_part);
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
 private:
+llvm::Value *generate_generic(generate_member member, llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *param, llvm::Value *header);
 std::shared_ptr<ast_node>condition;
 std::shared_ptr<ast_node>then_part;
 std::shared_ptr<ast_node>else_part;
