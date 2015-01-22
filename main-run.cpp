@@ -9,6 +9,7 @@
 
 #define hts_close0(x) if (x != nullptr) x = (hts_close(x), nullptr)
 typedef bool (*filter_function)(bam_hdr_t*, bam1_t*);
+typedef bool (*index_function)(bam_hdr_t*, uint32_t);
 
 class data_collector {
 public:
@@ -189,6 +190,45 @@ int main(int argc, char *const *argv) {
 		sam_hdr_write(accept, header);
 	if (reject != nullptr )
 		sam_hdr_write(reject, header);
+
+	data_collector stats(result.func, verbose);
+	// Decide if we can use an index.
+	hts_idx_t *index = hts_idx_load(bam_filename, HTS_FMT_BAI);
+	union {
+		index_function func;
+		void *ptr;
+	} index_result = { NULL };
+	if (index != NULL) {
+	  auto index_func = ast->create_index_function(module, "index");
+	  index_result.ptr = engine->getPointerToFunction(index_func);
+		if (index_result.ptr != nullptr) {
+			// Use the index to seek chomosome of interest.
+			bam1_t *read = bam_init1();
+			for (auto tid = 0; tid < header->n_targets; tid++) {
+				if (!index_result.func(header, tid)) {
+					continue;
+				}
+				hts_itr_t *itr = bam_itr_queryi(index, tid, 0, INT_MAX);
+				while(bam_itr_next(input, itr, read) >= 0) {
+					stats.process_read(header, read, accept, reject);
+				}
+				bam_itr_destroy(itr);
+			}
+			stats.write_summary();
+			bam_destroy1(read);
+
+			hts_idx_destroy(index);
+			hts_close0(input);
+			hts_close0(accept);
+			hts_close0(reject);
+			bam_hdr_destroy(header);
+
+			delete engine;
+
+			return 0;
+		}
+		hts_idx_destroy(index);
+	}
 
 	// Cycle through all the reads.
 	bam1_t *read = bam_init1();

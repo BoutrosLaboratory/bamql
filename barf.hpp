@@ -69,9 +69,17 @@ static std::shared_ptr<ast_node> parse(const std::string &input, predicate_map p
  */
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) = 0;
 /**
+ * Render this syntax node to LLVM for the purpose of deciding how to access the index.
+ * @param chromosome: A reference to the chromosome taget ID.
+ * @param header: A reference to the BAM header.
+ * @returns: A boolean value indicating success or failure of this node.
+ */
+virtual llvm::Value *generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *chromosome, llvm::Value *header);
+/**
  * Generate the LLVM function from the query.
  */
 llvm::Function *create_filter_function(llvm::Module *module, llvm::StringRef name);
+llvm::Function *create_index_function(llvm::Module *module, llvm::StringRef name);
 
 private:
 llvm::Function *create_function(llvm::Module *module, llvm::StringRef name, llvm::StringRef param_name, llvm::Type *param_type, barf::generate_member member);
@@ -84,6 +92,7 @@ class short_circuit_node : public ast_node {
 public:
 short_circuit_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node>);
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
+virtual llvm::Value *generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
 /**
  * The value that causes short circuting.
  */
@@ -116,6 +125,7 @@ class not_node : public ast_node {
 public:
 not_node(std::shared_ptr<ast_node>expr);
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
+virtual llvm::Value *generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
 private:
 std::shared_ptr<ast_node>expr;
 };
@@ -126,6 +136,7 @@ class conditional_node : public ast_node {
 public:
 conditional_node(std::shared_ptr<ast_node>condition, std::shared_ptr<ast_node>then_part, std::shared_ptr<ast_node> else_part);
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
+virtual llvm::Value *generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
 private:
 llvm::Value *generate_generic(generate_member member, llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *param, llvm::Value *header);
 std::shared_ptr<ast_node>condition;

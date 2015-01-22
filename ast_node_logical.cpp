@@ -36,6 +36,10 @@ llvm::Value *barf::short_circuit_node::generate(llvm::Module *module, llvm::IRBu
 	return generate_generic(&barf::ast_node::generate, module, builder, read, header);
 }
 
+llvm::Value *barf::short_circuit_node::generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *tid, llvm::Value *header) {
+	return generate_generic(&barf::ast_node::generate_index, module, builder, tid, header);
+}
+
 barf::and_node::and_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node>right) : short_circuit_node(left, right) {
 }
 llvm::Value *barf::and_node::branchValue() {
@@ -53,6 +57,11 @@ barf::not_node::not_node(std::shared_ptr<ast_node>expr) {
 }
 llvm::Value *barf::not_node::generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 	llvm::Value *result = this->expr->generate(module, builder, read, header);
+	return builder.CreateNot(result);
+}
+
+llvm::Value *barf::not_node::generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *tid, llvm::Value *header) {
+	llvm::Value *result = this->expr->generate_index(module, builder, tid, header);
 	return builder.CreateNot(result);
 }
 
@@ -96,4 +105,7 @@ llvm::Value *barf::conditional_node::generate_generic(generate_member member, ll
 }
 llvm::Value *barf::conditional_node::generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 				return generate_generic(&barf::ast_node::generate, module, builder, read, header);
+}
+llvm::Value *barf::conditional_node::generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *tid, llvm::Value *header) {
+				return generate_generic(&barf::ast_node::generate, module, builder, tid, header);
 }

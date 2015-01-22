@@ -46,6 +46,16 @@ virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, 
 		createString(module, name),
 		mate ? llvm::ConstantInt::getTrue(llvm::getGlobalContext()) : llvm::ConstantInt::getFalse(llvm::getGlobalContext()));
 }
+virtual llvm::Value *generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *chromosome, llvm::Value *header) {
+	if (mate) {
+	    return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+	}
+	auto function = module->getFunction("check_chromosome_id");
+	return builder.CreateCall3(function,
+		chromosome,
+		header,
+		createString(module, name));
+}
 
 static std::shared_ptr<ast_node> parse(const std::string& input, size_t&index) throw (parse_error) {
 	parse_char_in_space(input, index, '(');

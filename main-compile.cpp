@@ -69,6 +69,9 @@ int main(int argc, char *const *argv) {
 	auto module = new llvm::Module(name, llvm::getGlobalContext());
 
 	auto filter_func = ast->create_filter_function(module, name);
+	std::stringstream index_name;
+	index_name << name << "_index";
+	auto index_func = ast->create_index_function(module, index_name.str());
 
 	if (dump) {
 		module->dump();
@@ -90,7 +93,7 @@ int main(int argc, char *const *argv) {
 		llvm::WriteBitcodeToFile(module, out_data);
 	}
 	// Write the header file to stdout.
-	std::cout << "#include <stdbool.h>\n#include<htslib/sam.h>\nextern bool " << name << "(bam_hdr_t*, bam1_t*)" << std::endl;
+	std::cout << "#include <stdbool.h>\n#include <htslib/sam.h>\nextern bool " << name << "(bam_hdr_t*, bam1_t*)\nextern bool " << index_name.str() << "(bam_hdr_t*, uint32_t)" << std::endl;
 	delete module;
 	return 0;
 }

@@ -68,11 +68,10 @@ bool check_flag(bam1_t *read, uint16_t flag)
 	return flag & read->core.flag;
 }
 
-bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *pattern, bool mate)
-{
-	int32_t chr_id = mate ? read->core.mtid : read->core.tid;
-	if (chr_id < 0 || chr_id >= header->n_targets)
+bool check_chromosome_id(uint32_t chr_id, bam_hdr_t *header, const char *pattern) {
+	if (chr_id >= header->n_targets) {
 		return false;
+	}
 
 	const char *real_name = header->target_name[chr_id];
 
@@ -80,6 +79,11 @@ bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *pattern, bool
 		real_name += 3;
 	}
 	return globish_match(pattern, real_name);
+}
+
+bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *pattern, bool mate)
+{
+    return check_chromosome_id(mate ? read->core.mtid : read->core.tid, header, pattern);
 }
 
 bool check_mapping_quality(bam1_t *read, uint8_t quality)

@@ -1,5 +1,9 @@
 #include "barf.hpp"
 
+llvm::Value *barf::ast_node::generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+	return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+}
+
 llvm::Function *barf::ast_node::create_function(llvm::Module *module, llvm::StringRef name, llvm::StringRef param_name, llvm::Type* param_type, barf::generate_member member) {
 	auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
 		name,
@@ -22,4 +26,8 @@ llvm::Function *barf::ast_node::create_function(llvm::Module *module, llvm::Stri
 
 llvm::Function *barf::ast_node::create_filter_function(llvm::Module *module, llvm::StringRef name) {
 	return create_function(module, name, "read", llvm::PointerType::get(barf::getBamType(module), 0), &barf::ast_node::generate);
+}
+
+llvm::Function *barf::ast_node::create_index_function(llvm::Module *module, llvm::StringRef name) {
+	return create_function(module, name, "tid", llvm::Type::getInt32Ty(llvm::getGlobalContext()), &barf::ast_node::generate_index);
 }
