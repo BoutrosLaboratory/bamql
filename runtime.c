@@ -1,4 +1,4 @@
-#include <fnmatch.h>
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +17,52 @@
  * Functions here can have any signatures, but they should almost always return
  * bool. It is also important that they have no state and no side-effects.
  */
+
+bool globish_match(const char *pattern, const char *input) {
+	for (; *pattern != '\0' && *input != '\0'; pattern++, input++) {
+		switch (*pattern) {
+			case '?':
+				/*
+				 * Accept any character except the end of the string.
+				 */
+				if (*input == '\0')
+					return false;
+				break;
+			case '*':
+				/*
+				 * Eat any stars that have bunched together.
+				 */
+				while (pattern[1] == '*') {
+					pattern++;
+				}
+				/*
+				 * If there is no more pattern, then whatever remaining input matches.
+				 */
+				if (*pattern == '\0') {
+						return true;
+				}
+
+				/*
+				 * If there is input, it could be consumed by the star, or match after
+				 * the star, so consume the input, character by character, each time
+				 * recursively checking if the input matches the rest of the string.
+				 */
+				while (*(input++) != '\0') {
+					if (globish_match(pattern, input)) {
+						return true;
+					}
+				}
+				return false;
+			default:
+				if (tolower(*pattern) != tolower(*input)) {
+					return false;
+				}
+				break;
+		}
+	}
+	return *pattern == *input;
+}
+
 bool check_flag(bam1_t *read, uint16_t flag)
 {
 	return flag & read->core.flag;
@@ -33,7 +79,7 @@ bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *pattern, bool
 	if (strncasecmp("chr", real_name, 3) == 0) {
 		real_name += 3;
 	}
-	return fnmatch(pattern, real_name, FNM_PATHNAME | FNM_NOESCAPE) == 0;
+	return globish_match(pattern, real_name);
 }
 
 bool check_mapping_quality(bam1_t *read, uint8_t quality)
@@ -49,7 +95,7 @@ bool check_aux_str(bam1_t *read, const char *pattern, char group1, char group2)
 	if (value == NULL || value[0] != 'Z') {
 		return false;
 	}
-	return fnmatch(pattern, (const char *)value + 1, FNM_PATHNAME | FNM_NOESCAPE) == 0;
+	return globish_match(pattern, (const char *)value + 1);
 }
 
 bool randomly(double probability)
