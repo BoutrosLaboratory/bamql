@@ -138,7 +138,6 @@ conditional_node(std::shared_ptr<ast_node>condition, std::shared_ptr<ast_node>th
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
 virtual llvm::Value *generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header);
 private:
-llvm::Value *generate_generic(generate_member member, llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *param, llvm::Value *header);
 std::shared_ptr<ast_node>condition;
 std::shared_ptr<ast_node>then_part;
 std::shared_ptr<ast_node>else_part;
