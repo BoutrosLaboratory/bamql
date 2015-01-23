@@ -166,4 +166,8 @@ bool parse_space(const std::string& input, size_t& index);
  * Consume the specified character with optional whitespace before and after.
  */
 void parse_char_in_space(const std::string& input, size_t& index, char c) throw (parse_error);
+/**
+ * Attempt to parse the supplied keyword, returing true if it could be parsed.
+ */
+bool parse_keyword(const std::string& input, size_t& index, const std::string& keyword);
 }

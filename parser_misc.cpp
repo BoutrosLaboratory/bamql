@@ -58,4 +58,13 @@ void parse_char_in_space(const std::string& input, size_t& index, char c) throw 
 	index++;
 	parse_space(input, index);
 }
+bool parse_keyword(const std::string& input, size_t& index, const std::string& keyword) {
+	for(size_t it = 0; it < keyword.length(); it++) {
+		if (index + it >= input.length() || input[index + it] != keyword[it]) {
+			return false;
+		}
+	}
+	index += keyword.length();
+	return true;
+}
 }
