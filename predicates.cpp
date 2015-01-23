@@ -138,6 +138,9 @@ public:
 virtual llvm::Value *generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
 	return llvm::ConstantInt::getFalse(llvm::getGlobalContext());
 }
+virtual llvm::Value *generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *tid, llvm::Value *header) {
+	return llvm::ConstantInt::getFalse(llvm::getGlobalContext());
+}
 };
 
 static std::shared_ptr<ast_node> parse_false(const std::string& input, size_t&index) throw (parse_error) {
