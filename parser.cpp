@@ -103,25 +103,17 @@ static std::shared_ptr<ast_node> parse_or(const std::string &input, size_t &inde
  * Handle conditional operators (first step in the recursive descent)
  */
 static std::shared_ptr<ast_node> parse_conditional(const std::string &input, size_t &index, predicate_map predicates) {
-	std::shared_ptr<ast_node> cond_part, if_part, else_part;
-
-	cond_part = parse_or(input, index, predicates);
+	auto cond_part = parse_or(input, index, predicates);
 	parse_space(input, index);
-	if (index < input.length() && input[index] == '?') {
-		index++;
-		if_part = parse_or(input, index, predicates);
-		parse_space(input, index);
-	}
-	else {
+	if (!parse_keyword(input, index, "then")) {
 		return cond_part;
 	}
-	if (index < input.length() && input[index] == ':') {
-		index++;
-		else_part = parse_or(input, index, predicates);
-	} else {
-		throw parse_error(index, "Ternary operator has no ':'.");
+	auto then_part = parse_or(input, index, predicates);
+	if (!parse_keyword(input, index, "else")) {
+		throw parse_error(index, "Ternary operator has no else.");
 	}
-	return std::make_shared<conditional_node>(cond_part, if_part, else_part);
+	auto else_part = parse_or(input, index, predicates);
+	return std::make_shared<conditional_node>(cond_part, then_part, else_part);
 }
 
 /**
