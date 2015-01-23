@@ -7,6 +7,8 @@ barf \- Filter SAM/BAM files easily
 [
 .B \-b
 ] [
+.B \-I
+] [
 .B \-o 
 .I accepted_output.bam
 ] [
@@ -27,6 +29,9 @@ The query language is described in
 .TP
 \-b
 Opens the input as BAM format, rather than SAM format.
+.TP
+\-I
+Ignore the index, if present. BAM files can be indexed, allowing more efficient searching of the file. If an index is found, it will be automatically used. This switch ignore the index even if it is present; it makes no difference if it is not.
 .TP
 \-o accepted_output.bam
 Any reads which are accepted by the query, that is, for which the query is true, will be placed in this file. If omitted, the number of queries will be tallied, but discarded
