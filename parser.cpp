@@ -31,17 +31,17 @@ static std::shared_ptr<ast_node> parse_terminal(const std::string &input, size_t
 	}
 	size_t start = index;
 	while(index < input.length() && (
-			input[index] >= 'a' && input[index] <= 'z'
-		||
-			((index - start) > 0) && (
-					input[index] == '_'
-				||
-					input[index] == '?'
-				||
-					input[index] >= '0' && input[index] <= '9'
-				)
-			)
-		) {
+	              input[index] >= 'a' && input[index] <= 'z'
+	              ||
+	              ((index - start) > 0) && (
+	                      input[index] == '_'
+	                      ||
+	                      input[index] == '?'
+	                      ||
+	                      input[index] >= '0' && input[index] <= '9'
+	                      )
+	              )
+	      ) {
 		index++;
 	}
 	if (start == index) {

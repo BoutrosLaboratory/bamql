@@ -6,11 +6,11 @@ llvm::Value *barf::ast_node::generate_index(llvm::Module *module, llvm::IRBuilde
 
 llvm::Function *barf::ast_node::create_function(llvm::Module *module, llvm::StringRef name, llvm::StringRef param_name, llvm::Type* param_type, barf::generate_member member) {
 	auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
-		name,
-		llvm::Type::getInt1Ty(llvm::getGlobalContext()),
-		llvm::PointerType::get(barf::getBamHeaderType(module), 0),
-			param_type,
-			nullptr));
+	                                               name,
+	                                               llvm::Type::getInt1Ty(llvm::getGlobalContext()),
+	                                               llvm::PointerType::get(barf::getBamHeaderType(module), 0),
+	                                               param_type,
+	                                               nullptr));
 
 	auto entry = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", func);
 	llvm::IRBuilder<> builder(entry);

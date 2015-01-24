@@ -18,46 +18,47 @@
  * bool. It is also important that they have no state and no side-effects.
  */
 
-bool globish_match(const char *pattern, const char *input) {
+bool globish_match(const char *pattern, const char *input)
+{
 	for (; *pattern != '\0' && *input != '\0'; pattern++, input++) {
 		switch (*pattern) {
-			case '?':
-				/*
-				 * Accept any character except the end of the string.
-				 */
-				if (*input == '\0')
-					return false;
-				break;
-			case '*':
-				/*
-				 * Eat any stars that have bunched together.
-				 */
-				while (pattern[1] == '*') {
-					pattern++;
-				}
-				/*
-				 * If there is no more pattern, then whatever remaining input matches.
-				 */
-				if (*pattern == '\0') {
-						return true;
-				}
-
-				/*
-				 * If there is input, it could be consumed by the star, or match after
-				 * the star, so consume the input, character by character, each time
-				 * recursively checking if the input matches the rest of the string.
-				 */
-				while (*(input++) != '\0') {
-					if (globish_match(pattern, input)) {
-						return true;
-					}
-				}
+		case '?':
+			/*
+			 * Accept any character except the end of the string.
+			 */
+			if (*input == '\0')
 				return false;
-			default:
-				if (tolower(*pattern) != tolower(*input)) {
-					return false;
+			break;
+		case '*':
+			/*
+			 * Eat any stars that have bunched together.
+			 */
+			while (pattern[1] == '*') {
+				pattern++;
+			}
+			/*
+			 * If there is no more pattern, then whatever remaining input matches.
+			 */
+			if (*pattern == '\0') {
+				return true;
+			}
+
+			/*
+			 * If there is input, it could be consumed by the star, or match after
+			 * the star, so consume the input, character by character, each time
+			 * recursively checking if the input matches the rest of the string.
+			 */
+			while (*(input++) != '\0') {
+				if (globish_match(pattern, input)) {
+					return true;
 				}
-				break;
+			}
+			return false;
+		default:
+			if (tolower(*pattern) != tolower(*input)) {
+				return false;
+			}
+			break;
 		}
 	}
 	return *pattern == *input;
@@ -68,7 +69,9 @@ bool check_flag(bam1_t *read, uint16_t flag)
 	return flag & read->core.flag;
 }
 
-bool check_chromosome_id(uint32_t chr_id, bam_hdr_t *header, const char *pattern) {
+bool check_chromosome_id(uint32_t chr_id, bam_hdr_t *header,
+			 const char *pattern)
+{
 	if (chr_id >= header->n_targets) {
 		return false;
 	}
@@ -81,9 +84,11 @@ bool check_chromosome_id(uint32_t chr_id, bam_hdr_t *header, const char *pattern
 	return globish_match(pattern, real_name);
 }
 
-bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *pattern, bool mate)
+bool check_chromosome(bam1_t *read, bam_hdr_t *header, const char *pattern,
+		      bool mate)
 {
-    return check_chromosome_id(mate ? read->core.mtid : read->core.tid, header, pattern);
+	return check_chromosome_id(mate ? read->core.mtid : read->core.tid,
+				   header, pattern);
 }
 
 bool check_mapping_quality(bam1_t *read, uint8_t quality)

@@ -204,8 +204,8 @@ int main(int argc, char *const *argv) {
 		void *ptr;
 	} index_result = { NULL };
 	if (index != NULL) {
-	  auto index_func = ast->create_index_function(module, "index");
-	  index_result.ptr = engine->getPointerToFunction(index_func);
+		auto index_func = ast->create_index_function(module, "index");
+		index_result.ptr = engine->getPointerToFunction(index_func);
 		if (index_result.ptr != nullptr) {
 			// Use the index to seek chomosome of interest.
 			bam1_t *read = bam_init1();
