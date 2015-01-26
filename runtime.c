@@ -100,11 +100,12 @@ bool check_aux_str(bam1_t *read, const char *pattern, char group1, char group2)
 {
 	char const id[] = { group1, group2 };
 	uint8_t const *value = bam_aux_get(read, id);
+	const char *str;
 
-	if (value == NULL || value[0] != 'Z') {
+	if (value == NULL || (str = bam_aux2Z(value)) == NULL) {
 		return false;
 	}
-	return globish_match(pattern, (const char *)value + 1);
+	return globish_match(pattern, str);
 }
 
 bool randomly(double probability)
