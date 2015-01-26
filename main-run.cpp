@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include "barf.hpp"
 
-#define hts_close0(x) if (x != nullptr) x = (hts_close(x), nullptr)
 typedef bool (*filter_function)(bam_hdr_t*, bam1_t*);
 typedef bool (*index_function)(bam_hdr_t*, uint32_t);
 
@@ -63,9 +62,8 @@ bool figure_out_arguments(char *const *args, char **out_file, char **out_query) 
  * Use LLVM to compile a query, JIT it, and run it over a BAM file.
  */
 int main(int argc, char *const *argv) {
-	htsFile *input = nullptr; // The file holding the BAM reads to be filtered.
-	htsFile *accept = nullptr; // The file where reads matching the query will be placed.
-	htsFile *reject = nullptr; // The file where reads not matching the query will be placed.
+	std::shared_ptr<htsFile> accept; // The file where reads matching the query will be placed.
+	std::shared_ptr<htsFile> reject; // The file where reads not matching the query will be placed.
 	bool binary = false;
 	bool help = false;
 	bool verbose = false;
@@ -85,17 +83,16 @@ int main(int argc, char *const *argv) {
 			ignore_index = true;
 			break;
 		case 'o':
-			accept = hts_open(optarg, "wb");
-			if (accept == nullptr) {
+			accept = std::shared_ptr<htsFile>(hts_open(optarg, "wb"), hts_close);
+			if (!accept) {
 				perror(optarg);
-				hts_close0(reject);
+				return 1;
 			}
 			break;
 		case 'O':
-			reject = hts_open(optarg, "wb");
-			if (reject == nullptr) {
+			reject = std::shared_ptr<htsFile>(hts_open(optarg, "wb"), hts_close);
+			if (!reject) {
 				perror(optarg);
-				hts_close0(reject);
 			}
 			break;
 		case 'v':
@@ -103,8 +100,6 @@ int main(int argc, char *const *argv) {
 			break;
 		case '?':
 			fprintf (stderr, "Option -%c is not valid.\n", optopt);
-			hts_close0(accept);
-			hts_close0(reject);
 			return 1;
 		default:
 			abort ();
@@ -117,16 +112,11 @@ int main(int argc, char *const *argv) {
 		std::cout << "\t-I\tDo not use the index, even if it exists." << std::endl;
 		std::cout << "\t-o\tThe output file for reads that pass the query." << std::endl;
 		std::cout << "\t-O\tThe output file for reads that fail the query." << std::endl;
-		hts_close0(accept);
-		hts_close0(reject);
 		return 0;
 	}
 
 	if (argc - optind != 2) {
 		std::cout << "Need a query and a BAM file." << std::endl;
-
-		hts_close0(accept);
-		hts_close0(reject);
 		return 1;
 	}
 
@@ -134,9 +124,6 @@ int main(int argc, char *const *argv) {
 	char *bam_filename;
 	if (!figure_out_arguments(argv + optind, &bam_filename, &query_text)) {
 		std::cerr << "The file supplied does not exist." << std::endl;
-
-		hts_close0(accept);
-		hts_close0(reject);
 		return 1;
 	}
 
@@ -150,8 +137,6 @@ int main(int argc, char *const *argv) {
 			std::cerr << " ";
 		}
 		std::cerr << "^" << std::endl;
-		hts_close0(accept);
-		hts_close0(reject);
 		return 1;
 	}
 
@@ -165,11 +150,9 @@ int main(int argc, char *const *argv) {
 	std::string error;
 	std::vector<std::string> attrs;
 	attrs.push_back("-avx"); // The AVX support (auto-vectoring) should be disabled since the JIT isn't smart enough to detect this, even though there is a detection routine.
-	auto engine = llvm::EngineBuilder(module).setEngineKind(llvm::EngineKind::JIT).setErrorStr(&error).setMAttrs(attrs).create();
-	if (engine == NULL) {
+	std::shared_ptr<llvm::ExecutionEngine> engine(llvm::EngineBuilder(module).setEngineKind(llvm::EngineKind::JIT).setErrorStr(&error).setMAttrs(attrs).create());
+	if (!engine) {
 		std::cout << error << std::endl;
-		hts_close0(accept);
-		hts_close0(reject);
 		return 1;
 	}
 
@@ -180,75 +163,51 @@ int main(int argc, char *const *argv) {
 	result.ptr = engine->getPointerToFunction(filter_func);
 
 	// Open the input file.
-	input = hts_open(bam_filename, binary ? "rb" : "r");
-	if (input == nullptr) {
+	std::shared_ptr<htsFile> input(hts_open(bam_filename, binary ? "rb" : "r"), hts_close);
+	if (!input) {
 		perror(argv[optind]);
-		delete engine;
-		hts_close0(accept);
-		hts_close0(reject);
 		return 1;
 	}
 
 	// Copy the header to the output.
-	bam_hdr_t *header = sam_hdr_read(input);
-	if (accept != nullptr )
-		sam_hdr_write(accept, header);
-	if (reject != nullptr )
-		sam_hdr_write(reject, header);
+	std::shared_ptr<bam_hdr_t> header(sam_hdr_read(input.get()), bam_hdr_destroy);
+	if (accept)
+		sam_hdr_write(accept.get(), header.get());
+	if (reject)
+		sam_hdr_write(reject.get(), header.get());
 
 	data_collector stats(result.func, verbose);
 	// Decide if we can use an index.
-	hts_idx_t *index = ignore_index ? nullptr : hts_idx_load(bam_filename, HTS_FMT_BAI);
+	std::shared_ptr<hts_idx_t> index(ignore_index ? nullptr : hts_idx_load(bam_filename, HTS_FMT_BAI), hts_idx_destroy);
 	union {
 		index_function func;
 		void *ptr;
 	} index_result = { NULL };
-	if (index != NULL) {
+	if (index) {
 		auto index_func = ast->create_index_function(module, "index");
 		index_result.ptr = engine->getPointerToFunction(index_func);
 		if (index_result.ptr != nullptr) {
 			// Use the index to seek chomosome of interest.
-			bam1_t *read = bam_init1();
+			std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
 			for (auto tid = 0; tid < header->n_targets; tid++) {
-				if (!index_result.func(header, tid)) {
+				if (!index_result.func(header.get(), tid)) {
 					continue;
 				}
-				hts_itr_t *itr = bam_itr_queryi(index, tid, 0, INT_MAX);
-				while(bam_itr_next(input, itr, read) >= 0) {
-					stats.process_read(header, read, accept, reject);
+				std::shared_ptr<hts_itr_t> itr(bam_itr_queryi(index.get(), tid, 0, INT_MAX), hts_itr_destroy);
+				while(bam_itr_next(input.get(), itr.get(), read.get()) >= 0) {
+					stats.process_read(header.get(), read.get(), accept.get(), reject.get());
 				}
-				bam_itr_destroy(itr);
 			}
 			stats.write_summary();
-			bam_destroy1(read);
-
-			hts_idx_destroy(index);
-			hts_close0(input);
-			hts_close0(accept);
-			hts_close0(reject);
-			bam_hdr_destroy(header);
-
-			delete engine;
-
 			return 0;
 		}
-		hts_idx_destroy(index);
 	}
 
 	// Cycle through all the reads.
-	bam1_t *read = bam_init1();
-	while(sam_read1(input, header, read) >= 0) {
-		stats.process_read(header, read, accept, reject);
+	std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
+	while(sam_read1(input.get(), header.get(), read.get()) >= 0) {
+		stats.process_read(header.get(), read.get(), accept.get(), reject.get());
 	}
 	stats.write_summary();
-	bam_destroy1(read);
-
-	hts_close0(input);
-	hts_close0(accept);
-	hts_close0(reject);
-	bam_hdr_destroy(header);
-
-	delete engine;
-
 	return 0;
 }
