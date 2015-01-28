@@ -179,11 +179,11 @@ int main(int argc, char *const *argv) {
 	data_collector stats(result.func, verbose);
 	// Decide if we can use an index.
 	std::shared_ptr<hts_idx_t> index(ignore_index ? nullptr : hts_idx_load(bam_filename, HTS_FMT_BAI), hts_idx_destroy);
-	union {
-		index_function func;
-		void *ptr;
-	} index_result = { NULL };
 	if (index) {
+		union {
+			index_function func;
+			void *ptr;
+		} index_result = { NULL };
 		auto index_func = ast->create_index_function(module, "index");
 		index_result.ptr = engine->getPointerToFunction(index_func);
 		if (index_result.ptr != nullptr) {
