@@ -28,6 +28,7 @@ libbarf_la_SOURCES = \
 	parser_misc.cpp \
 	predicates.cpp \
 	parser.cpp \
+	runtime.cpp \
 	$(NULL)
 
 barf_SOURCES = \
@@ -67,12 +68,10 @@ runtime.bc: runtime.c
 	## provided, so we strip it out.
 	$(CLANG) -c -emit-llvm -o $@ $$(echo $(HTS_CFLAGS) | sed 's/-g//g') -O2 $<
 
-runtime.inc: runtime.bc
+runtime.cpp: runtime.bc
 	echo -e "#include <llvm/IR/IRBuilder.h>\n#include <llvm/IR/Module.h>\nusing namespace llvm;\nnamespace barf {" > $@
 	$(LLC) -march=cpp -cppfname=define_runtime --cppfor=__dummy__ -cppgen=contents -o - $< | sed '/setModuleIdentifier/d' >> $@
 	echo "}" >> $@
-
-predicates.cpp: runtime.inc
 
 EXTRA_DIST = \
 	barf.hpp \
@@ -81,5 +80,5 @@ EXTRA_DIST = \
 
 CLEANFILES = \
 	runtime.bc \
-	runtime.inc \
+	runtime.cpp \
 	$(NULL)

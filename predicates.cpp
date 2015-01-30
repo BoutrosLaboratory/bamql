@@ -1,9 +1,6 @@
 #include <htslib/sam.h>
 #include "barf.hpp"
 
-// This must be included exactly once in only this file!!!
-#include "runtime.inc"
-
 // Please keep the predicates in alphabetical order.
 namespace barf {
 
@@ -263,22 +260,5 @@ predicate_map getDefaultPredicates() {
 		       {std::string("read_group"), check_aux_string_node<'R', 'G', read_group_char>::parse},
 		       {std::string("true"), parse_true}
 	};
-}
-
-llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
-	auto struct_ty = module->getTypeByName(name);
-	if (struct_ty == nullptr) {
-		define_runtime(module);
-		struct_ty = module->getTypeByName(name);
-	}
-	return struct_ty;
-}
-
-llvm::Type *getBamType(llvm::Module *module) {
-	return getRuntimeType(module, "struct.bam1_t");
-}
-
-llvm::Type *getBamHeaderType(llvm::Module *module) {
-	return getRuntimeType(module, "struct.bam_hdr_t");
 }
 }
