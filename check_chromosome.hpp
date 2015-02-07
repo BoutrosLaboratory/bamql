@@ -55,24 +55,24 @@ public:
 		if (str.compare("23") == 0 || str.compare("X") == 0 ||
 				str.compare("x") == 0) {
 			return std::make_shared<or_node>(
-					std::make_shared<check_chromosome_node<mate> >("23"),
-					std::make_shared<check_chromosome_node<mate> >("x"));
+					std::make_shared<check_chromosome_node<mate>>("23"),
+					std::make_shared<check_chromosome_node<mate>>("x"));
 		}
 
 		if (str.compare("24") == 0 || str.compare("Y") == 0 ||
 				str.compare("y") == 0) {
 			return std::make_shared<or_node>(
-					std::make_shared<check_chromosome_node<mate> >("24"),
-					std::make_shared<check_chromosome_node<mate> >("y"));
+					std::make_shared<check_chromosome_node<mate>>("24"),
+					std::make_shared<check_chromosome_node<mate>>("y"));
 		}
 		if (str.compare("25") == 0 || str.compare("M") == 0 ||
 				str.compare("m") == 0) {
 			return std::make_shared<or_node>(
-					std::make_shared<check_chromosome_node<mate> >("25"),
-					std::make_shared<check_chromosome_node<mate> >("m"));
+					std::make_shared<check_chromosome_node<mate>>("25"),
+					std::make_shared<check_chromosome_node<mate>>("m"));
 		}
 		// otherwise, just match the provided chromosome.
-		return std::make_shared<check_chromosome_node<mate> >(str);
+		return std::make_shared<check_chromosome_node<mate>>(str);
 	}
 
 private:

@@ -24,7 +24,7 @@ public:
 
 	static std::shared_ptr<ast_node> parse(const std::string &input,
 																				 size_t &index) throw(parse_error) {
-		static auto result = std::make_shared<check_flag<F> >();
+		static auto result = std::make_shared<check_flag<F>>();
 		return result;
 	}
 };

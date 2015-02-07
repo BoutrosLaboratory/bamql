@@ -93,5 +93,4 @@ llvm::Value *createString(llvm::Module *module, std::string str) {
 	indicies.push_back(zero);
 	return llvm::ConstantExpr::getGetElementPtr(global_variable, indicies);
 }
-
 }

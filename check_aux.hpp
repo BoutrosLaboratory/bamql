@@ -44,7 +44,7 @@ public:
 
 		parse_char_in_space(input, index, ')');
 
-		return std::make_shared<check_aux_string_node<G1, G2, VC> >(
+		return std::make_shared<check_aux_string_node<G1, G2, VC>>(
 				input.substr(name_start, name_length));
 	}
 

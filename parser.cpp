@@ -63,7 +63,7 @@ static std::shared_ptr<ast_node> parse_terminal(const std::string &input,
 static std::shared_ptr<ast_node> parse_and(const std::string &input,
 																					 size_t &index,
 																					 predicate_map predicates) {
-	std::vector<std::shared_ptr<ast_node> > items;
+	std::vector<std::shared_ptr<ast_node>> items;
 
 	std::shared_ptr<ast_node> node = parse_terminal(input, index, predicates);
 	parse_space(input, index);
@@ -86,7 +86,7 @@ static std::shared_ptr<ast_node> parse_and(const std::string &input,
 static std::shared_ptr<ast_node> parse_or(const std::string &input,
 																					size_t &index,
 																					predicate_map predicates) {
-	std::vector<std::shared_ptr<ast_node> > items;
+	std::vector<std::shared_ptr<ast_node>> items;
 
 	std::shared_ptr<ast_node> node = parse_and(input, index, predicates);
 	parse_space(input, index);
