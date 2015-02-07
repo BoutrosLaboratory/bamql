@@ -91,27 +91,36 @@ private:
 predicate_map getDefaultPredicates() {
 
 	return {
+		// Auxiliary data
+		{ std::string("read_group"),
+			check_aux_string_node<'R', 'G', read_group_char>::parse },
+
+		// Chromosome information
 		{ std::string("chr"), check_chromosome_node<false>::parse },
 		{ std::string("mate_chr"), check_chromosome_node<true>::parse },
-		{ std::string("false"), constant_node<llvm::ConstantInt::getFalse>::parse },
-		{ std::string("paired?"), check_flag<BAM_FPAIRED>::parse },
-		{ std::string("proper_pair?"), check_flag<BAM_FPROPER_PAIR>::parse },
-		{ std::string("unmapped?"), check_flag<BAM_FUNMAP>::parse },
-		{ std::string("mate_unmapped?"), check_flag<BAM_FMUNMAP>::parse },
+
+		// Flags
+		{ std::string("duplicate?"), check_flag<BAM_FDUP>::parse },
+		{ std::string("failed_qc?"), check_flag<BAM_FQCFAIL>::parse },
 		{ std::string("mapped_to_reverse?"), check_flag<BAM_FREVERSE>::parse },
 		{ std::string("mate_mapped_to_reverse?"),
 			check_flag<BAM_FMREVERSE>::parse },
+		{ std::string("mate_unmapped?"), check_flag<BAM_FMUNMAP>::parse },
+		{ std::string("paired?"), check_flag<BAM_FPAIRED>::parse },
+		{ std::string("proper_pair?"), check_flag<BAM_FPROPER_PAIR>::parse },
 		{ std::string("read1?"), check_flag<BAM_FREAD1>::parse },
 		{ std::string("read2?"), check_flag<BAM_FREAD2>::parse },
 		{ std::string("secondary?"), check_flag<BAM_FSECONDARY>::parse },
-		{ std::string("failed_qc?"), check_flag<BAM_FQCFAIL>::parse },
-		{ std::string("duplicate?"), check_flag<BAM_FDUP>::parse },
 		{ std::string("supplementary?"), check_flag<BAM_FSUPPLEMENTARY>::parse },
+		{ std::string("unmapped?"), check_flag<BAM_FUNMAP>::parse },
+
+		// Constants
+		{ std::string("false"), constant_node<llvm::ConstantInt::getFalse>::parse },
+		{ std::string("true"), constant_node<llvm::ConstantInt::getTrue>::parse },
+
+		// Miscellaneous
 		{ std::string("mapping_quality"), mapping_quality_node::parse },
-		{ std::string("random"), randomly_node::parse },
-		{ std::string("read_group"),
-			check_aux_string_node<'R', 'G', read_group_char>::parse },
-		{ std::string("true"), constant_node<llvm::ConstantInt::getTrue>::parse }
+		{ std::string("random"), randomly_node::parse }
 	};
 }
 }
