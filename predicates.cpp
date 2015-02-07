@@ -1,212 +1,19 @@
 #include <htslib/sam.h>
 #include "barf.hpp"
+#include "boolean_constant.hpp"
+#include "check_aux.hpp"
+#include "check_chromosome.hpp"
+#include "check_flag.hpp"
 
 // vim: set ts=2 sw=2 tw=0 :
 
 // Please keep the predicates in alphabetical order.
 namespace barf {
 
-/**
- * This helper function puts a string into a global constant and then returns a
- *pointer to it.
- *
- * One would think this is trivial, but it isn't.
- */
-llvm::Value *createString(llvm::Module *module, std::string str) {
-	auto array =
-			llvm::ConstantDataArray::getString(llvm::getGlobalContext(), str);
-	auto global_variable = new llvm::GlobalVariable(
-			*module,
-			llvm::ArrayType::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-													 str.length() + 1),
-			true,
-			llvm::GlobalValue::PrivateLinkage,
-			0,
-			".str");
-	global_variable->setAlignment(1);
-	global_variable->setInitializer(array);
-	auto zero = llvm::ConstantInt::get(
-			llvm::Type::getInt8Ty(llvm::getGlobalContext()), 0);
-	std::vector<llvm::Value *> indicies;
-	indicies.push_back(zero);
-	indicies.push_back(zero);
-	return llvm::ConstantExpr::getGetElementPtr(global_variable, indicies);
-}
-
-/**
- * A predicate that checks of the chromosome name.
- */
-template <bool mate> class check_chromosome_node : public ast_node {
-public:
-	check_chromosome_node(std::string name_) : name(name_) {}
-	virtual llvm::Value *generate(llvm::Module *module,
-																llvm::IRBuilder<> &builder,
-																llvm::Value *read,
-																llvm::Value *header) {
-		auto function = module->getFunction("check_chromosome");
-		return builder.CreateCall4(
-				function,
-				read,
-				header,
-				createString(module, name),
-				mate ? llvm::ConstantInt::getTrue(llvm::getGlobalContext())
-						 : llvm::ConstantInt::getFalse(llvm::getGlobalContext()));
-	}
-	virtual llvm::Value *generate_index(llvm::Module *module,
-																			llvm::IRBuilder<> &builder,
-																			llvm::Value *chromosome,
-																			llvm::Value *header) {
-		if (mate) {
-			return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
-		}
-		auto function = module->getFunction("check_chromosome_id");
-		return builder.CreateCall3(
-				function, chromosome, header, createString(module, name));
-	}
-
-	static std::shared_ptr<ast_node> parse(const std::string &input,
-																				 size_t &index) throw(parse_error) {
-		parse_char_in_space(input, index, '(');
-
-		auto str = parse_str(
-				input,
-				index,
-				"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_*?.");
-		if (str.compare(0, 3, "chr") == 0) {
-			throw parse_error(index, "Chromosome names must not start with `chr'.");
-		}
-
-		parse_char_in_space(input, index, ')');
-
-		// If we are dealing with a chromosome that goes by many names, match all of
-		// them.
-		if (str.compare("23") == 0 || str.compare("X") == 0 ||
-				str.compare("x") == 0) {
-			return std::make_shared<or_node>(
-					std::make_shared<check_chromosome_node<mate> >("23"),
-					std::make_shared<check_chromosome_node<mate> >("x"));
-		}
-
-		if (str.compare("24") == 0 || str.compare("Y") == 0 ||
-				str.compare("y") == 0) {
-			return std::make_shared<or_node>(
-					std::make_shared<check_chromosome_node<mate> >("24"),
-					std::make_shared<check_chromosome_node<mate> >("y"));
-		}
-		if (str.compare("25") == 0 || str.compare("M") == 0 ||
-				str.compare("m") == 0) {
-			return std::make_shared<or_node>(
-					std::make_shared<check_chromosome_node<mate> >("25"),
-					std::make_shared<check_chromosome_node<mate> >("m"));
-		}
-		// otherwise, just match the provided chromosome.
-		return std::make_shared<check_chromosome_node<mate> >(str);
-	}
-
-private:
-	std::string name;
-};
-
-typedef bool (*ValidChar)(char, bool not_first);
-
-/**
- * A predicate that checks of name of a string in the BAM auxiliary data.
- */
-template <char G1, char G2, ValidChar VC>
-class check_aux_string_node : public ast_node {
-public:
-	check_aux_string_node(std::string name_) : name(name_) {}
-	virtual llvm::Value *generate(llvm::Module *module,
-																llvm::IRBuilder<> &builder,
-																llvm::Value *read,
-																llvm::Value *header) {
-		auto function = module->getFunction("check_aux_str");
-		return builder.CreateCall4(
-				function,
-				read,
-				createString(module, name),
-				llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-															 G1),
-				llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-															 G2));
-	}
-	static std::shared_ptr<ast_node> parse(const std::string &input,
-																				 size_t &index) throw(parse_error) {
-		parse_char_in_space(input, index, '(');
-
-		auto name_start = index;
-		while (index < input.length() && input[index] != ')' &&
-					 VC(input[index], index > name_start)) {
-			index++;
-		}
-		if (name_start == index) {
-			throw parse_error(index, "Expected valid identifier.");
-		}
-		auto name_length = index - name_start;
-
-		parse_char_in_space(input, index, ')');
-
-		return std::make_shared<check_aux_string_node<G1, G2, VC> >(
-				input.substr(name_start, name_length));
-	}
-
-private:
-	std::string name;
-};
-
 /* This insanity is brought to you by samtools's sam_tview.c */
 bool read_group_char(char input, bool not_first) {
 	return input >= '!' && input <= '~' && (not_first || input != '=');
 }
-
-/**
- * A predicate that always returns false.
- */
-class false_node : public ast_node {
-public:
-	virtual llvm::Value *generate(llvm::Module *module,
-																llvm::IRBuilder<> &builder,
-																llvm::Value *read,
-																llvm::Value *header) {
-		return llvm::ConstantInt::getFalse(llvm::getGlobalContext());
-	}
-	virtual llvm::Value *generate_index(llvm::Module *module,
-																			llvm::IRBuilder<> &builder,
-																			llvm::Value *tid,
-																			llvm::Value *header) {
-		return llvm::ConstantInt::getFalse(llvm::getGlobalContext());
-	}
-};
-
-static std::shared_ptr<ast_node> parse_false(const std::string &input,
-																						 size_t &index) throw(parse_error) {
-	static auto result = std::make_shared<false_node>();
-	return result;
-}
-
-/**
- * A predicate that checks of the read's flag.
- */
-template <unsigned int F> class check_flag : public ast_node {
-public:
-	virtual llvm::Value *generate(llvm::Module *module,
-																llvm::IRBuilder<> &builder,
-																llvm::Value *read,
-																llvm::Value *header) {
-		auto function = module->getFunction("check_flag");
-		return builder.CreateCall2(
-				function,
-				read,
-				llvm::ConstantInt::get(llvm::Type::getInt16Ty(llvm::getGlobalContext()),
-															 F));
-	}
-
-	static std::shared_ptr<ast_node> parse(const std::string &input,
-																				 size_t &index) throw(parse_error) {
-		static auto result = std::make_shared<check_flag<F> >();
-		return result;
-	}
-};
 
 /**
  * A predicate that is true if the mapping quality is sufficiently good.
@@ -279,25 +86,6 @@ static std::shared_ptr<ast_node> parse_randomly(
 }
 
 /**
- * A predicate that always returns true.
- */
-class true_node : public ast_node {
-public:
-	virtual llvm::Value *generate(llvm::Module *module,
-																llvm::IRBuilder<> &builder,
-																llvm::Value *read,
-																llvm::Value *header) {
-		return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
-	}
-};
-
-static std::shared_ptr<ast_node> parse_true(const std::string &input,
-																						size_t &index) throw(parse_error) {
-	static auto result = std::make_shared<true_node>();
-	return result;
-}
-
-/**
  * All the predicates known to the system.
  */
 predicate_map getDefaultPredicates() {
@@ -305,7 +93,7 @@ predicate_map getDefaultPredicates() {
 	return {
 		{ std::string("chr"), check_chromosome_node<false>::parse },
 		{ std::string("mate_chr"), check_chromosome_node<true>::parse },
-		{ std::string("false"), parse_false },
+		{ std::string("false"), constant_node<llvm::ConstantInt::getFalse>::parse },
 		{ std::string("paired?"), check_flag<BAM_FPAIRED>::parse },
 		{ std::string("proper_pair?"), check_flag<BAM_FPROPER_PAIR>::parse },
 		{ std::string("unmapped?"), check_flag<BAM_FUNMAP>::parse },
@@ -323,7 +111,7 @@ predicate_map getDefaultPredicates() {
 		{ std::string("random"), parse_randomly },
 		{ std::string("read_group"),
 			check_aux_string_node<'R', 'G', read_group_char>::parse },
-		{ std::string("true"), parse_true }
+		{ std::string("true"), constant_node<llvm::ConstantInt::getTrue>::parse }
 	};
 }
 }

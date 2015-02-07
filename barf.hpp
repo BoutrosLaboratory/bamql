@@ -234,4 +234,11 @@ void parse_char_in_space(const std::string &input,
 bool parse_keyword(const std::string &input,
 									 size_t &index,
 									 const std::string &keyword);
+/**
+ * This helper function puts a string into a global constant and then
+ * returns a pointer to it.
+ *
+ * One would think this is trivial, but it isn't.
+ */
+llvm::Value *createString(llvm::Module *module, std::string str);
 }

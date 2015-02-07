@@ -72,4 +72,26 @@ llvm::Type *getBamType(llvm::Module *module) {
 llvm::Type *getBamHeaderType(llvm::Module *module) {
 	return getRuntimeType(module, "struct.bam_hdr_t");
 }
+
+llvm::Value *createString(llvm::Module *module, std::string str) {
+	auto array =
+			llvm::ConstantDataArray::getString(llvm::getGlobalContext(), str);
+	auto global_variable = new llvm::GlobalVariable(
+			*module,
+			llvm::ArrayType::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+													 str.length() + 1),
+			true,
+			llvm::GlobalValue::PrivateLinkage,
+			0,
+			".str");
+	global_variable->setAlignment(1);
+	global_variable->setInitializer(array);
+	auto zero = llvm::ConstantInt::get(
+			llvm::Type::getInt8Ty(llvm::getGlobalContext()), 0);
+	std::vector<llvm::Value *> indicies;
+	indicies.push_back(zero);
+	indicies.push_back(zero);
+	return llvm::ConstantExpr::getGetElementPtr(global_variable, indicies);
+}
+
 }
