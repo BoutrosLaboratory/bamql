@@ -32,23 +32,23 @@ public:
 															 -10 * log(probability)));
 	}
 
+	static std::shared_ptr<ast_node> parse(const std::string &input,
+																				 size_t &index) throw(parse_error) {
+		parse_char_in_space(input, index, '(');
+
+		auto probability = parse_double(input, index);
+		if (probability <= 0 || probability >= 1) {
+			throw parse_error(index, "The provided probability is not probable.");
+		}
+
+		parse_char_in_space(input, index, ')');
+
+		return std::make_shared<mapping_quality_node>(probability);
+	}
+
 private:
 	double probability;
 };
-
-static std::shared_ptr<ast_node> parse_mapping_quality(
-		const std::string &input, size_t &index) throw(parse_error) {
-	parse_char_in_space(input, index, '(');
-
-	auto probability = parse_double(input, index);
-	if (probability <= 0 || probability >= 1) {
-		throw parse_error(index, "The provided probability is not probable.");
-	}
-
-	parse_char_in_space(input, index, ')');
-
-	return std::make_shared<mapping_quality_node>(probability);
-}
 
 /**
  * A predicate that randomly is true.
@@ -67,23 +67,23 @@ public:
 															probability));
 	}
 
+	static std::shared_ptr<ast_node> parse(const std::string &input,
+																				 size_t &index) throw(parse_error) {
+		parse_char_in_space(input, index, '(');
+
+		auto probability = parse_double(input, index);
+		if (probability < 0 || probability > 1) {
+			throw parse_error(index, "The provided probability is not probable.");
+		}
+
+		parse_char_in_space(input, index, ')');
+
+		return std::make_shared<randomly_node>(probability);
+	}
+
 private:
 	double probability;
 };
-
-static std::shared_ptr<ast_node> parse_randomly(
-		const std::string &input, size_t &index) throw(parse_error) {
-	parse_char_in_space(input, index, '(');
-
-	auto probability = parse_double(input, index);
-	if (probability < 0 || probability > 1) {
-		throw parse_error(index, "The provided probability is not probable.");
-	}
-
-	parse_char_in_space(input, index, ')');
-
-	return std::make_shared<randomly_node>(probability);
-}
 
 /**
  * All the predicates known to the system.
@@ -107,8 +107,8 @@ predicate_map getDefaultPredicates() {
 		{ std::string("failed_qc?"), check_flag<BAM_FQCFAIL>::parse },
 		{ std::string("duplicate?"), check_flag<BAM_FDUP>::parse },
 		{ std::string("supplementary?"), check_flag<BAM_FSUPPLEMENTARY>::parse },
-		{ std::string("mapping_quality"), parse_mapping_quality },
-		{ std::string("random"), parse_randomly },
+		{ std::string("mapping_quality"), mapping_quality_node::parse },
+		{ std::string("random"), randomly_node::parse },
 		{ std::string("read_group"),
 			check_aux_string_node<'R', 'G', read_group_char>::parse },
 		{ std::string("true"), constant_node<llvm::ConstantInt::getTrue>::parse }
