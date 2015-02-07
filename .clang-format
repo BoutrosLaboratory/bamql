@@ -1,0 +1,7 @@
+BasedOnStyle: LLVM
+UseTab: Always
+IndentWidth: 2
+TabWidth: 2
+BinPackParameters: false
+AllowAllParametersOfDeclarationOnNextLine: true
+PenaltyReturnTypeOnItsOwnLine: 1000

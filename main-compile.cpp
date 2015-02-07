@@ -9,6 +9,8 @@
 #include <llvm/Support/raw_ostream.h>
 #include "barf.hpp"
 
+// vim: set ts=2 sw=2 tw=0 :
+
 /**
  * Use LLVM to compile a query into object code.
  */
@@ -19,9 +21,8 @@ int main(int argc, char *const *argv) {
 	bool dump = false;
 	int c;
 
-	while ((c = getopt (argc, argv, "dhn:o:")) != -1) {
-		switch (c)
-		{
+	while ((c = getopt(argc, argv, "dhn:o:")) != -1) {
+		switch (c) {
 		case 'd':
 			dump = true;
 			break;
@@ -32,18 +33,24 @@ int main(int argc, char *const *argv) {
 			output = optarg;
 			break;
 		case '?':
-			fprintf (stderr, "Option -%c is not valid.\n", optopt);
+			fprintf(stderr, "Option -%c is not valid.\n", optopt);
 			return 1;
 		default:
-			abort ();
+			abort();
 		}
 	}
 	if (help) {
 		std::cout << argv[0] << "[-d] [-n name] [-o output.bc] query" << std::endl;
-		std::cout << "Compile a query to LLVM bitcode. For details, see the man page." << std::endl;
-		std::cout << "\t-d\tDump the human-readable LLVM bitcode to standard output." << std::endl;
-		std::cout << "\t-n\tThe name for function produced. If unspecified, it will be `filter'." << std::endl;
-		std::cout << "\t-o\tThe output file containing the reads. If unspecified, it will be the function name suffixed by `.bc'." << std::endl;
+		std::cout
+				<< "Compile a query to LLVM bitcode. For details, see the man page."
+				<< std::endl;
+		std::cout
+				<< "\t-d\tDump the human-readable LLVM bitcode to standard output."
+				<< std::endl;
+		std::cout << "\t-n\tThe name for function produced. If unspecified, it "
+								 "will be `filter'." << std::endl;
+		std::cout << "\t-o\tThe output file containing the reads. If unspecified, "
+								 "it will be the function name suffixed by `.bc'." << std::endl;
 		return 0;
 	}
 
@@ -55,10 +62,13 @@ int main(int argc, char *const *argv) {
 	// Parse the input query.
 	std::shared_ptr<barf::ast_node> ast;
 	try {
-		ast = barf::ast_node::parse(std::string(argv[optind]), barf::getDefaultPredicates());
-	} catch (barf::parse_error e) {
-		std::cerr << "Error: " << e.what() << std::endl << argv[optind] << std::endl;
-		for(auto i = 0; i < e.where(); i++) {
+		ast = barf::ast_node::parse(std::string(argv[optind]),
+																barf::getDefaultPredicates());
+	}
+	catch (barf::parse_error e) {
+		std::cerr << "Error: " << e.what() << std::endl << argv[optind]
+							<< std::endl;
+		for (auto i = 0; i < e.where(); i++) {
 			std::cerr << " ";
 		}
 		std::cerr << "^" << std::endl;
@@ -85,7 +95,8 @@ int main(int argc, char *const *argv) {
 		output_filename << output;
 	}
 	std::string error;
-	llvm::raw_fd_ostream out_data(output_filename.str().c_str(), error, llvm::sys::fs::F_None);
+	llvm::raw_fd_ostream out_data(
+			output_filename.str().c_str(), error, llvm::sys::fs::F_None);
 	if (error.length() > 0) {
 		std::cerr << error << std::endl;
 		return 1;
@@ -93,7 +104,9 @@ int main(int argc, char *const *argv) {
 		llvm::WriteBitcodeToFile(module, out_data);
 	}
 	// Write the header file to stdout.
-	std::cout << "#include <stdbool.h>\n#include <htslib/sam.h>\nextern bool " << name << "(bam_hdr_t*, bam1_t*)\nextern bool " << index_name.str() << "(bam_hdr_t*, uint32_t)" << std::endl;
+	std::cout << "#include <stdbool.h>\n#include <htslib/sam.h>\nextern bool "
+						<< name << "(bam_hdr_t*, bam1_t*)\nextern bool " << index_name.str()
+						<< "(bam_hdr_t*, uint32_t)" << std::endl;
 	delete module;
 	return 0;
 }

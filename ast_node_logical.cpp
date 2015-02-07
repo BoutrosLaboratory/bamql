@@ -1,20 +1,32 @@
 #include "barf.hpp"
+// vim: set ts=2 sw=2 tw=0 :
 
-barf::short_circuit_node::short_circuit_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node> right) {
+barf::short_circuit_node::short_circuit_node(std::shared_ptr<ast_node> left,
+																						 std::shared_ptr<ast_node> right) {
 	this->left = left;
 	this->right = right;
 }
 
-llvm::Value *barf::short_circuit_node::generate_generic(generate_member member, llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *param, llvm::Value *header) {
-	/* Create two basic blocks for the possibly executed right-hand expression and the final block. */
+llvm::Value *barf::short_circuit_node::generate_generic(
+		generate_member member,
+		llvm::Module *module,
+		llvm::IRBuilder<> &builder,
+		llvm::Value *param,
+		llvm::Value *header) {
+	/* Create two basic blocks for the possibly executed right-hand expression and
+	 * the final block. */
 	auto function = builder.GetInsertBlock()->getParent();
-	auto next_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", function);
-	auto merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
+	auto next_block =
+			llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", function);
+	auto merge_block =
+			llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
 	/* Generate the left expression in the current block. */
 	auto left_value = ((*this->left).*member)(module, builder, param, header);
-	auto short_circuit_value = builder.CreateICmpEQ(left_value, this->branchValue());
-	/* If short circuiting, jump to the final block, otherwise, do the right-hand expression. */
+	auto short_circuit_value =
+			builder.CreateICmpEQ(left_value, this->branchValue());
+	/* If short circuiting, jump to the final block, otherwise, do the right-hand
+	 * expression. */
 	builder.CreateCondBr(short_circuit_value, merge_block, next_block);
 	auto original_block = builder.GetInsertBlock();
 
@@ -24,59 +36,86 @@ llvm::Value *barf::short_circuit_node::generate_generic(generate_member member, 
 	builder.CreateBr(merge_block);
 	next_block = builder.GetInsertBlock();
 
-	/* Merge from the above paths, selecting the correct value through a PHI node. */
+	/* Merge from the above paths, selecting the correct value through a PHI node.
+	 */
 	builder.SetInsertPoint(merge_block);
-	auto phi = builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
+	auto phi =
+			builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
 	phi->addIncoming(left_value, original_block);
 	phi->addIncoming(right_value, next_block);
 	return phi;
 }
 
-llvm::Value *barf::short_circuit_node::generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-	return generate_generic(&barf::ast_node::generate, module, builder, read, header);
+llvm::Value *barf::short_circuit_node::generate(llvm::Module *module,
+																								llvm::IRBuilder<> &builder,
+																								llvm::Value *read,
+																								llvm::Value *header) {
+	return generate_generic(
+			&barf::ast_node::generate, module, builder, read, header);
 }
 
-llvm::Value *barf::short_circuit_node::generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *tid, llvm::Value *header) {
-	return generate_generic(&barf::ast_node::generate_index, module, builder, tid, header);
+llvm::Value *barf::short_circuit_node::generate_index(
+		llvm::Module *module,
+		llvm::IRBuilder<> &builder,
+		llvm::Value *tid,
+		llvm::Value *header) {
+	return generate_generic(
+			&barf::ast_node::generate_index, module, builder, tid, header);
 }
 
-barf::and_node::and_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node>right) : short_circuit_node(left, right) {
-}
+barf::and_node::and_node(std::shared_ptr<ast_node> left,
+												 std::shared_ptr<ast_node> right)
+		: short_circuit_node(left, right) {}
 llvm::Value *barf::and_node::branchValue() {
 	return llvm::ConstantInt::getFalse(llvm::getGlobalContext());
 }
 
-barf::or_node::or_node(std::shared_ptr<ast_node>left, std::shared_ptr<ast_node>right) : short_circuit_node(left, right) {
-}
+barf::or_node::or_node(std::shared_ptr<ast_node> left,
+											 std::shared_ptr<ast_node> right)
+		: short_circuit_node(left, right) {}
 llvm::Value *barf::or_node::branchValue() {
 	return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 
-barf::not_node::not_node(std::shared_ptr<ast_node>expr) {
-	this->expr = expr;
-}
-llvm::Value *barf::not_node::generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
+barf::not_node::not_node(std::shared_ptr<ast_node> expr) { this->expr = expr; }
+llvm::Value *barf::not_node::generate(llvm::Module *module,
+																			llvm::IRBuilder<> &builder,
+																			llvm::Value *read,
+																			llvm::Value *header) {
 	llvm::Value *result = this->expr->generate(module, builder, read, header);
 	return builder.CreateNot(result);
 }
 
-llvm::Value *barf::not_node::generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *tid, llvm::Value *header) {
-	llvm::Value *result = this->expr->generate_index(module, builder, tid, header);
+llvm::Value *barf::not_node::generate_index(llvm::Module *module,
+																						llvm::IRBuilder<> &builder,
+																						llvm::Value *tid,
+																						llvm::Value *header) {
+	llvm::Value *result =
+			this->expr->generate_index(module, builder, tid, header);
 	return builder.CreateNot(result);
 }
 
-barf::conditional_node::conditional_node(std::shared_ptr<ast_node>condition, std::shared_ptr<ast_node>then_part, std::shared_ptr<ast_node> else_part) {
+barf::conditional_node::conditional_node(std::shared_ptr<ast_node> condition,
+																				 std::shared_ptr<ast_node> then_part,
+																				 std::shared_ptr<ast_node> else_part) {
 	this->condition = condition;
 	this->then_part = then_part;
 	this->else_part = else_part;
 }
 
-llvm::Value *barf::conditional_node::generate(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *read, llvm::Value *header) {
-	/* Create three blocks: one for the “then”, one for the “else” and one for the final. */
+llvm::Value *barf::conditional_node::generate(llvm::Module *module,
+																							llvm::IRBuilder<> &builder,
+																							llvm::Value *read,
+																							llvm::Value *header) {
+	/* Create three blocks: one for the “then”, one for the “else” and one for the
+	 * final. */
 	auto function = builder.GetInsertBlock()->getParent();
-	auto then_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
-	auto else_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "else", function);
-	auto merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
+	auto then_block =
+			llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
+	auto else_block =
+			llvm::BasicBlock::Create(llvm::getGlobalContext(), "else", function);
+	auto merge_block =
+			llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
 	/* Compute the conditional argument and then decide to which block to jump. */
 	auto conditional_result = condition->generate(module, builder, read, header);
@@ -98,13 +137,17 @@ llvm::Value *barf::conditional_node::generate(llvm::Module *module, llvm::IRBuil
 
 	/* Get the two results and select the correct one using a PHI node. */
 	builder.SetInsertPoint(merge_block);
-	auto phi = builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
+	auto phi =
+			builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
 	phi->addIncoming(then_result, then_block);
 	phi->addIncoming(else_result, else_block);
 	return phi;
 }
 
-llvm::Value *barf::conditional_node::generate_index(llvm::Module *module, llvm::IRBuilder<>& builder, llvm::Value *tid, llvm::Value *header) {
+llvm::Value *barf::conditional_node::generate_index(llvm::Module *module,
+																										llvm::IRBuilder<> &builder,
+																										llvm::Value *tid,
+																										llvm::Value *header) {
 	/*
 	 * The logic in this function is twisty, so here is the explanation. Given we
 	 * have `C ? T : E`, consider the following cases during index building:
@@ -117,16 +160,21 @@ llvm::Value *barf::conditional_node::generate_index(llvm::Module *module, llvm::
 	 * executed, so we should return E.
 	 */
 
-	/* Create three blocks: one for the “then”, one for the “else” and one for the final. */
+	/* Create three blocks: one for the “then”, one for the “else” and one for the
+	 * final. */
 	auto function = builder.GetInsertBlock()->getParent();
-	auto then_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
-	auto else_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "else", function);
-	auto merge_block = llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
+	auto then_block =
+			llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
+	auto else_block =
+			llvm::BasicBlock::Create(llvm::getGlobalContext(), "else", function);
+	auto merge_block =
+			llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
 	/* Compute the conditional argument and then decide to which block to jump.
 	 * If true, try to make a decision based on the “then” block, otherwise, only
 	 * make a decision based on the “else” block. */
-	auto conditional_result = condition->generate_index(module, builder, tid, header);
+	auto conditional_result =
+			condition->generate_index(module, builder, tid, header);
 	builder.CreateCondBr(conditional_result, then_block, else_block);
 
 	/* Generate the “then” block. */
@@ -145,7 +193,8 @@ llvm::Value *barf::conditional_node::generate_index(llvm::Module *module, llvm::
 
 	/* Get the two results and select the correct one using a PHI node. */
 	builder.SetInsertPoint(merge_block);
-	auto phi = builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
+	auto phi =
+			builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
 	phi->addIncoming(then_result, then_block);
 	phi->addIncoming(else_result, else_block);
 	return phi;
