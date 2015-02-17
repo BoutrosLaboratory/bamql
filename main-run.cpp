@@ -72,10 +72,10 @@ bool figure_out_arguments(char *const *args,
  * Use LLVM to compile a query, JIT it, and run it over a BAM file.
  */
 int main(int argc, char *const *argv) {
-	std::shared_ptr<htsFile>
-	accept; // The file where reads matching the query will be placed.
-	std::shared_ptr<htsFile>
-	reject; // The file where reads not matching the query will be placed.
+	std::shared_ptr<htsFile> accept; // The file where reads matching the query
+																	 // will be placed.
+	std::shared_ptr<htsFile> reject; // The file where reads not matching the
+																	 // query will be placed.
 	bool binary = false;
 	bool help = false;
 	bool verbose = false;
@@ -118,7 +118,8 @@ int main(int argc, char *const *argv) {
 	}
 	if (help) {
 		std::cout << argv[0] << " [-b] [-I] [-o accepted_reads.bam] [-O "
-														"rejected_reads.bam] [-v] input.bam query" << std::endl;
+														"rejected_reads.bam] [-v] input.bam query"
+							<< std::endl;
 		std::cout << "Filter a BAM/SAM file based on the provided query. For "
 								 "details, see the man page." << std::endl;
 		std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)."

@@ -15,32 +15,30 @@ typedef bool (*index_function)(bam_hdr_t *, uint32_t);
 
 typedef bool (*chain_function)(bool);
 
-bool parallel_chain(bool x) {
-	return true;
-}
-bool series_chain(bool x) {
-	return x;
-}
-bool shuttle_chain(bool x) {
-	return !x;
-}
+bool parallel_chain(bool x) { return true; }
+bool series_chain(bool x) { return x; }
+bool shuttle_chain(bool x) { return !x; }
 
 std::map<std::string, chain_function> known_chains = {
-	{ "parallel", parallel_chain },
-	{ "series", series_chain },
+	{ "parallel", parallel_chain }, { "series", series_chain },
 	{ "shuttle", shuttle_chain }
 };
 
 class output_wrangler {
 public:
-		output_wrangler(chain_function c, std::shared_ptr<htsFile> o, filter_function f, index_function i, std::shared_ptr<output_wrangler> n) : chain(c), output_file(o), filter(f), index(i), next(n) {}
+	output_wrangler(chain_function c,
+									std::shared_ptr<htsFile> o,
+									filter_function f,
+									index_function i,
+									std::shared_ptr<output_wrangler> n)
+			: chain(c), output_file(o), filter(f), index(i), next(n) {}
 
 	bool index_interest(bam_hdr_t *header, uint32_t tid) {
-		return index(header, tid) || next && chain(false) && next->index_interest(header, tid);
+		return index(header, tid) ||
+					 next && chain(false) && next->index_interest(header, tid);
 	}
 
-	void process_read(bam_hdr_t *header,
-										bam1_t *read) {
+	void process_read(bam_hdr_t *header, bam1_t *read) {
 		bool matches = filter(header, read);
 		if (matches) {
 			accept_count++;
@@ -118,7 +116,8 @@ int main(int argc, char *const *argv) {
 								 "details, see the man page." << std::endl;
 		std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)."
 							<< std::endl;
-		std::cout << "\t-c\tChain the queries, rather than use them independently." << std::endl;
+		std::cout << "\t-c\tChain the queries, rather than use them independently."
+							<< std::endl;
 		std::cout << "\t-I\tDo not use the index, even if it exists." << std::endl;
 		std::cout << "\t-v\tPrint some information along the way." << std::endl;
 		return 0;
@@ -136,7 +135,8 @@ int main(int argc, char *const *argv) {
 		std::cout << "An input file is required." << std::endl;
 		return 1;
 	}
-	std::shared_ptr<htsFile> input = std::shared_ptr<htsFile>(hts_open(input_filename, binary ? "rb" : "r"), hts_close);
+	std::shared_ptr<htsFile> input = std::shared_ptr<htsFile>(
+			hts_open(input_filename, binary ? "rb" : "r"), hts_close);
 	if (!input) {
 		perror(optarg);
 		return 1;
@@ -168,12 +168,13 @@ int main(int argc, char *const *argv) {
 	}
 
 	std::shared_ptr<output_wrangler> output;
-	for(auto it = argc - 2; it >= optind; it -= 2) {
-			auto output_file = std::shared_ptr<htsFile>(hts_open(argv[it + 1], "wb"), hts_close);
-			if (!output_file) {
-				perror(optarg);
-				return 1;
-			}
+	for (auto it = argc - 2; it >= optind; it -= 2) {
+		auto output_file =
+				std::shared_ptr<htsFile>(hts_open(argv[it + 1], "wb"), hts_close);
+		if (!output_file) {
+			perror(optarg);
+			return 1;
+		}
 		// Parse the input query.
 		std::shared_ptr<barf::ast_node> ast;
 		try {
@@ -206,11 +207,13 @@ int main(int argc, char *const *argv) {
 		if (index) {
 			std::stringstream index_function_name;
 			index_function_name << "index" << it;
-			auto index_func = ast->create_index_function(module, index_function_name.str());
+			auto index_func =
+					ast->create_index_function(module, index_function_name.str());
 			index_result.ptr = engine->getPointerToFunction(index_func);
 		}
 
-		output = std::make_shared<output_wrangler>(chain, output_file, result.func, index_result.func, output);
+		output = std::make_shared<output_wrangler>(
+				chain, output_file, result.func, index_result.func, output);
 	}
 
 	// Copy the header to the output.
@@ -231,7 +234,6 @@ int main(int argc, char *const *argv) {
 		}
 		output->write_summary();
 		return 0;
-		
 	}
 
 	// Cycle through all the reads.
