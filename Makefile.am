@@ -1,12 +1,12 @@
 NULL = 
 ACLOCAL_AMFLAGS = -I m4
-bin_PROGRAMS = barf barf-compile
+bin_PROGRAMS = barf barf-chain barf-compile
 lib_LTLIBRARIES = libbarf.la
 library_includedir=$(includedir)/barf
 library_include_HEADERS = barf.hpp
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = barf.pc
-man1_MANS = barf.1 barf-compile.1
+man1_MANS = barf.1 barf-chain.1 barf-compile.1
 man7_MANS = barf_queries.7
 
 libbarf_la_CPPFLAGS = \
@@ -43,6 +43,23 @@ barf_LDFLAGS =\
 	$(LLVM_RUN_LDFLAGS) \
 	$(NULL)
 barf_LDADD = \
+	libbarf.la \
+	$(HTS_LIBS) \
+	$(LLVM_RUN_LIBS) \
+	$(NULL)
+
+barf_chain_SOURCES = \
+	main-chain.cpp \
+	$(NULL)
+barf_chain_CPPFLAGS = \
+	-std=c++11 \
+	$(HTS_CFLAGS) -O2 \
+	$(LLVM_RUN_CPPFLAGS) -fexceptions \
+	$(NULL)
+barf_chain_LDFLAGS =\
+	$(LLVM_RUN_LDFLAGS) \
+	$(NULL)
+barf_chain_LDADD = \
 	libbarf.la \
 	$(HTS_LIBS) \
 	$(LLVM_RUN_LIBS) \

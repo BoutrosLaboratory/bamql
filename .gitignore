@@ -13,6 +13,7 @@ aclocal.m4
 ar-lib
 autom4te.cache
 barf
+barf-chain
 barf-compile
 compile
 config.*
