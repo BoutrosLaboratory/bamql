@@ -15,7 +15,7 @@ public:
 																llvm::IRBuilder<> &builder,
 																llvm::Value *read,
 																llvm::Value *header) {
-		return llvm::ConstantInt::getFalse(llvm::getGlobalContext());
+		return CF(llvm::getGlobalContext());
 	}
 	virtual llvm::Value *generate_index(llvm::Module *module,
 																			llvm::IRBuilder<> &builder,
