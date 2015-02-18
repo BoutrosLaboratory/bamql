@@ -1,20 +1,14 @@
 #include <unistd.h>
 #include <iostream>
-#include <htslib/hts.h>
-#include <htslib/sam.h>
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/ExecutionEngine/JIT.h>
 #include <sys/stat.h>
 #include "barf.hpp"
+#include "barf-runtime.hpp"
 
 // vim: set ts=2 sw=2 tw=0 :
 
-typedef bool (*filter_function)(bam_hdr_t *, bam1_t *);
-typedef bool (*index_function)(bam_hdr_t *, uint32_t);
-
 class data_collector {
 public:
-	data_collector(filter_function f, bool verbose_)
+	data_collector(barf::filter_function f, bool verbose_)
 			: filter(f), verbose(verbose_) {}
 	void process_read(bam_hdr_t *header,
 										bam1_t *read,
@@ -40,7 +34,7 @@ public:
 	}
 
 private:
-	filter_function filter;
+	barf::filter_function filter;
 	size_t accept_count = 0;
 	size_t reject_count = 0;
 	bool verbose;
@@ -184,11 +178,8 @@ int main(int argc, char *const *argv) {
 		return 1;
 	}
 
-	union {
-		filter_function func;
-		void *ptr;
-	} result = { NULL };
-	result.ptr = engine->getPointerToFunction(filter_func);
+	auto filter =
+			barf::getNativeFunction<barf::filter_function>(engine, filter_func);
 
 	// Open the input file.
 	std::shared_ptr<htsFile> input(hts_open(bam_filename, binary ? "rb" : "r"),
@@ -205,35 +196,29 @@ int main(int argc, char *const *argv) {
 	if (reject)
 		sam_hdr_write(reject.get(), header.get());
 
-	data_collector stats(result.func, verbose);
+	data_collector stats(filter, verbose);
 	// Decide if we can use an index.
 	std::shared_ptr<hts_idx_t> index(
 			ignore_index ? nullptr : hts_idx_load(bam_filename, HTS_FMT_BAI),
 			hts_idx_destroy);
 	if (index) {
-		union {
-			index_function func;
-			void *ptr;
-		} index_result = { NULL };
-		auto index_func = ast->create_index_function(module, "index");
-		index_result.ptr = engine->getPointerToFunction(index_func);
-		if (index_result.ptr != nullptr) {
-			// Use the index to seek chomosome of interest.
-			std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
-			for (auto tid = 0; tid < header->n_targets; tid++) {
-				if (!index_result.func(header.get(), tid)) {
-					continue;
-				}
-				std::shared_ptr<hts_itr_t> itr(
-						bam_itr_queryi(index.get(), tid, 0, INT_MAX), hts_itr_destroy);
-				while (bam_itr_next(input.get(), itr.get(), read.get()) >= 0) {
-					stats.process_read(
-							header.get(), read.get(), accept.get(), reject.get());
-				}
+		auto index_func = barf::getNativeFunction<barf::index_function>(
+				engine, ast->create_index_function(module, "index"));
+		// Use the index to seek chomosome of interest.
+		std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
+		for (auto tid = 0; tid < header->n_targets; tid++) {
+			if (!index_func(header.get(), tid)) {
+				continue;
 			}
-			stats.write_summary();
-			return 0;
+			std::shared_ptr<hts_itr_t> itr(
+					bam_itr_queryi(index.get(), tid, 0, INT_MAX), hts_itr_destroy);
+			while (bam_itr_next(input.get(), itr.get(), read.get()) >= 0) {
+				stats.process_read(
+						header.get(), read.get(), accept.get(), reject.get());
+			}
 		}
+		stats.write_summary();
+		return 0;
 	}
 
 	// Cycle through all the reads.

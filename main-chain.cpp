@@ -1,17 +1,11 @@
 #include <unistd.h>
 #include <iostream>
 #include <sstream>
-#include <htslib/hts.h>
-#include <htslib/sam.h>
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/ExecutionEngine/JIT.h>
 #include <sys/stat.h>
 #include "barf.hpp"
+#include "barf-runtime.hpp"
 
 // vim: set ts=2 sw=2 tw=0 :
-
-typedef bool (*filter_function)(bam_hdr_t *, bam1_t *);
-typedef bool (*index_function)(bam_hdr_t *, uint32_t);
 
 typedef bool (*chain_function)(bool);
 
@@ -28,8 +22,8 @@ class output_wrangler {
 public:
 	output_wrangler(chain_function c,
 									std::shared_ptr<htsFile> o,
-									filter_function f,
-									index_function i,
+									barf::filter_function f,
+									barf::index_function i,
 									std::shared_ptr<output_wrangler> n)
 			: chain(c), output_file(o), filter(f), index(i), next(n) {}
 
@@ -62,8 +56,8 @@ public:
 private:
 	chain_function chain;
 	std::shared_ptr<htsFile> output_file;
-	filter_function filter;
-	index_function index;
+	barf::filter_function filter;
+	barf::index_function index;
 	std::shared_ptr<output_wrangler> next;
 	size_t accept_count = 0;
 	size_t reject_count = 0;
@@ -192,28 +186,21 @@ int main(int argc, char *const *argv) {
 
 		std::stringstream function_name;
 		function_name << "filter" << it;
-		auto filter_func = ast->create_filter_function(module, function_name.str());
 
-		union {
-			filter_function func;
-			void *ptr;
-		} result = { NULL };
-		result.ptr = engine->getPointerToFunction(filter_func);
+		auto filter_func = barf::getNativeFunction<barf::filter_function>(
+				engine, ast->create_filter_function(module, function_name.str()));
 
-		union {
-			index_function func;
-			void *ptr;
-		} index_result = { NULL };
+		barf::index_function index_func = nullptr;
 		if (index) {
 			std::stringstream index_function_name;
 			index_function_name << "index" << it;
-			auto index_func =
-					ast->create_index_function(module, index_function_name.str());
-			index_result.ptr = engine->getPointerToFunction(index_func);
+			index_func = barf::getNativeFunction<barf::index_function>(
+					engine,
+					ast->create_index_function(module, index_function_name.str()));
 		}
 
 		output = std::make_shared<output_wrangler>(
-				chain, output_file, result.func, index_result.func, output);
+				chain, output_file, filter_func, index_func, output);
 	}
 
 	// Copy the header to the output.
