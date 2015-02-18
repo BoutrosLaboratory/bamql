@@ -47,6 +47,7 @@ libbarf_jit_la_LDFLAGS = \
 	$(NULL)
 libbarf_jit_la_SOURCES = \
 	iterator.cpp \
+	jit.cpp \
 	$(NULL)
 
 barf_SOURCES = \
