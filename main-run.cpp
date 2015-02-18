@@ -47,28 +47,6 @@ private:
 	size_t reject_count = 0;
 	bool verbose;
 };
-/**
- * We are given two arguments on the command line, which our user is almost
- * certainly likely to get wrong. Rather than force them to do the USB plug
- * thing of flipping it over three times, figure out which is the file and
- * which is the query.
- */
-bool figure_out_arguments(char *const *args,
-													char **out_file,
-													char **out_query) {
-	struct stat buf;
-	if (stat(args[0], &buf) == 0) {
-		*out_file = args[0];
-		*out_query = args[1];
-		return true;
-	}
-	if (stat(args[1], &buf) == 0) {
-		*out_file = args[1];
-		*out_query = args[0];
-		return true;
-	}
-	return false;
-}
 
 /**
  * Use LLVM to compile a query, JIT it, and run it over a BAM file.
@@ -78,19 +56,23 @@ int main(int argc, char *const *argv) {
 																	 // will be placed.
 	std::shared_ptr<htsFile> reject; // The file where reads not matching the
 																	 // query will be placed.
+	char *bam_filename = nullptr;
 	bool binary = false;
 	bool help = false;
 	bool verbose = false;
 	bool ignore_index = false;
 	int c;
 
-	while ((c = getopt(argc, argv, "bhIo:O:v")) != -1) {
+	while ((c = getopt(argc, argv, "bhf:Io:O:v")) != -1) {
 		switch (c) {
 		case 'b':
 			binary = true;
 			break;
 		case 'h':
 			help = true;
+			break;
+		case 'f':
+			bam_filename = optarg;
 			break;
 		case 'I':
 			ignore_index = true;
@@ -120,12 +102,13 @@ int main(int argc, char *const *argv) {
 	}
 	if (help) {
 		std::cout << argv[0] << " [-b] [-I] [-o accepted_reads.bam] [-O "
-														"rejected_reads.bam] [-v] input.bam query"
+														"rejected_reads.bam] [-v] -f input.bam query"
 							<< std::endl;
 		std::cout << "Filter a BAM/SAM file based on the provided query. For "
 								 "details, see the man page." << std::endl;
 		std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)."
 							<< std::endl;
+		std::cout << "\t-f\tThe input file to read." << std::endl;
 		std::cout << "\t-I\tDo not use the index, even if it exists." << std::endl;
 		std::cout << "\t-o\tThe output file for reads that pass the query."
 							<< std::endl;
@@ -135,20 +118,17 @@ int main(int argc, char *const *argv) {
 		return 0;
 	}
 
-	if (argc - optind != 2) {
-		std::cout << "Need a query and a BAM file." << std::endl;
+	if (argc - optind != 1) {
+		std::cout << "Need a query." << std::endl;
 		return 1;
 	}
-
-	char *query_text;
-	char *bam_filename;
-	if (!figure_out_arguments(argv + optind, &bam_filename, &query_text)) {
-		std::cerr << "The file supplied does not exist." << std::endl;
+	if (bam_filename == nullptr) {
+		std::cout << "Need an input file." << std::endl;
 		return 1;
 	}
 
 	// Parse the input query.
-	auto ast = barf::ast_node::parse_with_logging(std::string(query_text),
+	auto ast = barf::ast_node::parse_with_logging(std::string(argv[optind]),
 																								barf::getDefaultPredicates());
 	if (!ast) {
 		return 1;
