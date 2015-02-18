@@ -64,10 +64,11 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
-  // Create a new LLVM module and our function
+  // Create a new LLVM module and our functions
   auto module = new llvm::Module(name, llvm::getGlobalContext());
 
   auto filter_func = ast->create_filter_function(module, name);
+
   std::stringstream index_name;
   index_name << name << "_index";
   auto index_func = ast->create_index_function(module, index_name.str());
@@ -76,7 +77,7 @@ int main(int argc, char *const *argv) {
     module->dump();
   }
 
-  // Create the output file.
+  // Create the output bitcode file.
   std::stringstream output_filename;
   if (output == nullptr) {
     output_filename << name << ".bc";
@@ -92,6 +93,7 @@ int main(int argc, char *const *argv) {
   } else {
     llvm::WriteBitcodeToFile(module, out_data);
   }
+
   // Write the header file to stdout.
   std::cout << "#include <stdbool.h>\n#include <htslib/sam.h>\nextern bool "
             << name << "(bam_hdr_t*, bam1_t*)\nextern bool " << index_name.str()

@@ -5,12 +5,24 @@
 #include "barf.hpp"
 #include "barf-jit.hpp"
 
+/**
+ * A type for a chaining behaviour. This is a bitfield where the lowest bit is
+ * whether to accept the read on no-match and the next bit is whether to accept
+ * the read on match.
+ */
 typedef unsigned int chain_pattern;
 
+/**
+ * The different chaining behaviours allowed.
+ */
 std::map<std::string, chain_pattern> known_chains = { { "parallel", 3 },
                                                       { "series", 2 },
                                                       { "shuttle", 1 } };
 
+/**
+ * One link of a chain. It checks the filter, writes matching reads to a file,
+ * and propagates the read to the next link in the chain.
+ */
 class output_wrangler : public barf::check_iterator {
 public:
   output_wrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
@@ -24,6 +36,11 @@ public:
       : barf::check_iterator::check_iterator(engine, module, node, name),
         chain(c), file_name(file_name_), output_file(o), next(n) {}
 
+  /**
+   * We want this chromosome if our query is interested or the next link can
+   * make use of it _if_ it will see it upon failure (otherwise, its behaviour
+   * is determined by ours.
+   */
   bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid) {
     return check_iterator::wantChromosome(header, tid) ||
            next && chain & 1 && next->wantChromosome(header, tid);
@@ -35,6 +52,10 @@ public:
       next->ingestHeader(header);
   }
 
+  /**
+   * Write the read if it matches and then pass it down the chain if
+   * appropriate.
+   */
   void readMatch(bool matches,
                  std::shared_ptr<bam_hdr_t> &header,
                  std::shared_ptr<bam1_t> &read) {
@@ -65,7 +86,8 @@ private:
 };
 
 /**
- * Use LLVM to compile a query, JIT it, and run it over a BAM file.
+ * Compile many queries, then arrange them into a chain and squirt reads
+ * through it.
  */
 int main(int argc, char *const *argv) {
   const char *input_filename = nullptr;
@@ -138,8 +160,10 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
+  // Prepare a chain of wranglers.
   std::shared_ptr<output_wrangler> output;
   for (auto it = argc - 2; it >= optind; it -= 2) {
+    // Prepare the output file.
     auto output_file =
         std::shared_ptr<htsFile>(hts_open(argv[it + 1], "wb"), hts_close);
     if (!output_file) {
@@ -152,9 +176,10 @@ int main(int argc, char *const *argv) {
     if (!ast) {
       return 1;
     }
+
+    // Add the link to the chain.
     std::stringstream function_name;
     function_name << "filter" << it;
-
     output = std::make_shared<output_wrangler>(engine,
                                                module,
                                                ast,
@@ -165,6 +190,7 @@ int main(int argc, char *const *argv) {
                                                output);
   }
 
+  // Run the chain.
   if (output->processFile(input_filename, binary, ignore_index)) {
     output->write_summary();
   }

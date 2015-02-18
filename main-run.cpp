@@ -4,6 +4,10 @@
 #include "barf.hpp"
 #include "barf-jit.hpp"
 
+/**
+ * Handler for output collection. Shunts reads into appropriate files and tracks
+ * stats.
+ */
 class data_collector : public barf::check_iterator {
 public:
   data_collector(std::shared_ptr<llvm::ExecutionEngine> &engine,
@@ -141,6 +145,7 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
+  // Process the input file.
   data_collector stats(engine, module, ast, verbose, accept, reject);
   if (stats.processFile(bam_filename, binary, ignore_index)) {
     stats.write_summary();
