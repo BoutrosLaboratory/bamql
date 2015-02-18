@@ -20,10 +20,11 @@ public:
 									std::shared_ptr<barf::ast_node> &node,
 									std::string name,
 									chain_pattern c,
+									std::string file_name_,
 									std::shared_ptr<htsFile> o,
 									std::shared_ptr<output_wrangler> n)
 			: barf::check_iterator::check_iterator(engine, module, node, name),
-				chain(c), output_file(o), next(n) {}
+				chain(c), file_name(file_name_), output_file(o), next(n) {}
 
 	bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid) {
 		return check_iterator::wantChromosome(header, tid) ||
@@ -40,10 +41,8 @@ public:
 								 std::shared_ptr<bam_hdr_t> &header,
 								 std::shared_ptr<bam1_t> &read) {
 		if (matches) {
-			accept_count++;
+			count++;
 			sam_write1(output_file.get(), header.get(), read.get());
-		} else {
-			reject_count++;
 		}
 		if (next && chain & (1 << matches)) {
 			next->processRead(header, read);
@@ -51,8 +50,7 @@ public:
 	}
 
 	void write_summary() {
-		std::cout << "Accepted: " << accept_count << std::endl
-							<< "Rejected: " << reject_count << std::endl;
+		std::cout << count << " " << file_name << std::endl;
 		if (next) {
 			next->write_summary();
 		}
@@ -64,8 +62,8 @@ private:
 	barf::filter_function filter;
 	barf::index_function index;
 	std::shared_ptr<output_wrangler> next;
-	size_t accept_count = 0;
-	size_t reject_count = 0;
+	std::string file_name;
+	size_t count = 0;
 };
 
 /**
@@ -160,7 +158,7 @@ int main(int argc, char *const *argv) {
 		function_name << "filter" << it;
 
 		output = std::make_shared<output_wrangler>(
-				engine, module, ast, function_name.str(), chain, output_file, output);
+				engine, module, ast, function_name.str(), chain, std::string(argv[it + 1]), output_file, output);
 	}
 
 	if (output->processFile(input_filename, binary, ignore_index)) {
