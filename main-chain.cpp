@@ -6,16 +6,11 @@
 #include "barf-jit.hpp"
 
 // vim: set ts=2 sw=2 tw=0 :
+typedef unsigned int chain_pattern;
 
-typedef bool (*chain_function)(bool);
-
-bool parallel_chain(bool x) { return true; }
-bool series_chain(bool x) { return x; }
-bool shuttle_chain(bool x) { return !x; }
-
-std::map<std::string, chain_function> known_chains = {
-	{ "parallel", parallel_chain }, { "series", series_chain },
-	{ "shuttle", shuttle_chain }
+std::map<std::string, chain_pattern> known_chains = {
+	{ "parallel", 3 }, { "series", 2 },
+	{ "shuttle", 1 }
 };
 
 class output_wrangler : public barf::check_iterator {
@@ -24,7 +19,7 @@ public:
 									llvm::Module *module,
 									std::shared_ptr<barf::ast_node> &node,
 									std::string name,
-									chain_function c,
+									chain_pattern c,
 									std::shared_ptr<htsFile> o,
 									std::shared_ptr<output_wrangler> n)
 			: barf::check_iterator::check_iterator(engine, module, node, name),
@@ -32,7 +27,7 @@ public:
 
 	bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid) {
 		return check_iterator::wantChromosome(header, tid) ||
-					 next && chain(false) && next->wantChromosome(header, tid);
+					 next && chain & 1 && next->wantChromosome(header, tid);
 	}
 
 	void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
@@ -50,7 +45,7 @@ public:
 		} else {
 			reject_count++;
 		}
-		if (next && chain(matches)) {
+		if (next && chain & (1 << matches)) {
 			next->processRead(header, read);
 		}
 	}
@@ -64,7 +59,7 @@ public:
 	}
 
 private:
-	chain_function chain;
+	chain_pattern chain;
 	std::shared_ptr<htsFile> output_file;
 	barf::filter_function filter;
 	barf::index_function index;
@@ -79,7 +74,7 @@ private:
 int main(int argc, char *const *argv) {
 	const char *input_filename = nullptr;
 	bool binary = false;
-	chain_function chain = parallel_chain;
+	chain_pattern chain = known_chains["parallel"];
 	bool help = false;
 	bool ignore_index = false;
 	int c;
