@@ -3,7 +3,7 @@
 #include <sstream>
 #include <sys/stat.h>
 #include "barf.hpp"
-#include "barf-runtime.hpp"
+#include "barf-jit.hpp"
 
 // vim: set ts=2 sw=2 tw=0 :
 
@@ -18,30 +18,40 @@ std::map<std::string, chain_function> known_chains = {
 	{ "shuttle", shuttle_chain }
 };
 
-class output_wrangler {
+class output_wrangler : public barf::check_iterator {
 public:
-	output_wrangler(chain_function c,
+	output_wrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
+									llvm::Module *module,
+									std::shared_ptr<barf::ast_node> &node,
+									std::string name,
+									chain_function c,
 									std::shared_ptr<htsFile> o,
-									barf::filter_function f,
-									barf::index_function i,
 									std::shared_ptr<output_wrangler> n)
-			: chain(c), output_file(o), filter(f), index(i), next(n) {}
+			: barf::check_iterator::check_iterator(engine, module, node, name),
+				chain(c), output_file(o), next(n) {}
 
-	bool index_interest(bam_hdr_t *header, uint32_t tid) {
-		return index(header, tid) ||
-					 next && chain(false) && next->index_interest(header, tid);
+	bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid) {
+		return check_iterator::wantChromosome(header, tid) ||
+					 next && chain(false) && next->wantChromosome(header, tid);
 	}
 
-	void process_read(bam_hdr_t *header, bam1_t *read) {
-		bool matches = filter(header, read);
+	void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
+		sam_hdr_write(output_file.get(), header.get());
+		if (next)
+			next->ingestHeader(header);
+	}
+
+	void readMatch(bool matches,
+								 std::shared_ptr<bam_hdr_t> &header,
+								 std::shared_ptr<bam1_t> &read) {
 		if (matches) {
 			accept_count++;
-			sam_write1(output_file.get(), header, read);
+			sam_write1(output_file.get(), header.get(), read.get());
 		} else {
 			reject_count++;
 		}
 		if (next && chain(matches)) {
-			next->process_read(header, read);
+			next->processRead(header, read);
 		}
 	}
 
@@ -129,35 +139,11 @@ int main(int argc, char *const *argv) {
 		std::cout << "An input file is required." << std::endl;
 		return 1;
 	}
-	std::shared_ptr<htsFile> input = std::shared_ptr<htsFile>(
-			hts_open(input_filename, binary ? "rb" : "r"), hts_close);
-	if (!input) {
-		perror(optarg);
-		return 1;
-	}
-
-	// Try to open the index.
-	std::shared_ptr<hts_idx_t> index(
-			ignore_index ? nullptr : hts_idx_load(input_filename, HTS_FMT_BAI),
-			hts_idx_destroy);
-
 	// Create a new LLVM module and JIT
 	LLVMInitializeNativeTarget();
 	auto module = new llvm::Module("barf", llvm::getGlobalContext());
-	std::string error;
-	std::vector<std::string> attrs;
-	attrs.push_back("-avx"); // The AVX support (auto-vectoring) should be
-													 // disabled since the JIT isn't smart enough to
-													 // detect this, even though there is a detection
-													 // routine.
-	std::shared_ptr<llvm::ExecutionEngine> engine(
-			llvm::EngineBuilder(module)
-					.setEngineKind(llvm::EngineKind::JIT)
-					.setErrorStr(&error)
-					.setMAttrs(attrs)
-					.create());
+	auto engine = barf::createEngine(module);
 	if (!engine) {
-		std::cout << error << std::endl;
 		return 1;
 	}
 
@@ -175,51 +161,15 @@ int main(int argc, char *const *argv) {
 		if (!ast) {
 			return 1;
 		}
-
 		std::stringstream function_name;
 		function_name << "filter" << it;
 
-		auto filter_func = barf::getNativeFunction<barf::filter_function>(
-				engine, ast->create_filter_function(module, function_name.str()));
-
-		barf::index_function index_func = nullptr;
-		if (index) {
-			std::stringstream index_function_name;
-			index_function_name << "index" << it;
-			index_func = barf::getNativeFunction<barf::index_function>(
-					engine,
-					ast->create_index_function(module, index_function_name.str()));
-		}
-
 		output = std::make_shared<output_wrangler>(
-				chain, output_file, filter_func, index_func, output);
+				engine, module, ast, function_name.str(), chain, output_file, output);
 	}
 
-	// Copy the header to the output.
-	std::shared_ptr<bam_hdr_t> header(sam_hdr_read(input.get()), bam_hdr_destroy);
-
-	if (index) {
-		// Use the index to seek chomosome of interest.
-		std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
-		for (auto tid = 0; tid < header->n_targets; tid++) {
-			if (!output->index_interest(header.get(), tid)) {
-				continue;
-			}
-			std::shared_ptr<hts_itr_t> itr(
-					bam_itr_queryi(index.get(), tid, 0, INT_MAX), hts_itr_destroy);
-			while (bam_itr_next(input.get(), itr.get(), read.get()) >= 0) {
-				output->process_read(header.get(), read.get());
-			}
-		}
+	if (output->processFile(input_filename, binary, ignore_index)) {
 		output->write_summary();
-		return 0;
 	}
-
-	// Cycle through all the reads.
-	std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
-	while (sam_read1(input.get(), header.get(), read.get()) >= 0) {
-		output->process_read(header.get(), read.get());
-	}
-	output->write_summary();
 	return 0;
 }

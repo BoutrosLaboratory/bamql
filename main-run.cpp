@@ -2,27 +2,34 @@
 #include <iostream>
 #include <sys/stat.h>
 #include "barf.hpp"
-#include "barf-runtime.hpp"
+#include "barf-jit.hpp"
 
 // vim: set ts=2 sw=2 tw=0 :
 
-class data_collector {
+class data_collector : public barf::check_iterator {
 public:
-	data_collector(barf::filter_function f, bool verbose_)
-			: filter(f), verbose(verbose_) {}
-	void process_read(bam_hdr_t *header,
-										bam1_t *read,
-										htsFile *accept,
-										htsFile *reject) {
-		if (filter(header, read)) {
-			accept_count++;
-			if (accept != nullptr)
-				sam_write1(accept, header, read);
-		} else {
-			reject_count++;
-			if (reject != nullptr)
-				sam_write1(reject, header, read);
-		}
+	data_collector(std::shared_ptr<llvm::ExecutionEngine> &engine,
+								 llvm::Module *module,
+								 std::shared_ptr<barf::ast_node> &node,
+								 bool verbose_,
+								 std::shared_ptr<htsFile> &a,
+								 std::shared_ptr<htsFile> &r)
+			: barf::check_iterator::check_iterator(
+						engine, module, node, std::string("filter")),
+				verbose(verbose_), accept(a), reject(r) {}
+	void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
+		if (accept)
+			sam_hdr_write(accept.get(), header.get());
+		if (reject)
+			sam_hdr_write(reject.get(), header.get());
+	}
+	void readMatch(bool matches,
+								 std::shared_ptr<bam_hdr_t> &header,
+								 std::shared_ptr<bam1_t> &read) {
+		(matches ? accept_count : reject_count)++;
+		std::shared_ptr<htsFile> &chosen = matches ? accept : reject;
+		if (chosen)
+			sam_write1(chosen.get(), header.get(), read.get());
 		if (verbose && (accept_count + reject_count) % 1000000 == 0) {
 			std::cout << "So far, Accepted: " << accept_count
 								<< " Rejected: " << reject_count << std::endl;
@@ -34,7 +41,8 @@ public:
 	}
 
 private:
-	barf::filter_function filter;
+	std::shared_ptr<htsFile> accept;
+	std::shared_ptr<htsFile> reject;
 	size_t accept_count = 0;
 	size_t reject_count = 0;
 	bool verbose;
@@ -150,74 +158,16 @@ int main(int argc, char *const *argv) {
 	LLVMInitializeNativeTarget();
 	auto module = new llvm::Module("barf", llvm::getGlobalContext());
 
-	auto filter_func = ast->create_filter_function(module, "filter");
-
-	// Create a JIT and convert the generated code to a callable function pointer.
-	std::string error;
-	std::vector<std::string> attrs;
-	attrs.push_back("-avx"); // The AVX support (auto-vectoring) should be
-													 // disabled since the JIT isn't smart enough to
-													 // detect this, even though there is a detection
-													 // routine.
-	std::shared_ptr<llvm::ExecutionEngine> engine(
-			llvm::EngineBuilder(module)
-					.setEngineKind(llvm::EngineKind::JIT)
-					.setErrorStr(&error)
-					.setMAttrs(attrs)
-					.create());
+	auto engine = barf::createEngine(module);
 	if (!engine) {
-		std::cout << error << std::endl;
 		return 1;
 	}
 
-	auto filter =
-			barf::getNativeFunction<barf::filter_function>(engine, filter_func);
-
-	// Open the input file.
-	std::shared_ptr<htsFile> input(hts_open(bam_filename, binary ? "rb" : "r"),
-																 hts_close);
-	if (!input) {
-		perror(argv[optind]);
-		return 1;
-	}
-
-	// Copy the header to the output.
-	std::shared_ptr<bam_hdr_t> header(sam_hdr_read(input.get()), bam_hdr_destroy);
-	if (accept)
-		sam_hdr_write(accept.get(), header.get());
-	if (reject)
-		sam_hdr_write(reject.get(), header.get());
-
-	data_collector stats(filter, verbose);
-	// Decide if we can use an index.
-	std::shared_ptr<hts_idx_t> index(
-			ignore_index ? nullptr : hts_idx_load(bam_filename, HTS_FMT_BAI),
-			hts_idx_destroy);
-	if (index) {
-		auto index_func = barf::getNativeFunction<barf::index_function>(
-				engine, ast->create_index_function(module, "index"));
-		// Use the index to seek chomosome of interest.
-		std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
-		for (auto tid = 0; tid < header->n_targets; tid++) {
-			if (!index_func(header.get(), tid)) {
-				continue;
-			}
-			std::shared_ptr<hts_itr_t> itr(
-					bam_itr_queryi(index.get(), tid, 0, INT_MAX), hts_itr_destroy);
-			while (bam_itr_next(input.get(), itr.get(), read.get()) >= 0) {
-				stats.process_read(
-						header.get(), read.get(), accept.get(), reject.get());
-			}
-		}
+	data_collector stats(engine, module, ast, verbose, accept, reject);
+	if (stats.processFile(bam_filename, binary, ignore_index)) {
 		stats.write_summary();
 		return 0;
+	} else {
+		return 1;
 	}
-
-	// Cycle through all the reads.
-	std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
-	while (sam_read1(input.get(), header.get(), read.get()) >= 0) {
-		stats.process_read(header.get(), read.get(), accept.get(), reject.get());
-	}
-	stats.write_summary();
-	return 0;
 }

@@ -29,5 +29,5 @@ PKG_CHECK_MODULES(HTS, [ htslib ], [], [
 	LIBS="$ORIGINAL_LIBS"
 ])
 
-AC_CONFIG_FILES([Makefile barf.pc])
+AC_CONFIG_FILES([Makefile barf.pc barf-jit.pc])
 AC_OUTPUT

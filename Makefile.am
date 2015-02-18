@@ -1,7 +1,7 @@
 NULL = 
 ACLOCAL_AMFLAGS = -I m4
 bin_PROGRAMS = barf barf-chain barf-compile
-lib_LTLIBRARIES = libbarf.la
+lib_LTLIBRARIES = libbarf.la libbarf-jit.la
 library_includedir=$(includedir)/barf
 library_include_HEADERS = barf.hpp barf-runtime.hpp
 pkgconfigdir = $(libdir)/pkgconfig
@@ -31,6 +31,24 @@ libbarf_la_SOURCES = \
 	runtime.cpp \
 	$(NULL)
 
+libbarf_jit_la_CPPFLAGS = \
+	-std=c++11 \
+	$(LLVM_RUN_CPPFLAGS) -fexceptions \
+	$(HTS_CFLAGS) -O2 \
+	$(NULL)
+libbarf_jit_la_LIBADD = \
+	$(LLVM_RUN_LIBS) \
+	$(HTS_LIBS) \
+	$(NULL)
+libbarf_jit_la_LDFLAGS = \
+	$(LLVM_RUN_LDFLAGS) \
+	-version-info 0:0:0 \
+	-no-undefined \
+	$(NULL)
+libbarf_jit_la_SOURCES = \
+	iterator.cpp \
+	$(NULL)
+
 barf_SOURCES = \
 	main-run.cpp \
 	$(NULL)
@@ -44,6 +62,7 @@ barf_LDFLAGS =\
 	$(NULL)
 barf_LDADD = \
 	libbarf.la \
+	libbarf-jit.la \
 	$(HTS_LIBS) \
 	$(LLVM_RUN_LIBS) \
 	$(NULL)
@@ -61,6 +80,7 @@ barf_chain_LDFLAGS =\
 	$(NULL)
 barf_chain_LDADD = \
 	libbarf.la \
+	libbarf-jit.la \
 	$(HTS_LIBS) \
 	$(LLVM_RUN_LIBS) \
 	$(NULL)
