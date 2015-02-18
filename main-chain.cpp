@@ -170,17 +170,9 @@ int main(int argc, char *const *argv) {
 			return 1;
 		}
 		// Parse the input query.
-		std::shared_ptr<barf::ast_node> ast;
-		try {
-			ast = barf::ast_node::parse(std::string(argv[it]),
-																	barf::getDefaultPredicates());
-		}
-		catch (barf::parse_error e) {
-			std::cerr << "Error: " << e.what() << std::endl << argv[it] << std::endl;
-			for (auto i = 0; i < e.where(); i++) {
-				std::cerr << " ";
-			}
-			std::cerr << "^" << std::endl;
+		std::shared_ptr<barf::ast_node> ast = barf::ast_node::parse_with_logging(
+				std::string(argv[it]), barf::getDefaultPredicates());
+		if (!ast) {
 			return 1;
 		}
 

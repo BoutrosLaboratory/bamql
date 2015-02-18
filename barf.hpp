@@ -75,6 +75,9 @@ public:
 	 */
 	static std::shared_ptr<ast_node> parse(
 			const std::string &input, predicate_map predicates) throw(parse_error);
+	static std::shared_ptr<barf::ast_node> parse_with_logging(
+			const std::string &input, predicate_map predicates);
+
 	/**
 	 * Render this syntax node to LLVM.
 	 * @param read: A reference to the BAM read.

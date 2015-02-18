@@ -1,3 +1,4 @@
+#include <iostream>
 #include "barf.hpp"
 
 // vim: set ts=2 sw=2 tw=0 :
@@ -137,5 +138,21 @@ std::shared_ptr<ast_node> ast_node::parse(
 		throw parse_error(index, "Junk at end of input.");
 	}
 	return node;
+}
+
+std::shared_ptr<barf::ast_node> barf::ast_node::parse_with_logging(
+		const std::string &input, predicate_map predicates) {
+	std::shared_ptr<barf::ast_node> ast;
+	try {
+		ast = barf::ast_node::parse(input, predicates);
+	}
+	catch (barf::parse_error e) {
+		std::cerr << "Error: " << e.what() << std::endl << input << std::endl;
+		for (auto i = 0; i < e.where(); i++) {
+			std::cerr << " ";
+		}
+		std::cerr << "^" << std::endl;
+	}
+	return ast;
 }
 }
