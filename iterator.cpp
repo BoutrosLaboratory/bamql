@@ -5,9 +5,10 @@
 
 barf::read_iterator::read_iterator() {}
 
-static void showHtsError(int result) {
+static bool checkHtsError(int result) {
   if (result == -1) {
     /* No error. */
+	return true;
   } else if (result == -2) {
     std::cerr << "Input file is truncated." << std::endl;
   } else if (result == -3) {
@@ -17,6 +18,7 @@ static void showHtsError(int result) {
   } else {
     std::cerr << "A mysterious error occurred: " << result << std::endl;
   }
+  return false;
 }
 
 bool barf::read_iterator::processFile(const char *file_name,
@@ -40,7 +42,6 @@ bool barf::read_iterator::processFile(const char *file_name,
       hts_idx_destroy);
 
   if (index) {
-    int result = -1;
     std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
     // Rummage through all the chromosomes in the header...
     for (auto tid = 0; tid < header->n_targets; tid++) {
@@ -50,14 +51,14 @@ bool barf::read_iterator::processFile(const char *file_name,
       // ...and use the index to seek through chomosome of interest.
       std::shared_ptr<hts_itr_t> itr(
           bam_itr_queryi(index.get(), tid, 0, INT_MAX), hts_itr_destroy);
+	  int result;
       while ((result = bam_itr_next(input.get(), itr.get(), read.get())) >= 0) {
         processRead(header, read);
       }
-      if (result != -1) {
-        break;
+      if (!checkHtsError(result)) {
+        return false;
       }
     }
-    showHtsError(result);
     return true;
   }
 
@@ -67,7 +68,7 @@ bool barf::read_iterator::processFile(const char *file_name,
   while ((result = sam_read1(input.get(), header.get(), read.get())) >= 0) {
     processRead(header, read);
   }
-  showHtsError(result);
+  return checkHtsError(result);
 }
 
 barf::check_iterator::check_iterator(std::shared_ptr<llvm::ExecutionEngine> &e,
