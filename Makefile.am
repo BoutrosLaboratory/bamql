@@ -37,6 +37,7 @@ libbarf_jit_la_CPPFLAGS = \
 	$(HTS_CFLAGS) -O2 \
 	$(NULL)
 libbarf_jit_la_LIBADD = \
+	libbarf.la \
 	$(LLVM_RUN_LIBS) \
 	$(HTS_LIBS) \
 	$(NULL)
