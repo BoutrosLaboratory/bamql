@@ -193,6 +193,8 @@ int main(int argc, char *const *argv) {
   // Run the chain.
   if (output->processFile(input_filename, binary, ignore_index)) {
     output->write_summary();
-  }
-  return 0;
+  	return 0;
+  } else {
+  	return 1;
+	}
 }
