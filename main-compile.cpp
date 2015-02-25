@@ -58,8 +58,8 @@ int main(int argc, char *const *argv) {
   }
 
   // Parse the input query.
-  auto ast = barf::ast_node::parse_with_logging(std::string(argv[optind]),
-                                                barf::getDefaultPredicates());
+  auto ast = barf::AstNode::parseWithLogging(std::string(argv[optind]),
+                                             barf::getDefaultPredicates());
   if (!ast) {
     return 1;
   }
@@ -67,11 +67,11 @@ int main(int argc, char *const *argv) {
   // Create a new LLVM module and our functions
   auto module = new llvm::Module(name, llvm::getGlobalContext());
 
-  auto filter_func = ast->create_filter_function(module, name);
+  auto filter_func = ast->createFilterFunction(module, name);
 
   std::stringstream index_name;
   index_name << name << "_index";
-  auto index_func = ast->create_index_function(module, index_name.str());
+  auto index_func = ast->createIndexFunction(module, index_name.str());
 
   if (dump) {
     module->dump();

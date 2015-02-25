@@ -21,9 +21,9 @@ llvm::Type *getBamHeaderType(llvm::Module *module);
 /**
  * The exception thrown when a parse error occurs.
  */
-class parse_error : public std::runtime_error {
+class ParseError : public std::runtime_error {
 public:
-  parse_error(size_t index, std::string what);
+  ParseError(size_t index, std::string what);
   /**
    * The position in the parse string where the error occured.
    */
@@ -33,30 +33,28 @@ private:
   size_t index;
 };
 
-class ast_node;
+class AstNode;
 
 /**
  * A predicate is a function that parses a named predicate, and, upon success,
  * returns a syntax node.
  */
-typedef std::function<std::shared_ptr<ast_node>(
-    const std::string &input, size_t &index) throw(parse_error)> predicate;
+typedef std::function<std::shared_ptr<AstNode>(
+    const std::string &input, size_t &index) throw(ParseError)> Predicate;
 
 /**
  * A collection of predicates, where the name is the keyword in the query
  * indicating which predicate is selected.
  */
-typedef std::map<std::string, predicate> predicate_map;
+typedef std::map<std::string, Predicate> PredicateMap;
 
 /**
  * Get a map of the predicates as included in the library. These should be as
  * described in the documenation.
  */
-predicate_map getDefaultPredicates();
+PredicateMap getDefaultPredicates();
 
-class ast_node;
-
-typedef llvm::Value *(barf::ast_node::*generate_member)(
+typedef llvm::Value *(barf::AstNode::*GenerateMember)(
     llvm::Module *module,
     llvm::IRBuilder<> &builder,
     llvm::Value *read,
@@ -65,16 +63,16 @@ typedef llvm::Value *(barf::ast_node::*generate_member)(
 /**
  * An abstract syntax node representing a predicate or logical operation.
  */
-class ast_node {
+class AstNode {
 public:
   /**
    * Parse a string into a syntax tree using the built-in logical operations and
    * the predicates provided.
    */
-  static std::shared_ptr<ast_node> parse(
-      const std::string &input, predicate_map predicates) throw(parse_error);
-  static std::shared_ptr<barf::ast_node> parse_with_logging(
-      const std::string &input, predicate_map predicates);
+  static std::shared_ptr<AstNode> parse(
+      const std::string &input, PredicateMap predicates) throw(ParseError);
+  static std::shared_ptr<AstNode> parseWithLogging(const std::string &input,
+                                                   PredicateMap predicates);
 
   /**
    * Render this syntax node to LLVM.
@@ -93,120 +91,120 @@ public:
    * @param header: A reference to the BAM header.
    * @returns: A boolean value indicating success or failure of this node.
    */
-  virtual llvm::Value *generate_index(llvm::Module *module,
-                                      llvm::IRBuilder<> &builder,
-                                      llvm::Value *chromosome,
-                                      llvm::Value *header);
+  virtual llvm::Value *generateIndex(llvm::Module *module,
+                                     llvm::IRBuilder<> &builder,
+                                     llvm::Value *chromosome,
+                                     llvm::Value *header);
   /**
    * Generate the LLVM function from the query.
    */
-  llvm::Function *create_filter_function(llvm::Module *module,
-                                         llvm::StringRef name);
-  llvm::Function *create_index_function(llvm::Module *module,
-                                        llvm::StringRef name);
+  llvm::Function *createFilterFunction(llvm::Module *module,
+                                       llvm::StringRef name);
+  llvm::Function *createIndexFunction(llvm::Module *module,
+                                      llvm::StringRef name);
 
 private:
-  llvm::Function *create_function(llvm::Module *module,
-                                  llvm::StringRef name,
-                                  llvm::StringRef param_name,
-                                  llvm::Type *param_type,
-                                  barf::generate_member member);
+  llvm::Function *createFunction(llvm::Module *module,
+                                 llvm::StringRef name,
+                                 llvm::StringRef param_name,
+                                 llvm::Type *param_type,
+                                 barf::GenerateMember member);
 };
 
 /**
  * An abstract syntax node encompassing logical ANDs and ORs that can
  * short-circuit.
  */
-class short_circuit_node : public ast_node {
+class ShortCircuitNode : public AstNode {
 public:
-  short_circuit_node(std::shared_ptr<ast_node> left, std::shared_ptr<ast_node>);
+  ShortCircuitNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode>);
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
                                 llvm::Value *header);
-  virtual llvm::Value *generate_index(llvm::Module *module,
-                                      llvm::IRBuilder<> &builder,
-                                      llvm::Value *read,
-                                      llvm::Value *header);
+  virtual llvm::Value *generateIndex(llvm::Module *module,
+                                     llvm::IRBuilder<> &builder,
+                                     llvm::Value *read,
+                                     llvm::Value *header);
   /**
    * The value that causes short circuting.
    */
   virtual llvm::Value *branchValue() = 0;
 
 private:
-  llvm::Value *generate_generic(generate_member member,
-                                llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
-                                llvm::Value *param,
-                                llvm::Value *header);
-  std::shared_ptr<ast_node> left;
-  std::shared_ptr<ast_node> right;
+  llvm::Value *generateGeneric(GenerateMember member,
+                               llvm::Module *module,
+                               llvm::IRBuilder<> &builder,
+                               llvm::Value *param,
+                               llvm::Value *header);
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
 };
 /**
  * A syntax node for logical conjunction (AND).
  */
-class and_node : public short_circuit_node {
+class AndNode : public ShortCircuitNode {
 public:
-  and_node(std::shared_ptr<ast_node> left, std::shared_ptr<ast_node>);
+  AndNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode>);
   virtual llvm::Value *branchValue();
 };
 /**
  * A syntax node for logical disjunction (OR).
  */
-class or_node : public short_circuit_node {
+class OrNode : public ShortCircuitNode {
 public:
-  or_node(std::shared_ptr<ast_node> left, std::shared_ptr<ast_node>);
+  OrNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode>);
   virtual llvm::Value *branchValue();
 };
 /**
  * A syntax node for logical complement (NOT).
  */
-class not_node : public ast_node {
+class NotNode : public AstNode {
 public:
-  not_node(std::shared_ptr<ast_node> expr);
+  NotNode(std::shared_ptr<AstNode> expr);
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
                                 llvm::Value *header);
-  virtual llvm::Value *generate_index(llvm::Module *module,
-                                      llvm::IRBuilder<> &builder,
-                                      llvm::Value *read,
-                                      llvm::Value *header);
+  virtual llvm::Value *generateIndex(llvm::Module *module,
+                                     llvm::IRBuilder<> &builder,
+                                     llvm::Value *read,
+                                     llvm::Value *header);
 
 private:
-  std::shared_ptr<ast_node> expr;
+  std::shared_ptr<AstNode> expr;
 };
 /**
  * A syntax node for ternary if.
  */
-class conditional_node : public ast_node {
+class ConditionalNode : public AstNode {
 public:
-  conditional_node(std::shared_ptr<ast_node> condition,
-                   std::shared_ptr<ast_node> then_part,
-                   std::shared_ptr<ast_node> else_part);
+  ConditionalNode(std::shared_ptr<AstNode> condition,
+                  std::shared_ptr<AstNode> then_part,
+                  std::shared_ptr<AstNode> else_part);
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
                                 llvm::Value *header);
-  virtual llvm::Value *generate_index(llvm::Module *module,
-                                      llvm::IRBuilder<> &builder,
-                                      llvm::Value *read,
-                                      llvm::Value *header);
+  virtual llvm::Value *generateIndex(llvm::Module *module,
+                                     llvm::IRBuilder<> &builder,
+                                     llvm::Value *read,
+                                     llvm::Value *header);
 
 private:
-  std::shared_ptr<ast_node> condition;
-  std::shared_ptr<ast_node> then_part;
-  std::shared_ptr<ast_node> else_part;
+  std::shared_ptr<AstNode> condition;
+  std::shared_ptr<AstNode> then_part;
+  std::shared_ptr<AstNode> else_part;
 };
 
 /**
  * A function to parse a valid non-empty integer.
  */
-int parse_int(const std::string &input, size_t &index) throw(parse_error);
+int parseInt(const std::string &input, size_t &index) throw(ParseError);
 /**
  * A function to parse a valid non-empty floating point value.
  */
-double parse_double(const std::string &input, size_t &index) throw(parse_error);
+double parseDouble(const std::string &input, size_t &index) throw(ParseError);
 /**
  * A function to parse a non-empty string.
  * @param accept_chars: A list of valid characters that may be present in the
@@ -214,27 +212,27 @@ double parse_double(const std::string &input, size_t &index) throw(parse_error);
  * @param reject: If true, this inverts the meaning of `accept_chars`, accepting
  * any character execpt those listed.
  */
-std::string parse_str(const std::string &input,
-                      size_t &index,
-                      const std::string &accept_chars,
-                      bool reject = false) throw(parse_error);
+std::string parseStr(const std::string &input,
+                     size_t &index,
+                     const std::string &accept_chars,
+                     bool reject = false) throw(ParseError);
 /**
  * Consume whitespace in the parse stream.
  * @returns: true if any whitespace was consumed.
  */
-bool parse_space(const std::string &input, size_t &index);
+bool parseSpace(const std::string &input, size_t &index);
 /**
  * Consume the specified character with optional whitespace before and after.
  */
-void parse_char_in_space(const std::string &input,
-                         size_t &index,
-                         char c) throw(parse_error);
+void parseCharInSpace(const std::string &input,
+                      size_t &index,
+                      char c) throw(ParseError);
 /**
  * Attempt to parse the supplied keyword, returing true if it could be parsed.
  */
-bool parse_keyword(const std::string &input,
-                   size_t &index,
-                   const std::string &keyword);
+bool parseKeyword(const std::string &input,
+                  size_t &index,
+                  const std::string &keyword);
 /**
  * This helper function puts a string into a global constant and then
  * returns a pointer to it.

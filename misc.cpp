@@ -3,18 +3,18 @@
 namespace barf {
 extern llvm::Module *define_runtime(llvm::Module *module);
 
-llvm::Value *ast_node::generate_index(llvm::Module *module,
-                                      llvm::IRBuilder<> &builder,
-                                      llvm::Value *read,
-                                      llvm::Value *header) {
+llvm::Value *AstNode::generateIndex(llvm::Module *module,
+                                    llvm::IRBuilder<> &builder,
+                                    llvm::Value *read,
+                                    llvm::Value *header) {
   return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 
-llvm::Function *ast_node::create_function(llvm::Module *module,
-                                          llvm::StringRef name,
-                                          llvm::StringRef param_name,
-                                          llvm::Type *param_type,
-                                          barf::generate_member member) {
+llvm::Function *AstNode::createFunction(llvm::Module *module,
+                                        llvm::StringRef name,
+                                        llvm::StringRef param_name,
+                                        llvm::Type *param_type,
+                                        GenerateMember member) {
   auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
       name,
       llvm::Type::getInt1Ty(llvm::getGlobalContext()),
@@ -36,22 +36,22 @@ llvm::Function *ast_node::create_function(llvm::Module *module,
   return func;
 }
 
-llvm::Function *ast_node::create_filter_function(llvm::Module *module,
-                                                 llvm::StringRef name) {
-  return create_function(module,
-                         name,
-                         "read",
-                         llvm::PointerType::get(barf::getBamType(module), 0),
-                         &barf::ast_node::generate);
+llvm::Function *AstNode::createFilterFunction(llvm::Module *module,
+                                              llvm::StringRef name) {
+  return createFunction(module,
+                        name,
+                        "read",
+                        llvm::PointerType::get(barf::getBamType(module), 0),
+                        &barf::AstNode::generate);
 }
 
-llvm::Function *ast_node::create_index_function(llvm::Module *module,
-                                                llvm::StringRef name) {
-  return create_function(module,
-                         name,
-                         "tid",
-                         llvm::Type::getInt32Ty(llvm::getGlobalContext()),
-                         &barf::ast_node::generate_index);
+llvm::Function *AstNode::createIndexFunction(llvm::Module *module,
+                                             llvm::StringRef name) {
+  return createFunction(module,
+                        name,
+                        "tid",
+                        llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+                        &barf::AstNode::generateIndex);
 }
 
 llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {

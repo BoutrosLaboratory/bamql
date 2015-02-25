@@ -10,12 +10,12 @@ namespace barf {
 /**
  * The run-time type of a filter.
  */
-typedef bool (*filter_function)(bam_hdr_t *, bam1_t *);
+typedef bool (*FilterFunction)(bam_hdr_t *, bam1_t *);
 
 /**
  * The run-time type of an index checker.
  */
-typedef bool (*index_function)(bam_hdr_t *, uint32_t);
+typedef bool (*IndexFunction)(bam_hdr_t *, uint32_t);
 
 /**
  * Call the JITer on a function and return it as the correct type.
@@ -39,9 +39,9 @@ std::shared_ptr<llvm::ExecutionEngine> createEngine(llvm::Module *module);
 /**
  * Iterator over all the reads in a BAM file, using an index if possible.
  */
-class read_iterator {
+class ReadIterator {
 public:
-  read_iterator();
+  ReadIterator();
   /**
    * Should the reads on this chromosome be examined?
    */
@@ -67,12 +67,12 @@ public:
 /**
  * Iterate over the reads in a BAM file, preselecting those through a filter.
  */
-class check_iterator : public read_iterator {
+class CheckIterator : public ReadIterator {
 public:
-  check_iterator(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                 llvm::Module *module,
-                 std::shared_ptr<ast_node> &node,
-                 std::string name);
+  CheckIterator(std::shared_ptr<llvm::ExecutionEngine> &engine,
+                llvm::Module *module,
+                std::shared_ptr<AstNode> &node,
+                std::string name);
   virtual bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid);
   virtual void processRead(std::shared_ptr<bam_hdr_t> &header,
                            std::shared_ptr<bam1_t> &read);
@@ -89,8 +89,8 @@ public:
                          std::shared_ptr<bam1_t> &read) = 0;
 
 private:
-  barf::filter_function filter;
-  barf::index_function index;
+  barf::FilterFunction filter;
+  barf::IndexFunction index;
   std::shared_ptr<llvm::ExecutionEngine> engine;
 };
 }

@@ -3,12 +3,12 @@
 #include <sstream>
 #include "barf-jit.hpp"
 
-barf::read_iterator::read_iterator() {}
+barf::ReadIterator::ReadIterator() {}
 
 static bool checkHtsError(int result) {
   if (result == -1) {
     /* No error. */
-	return true;
+    return true;
   } else if (result == -2) {
     std::cerr << "Input file is truncated." << std::endl;
   } else if (result == -3) {
@@ -21,9 +21,9 @@ static bool checkHtsError(int result) {
   return false;
 }
 
-bool barf::read_iterator::processFile(const char *file_name,
-                                      bool binary,
-                                      bool ignore_index) {
+bool barf::ReadIterator::processFile(const char *file_name,
+                                     bool binary,
+                                     bool ignore_index) {
   // Open the input file.
   std::shared_ptr<htsFile> input = std::shared_ptr<htsFile>(
       hts_open(file_name, binary ? "rb" : "r"), hts_close);
@@ -51,7 +51,7 @@ bool barf::read_iterator::processFile(const char *file_name,
       // ...and use the index to seek through chomosome of interest.
       std::shared_ptr<hts_itr_t> itr(
           bam_itr_queryi(index.get(), tid, 0, INT_MAX), hts_itr_destroy);
-	  int result;
+      int result;
       while ((result = bam_itr_next(input.get(), itr.get(), read.get())) >= 0) {
         processRead(header, read);
       }
@@ -71,27 +71,27 @@ bool barf::read_iterator::processFile(const char *file_name,
   return checkHtsError(result);
 }
 
-barf::check_iterator::check_iterator(std::shared_ptr<llvm::ExecutionEngine> &e,
-                                     llvm::Module *module,
-                                     std::shared_ptr<ast_node> &node,
-                                     std::string name)
+barf::CheckIterator::CheckIterator(std::shared_ptr<llvm::ExecutionEngine> &e,
+                                   llvm::Module *module,
+                                   std::shared_ptr<AstNode> &node,
+                                   std::string name)
     : engine(e) {
   // Compile the query into native functions. We must hold a reference to the
   // execution engine as long as we intend for these pointers to be valid.
-  filter = getNativeFunction<filter_function>(
-      e, node->create_filter_function(module, name));
+  filter = getNativeFunction<FilterFunction>(
+      e, node->createFilterFunction(module, name));
   std::stringstream index_function_name;
   index_function_name << name << "_index";
-  index = getNativeFunction<index_function>(
-      e, node->create_index_function(module, index_function_name.str()));
+  index = getNativeFunction<IndexFunction>(
+      e, node->createIndexFunction(module, index_function_name.str()));
 }
 
-bool barf::check_iterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,
-                                          uint32_t tid) {
+bool barf::CheckIterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,
+                                         uint32_t tid) {
   return index(header.get(), tid);
 }
 
-void barf::check_iterator::processRead(std::shared_ptr<bam_hdr_t> &header,
-                                       std::shared_ptr<bam1_t> &read) {
+void barf::CheckIterator::processRead(std::shared_ptr<bam_hdr_t> &header,
+                                      std::shared_ptr<bam1_t> &read) {
   readMatch(filter(header.get(), read.get()), header, read);
 }

@@ -3,36 +3,36 @@
 
 namespace barf {
 
-static std::shared_ptr<ast_node> parse_conditional(const std::string &input,
-                                                   size_t &index,
-                                                   predicate_map predicates);
+static std::shared_ptr<AstNode> parseConditional(const std::string &input,
+                                                 size_t &index,
+                                                 PredicateMap predicates);
 
 /**
  * Handle terminal operators (final step in the recursive descent)
  */
-static std::shared_ptr<ast_node> parse_terminal(const std::string &input,
-                                                size_t &index,
-                                                predicate_map predicates) {
+static std::shared_ptr<AstNode> parseTerminal(const std::string &input,
+                                              size_t &index,
+                                              PredicateMap predicates) {
 
-  parse_space(input, index);
+  parseSpace(input, index);
   if (index >= input.length()) {
-    throw parse_error(index, "Reached end of input before completing parsing.");
+    throw ParseError(index, "Reached end of input before completing parsing.");
   }
   if (input[index] == '!') {
     index++;
-    return std::make_shared<not_node>(parse_terminal(input, index, predicates));
+    return std::make_shared<NotNode>(parseTerminal(input, index, predicates));
   }
   if (input[index] == '(') {
     index++;
     size_t brace_index = index;
-    auto node = parse_conditional(input, index, predicates);
-    parse_space(input, index);
+    auto node = parseConditional(input, index, predicates);
+    parseSpace(input, index);
     if (index < input.length() && input[index] == ')') {
       index++;
       return node;
     } else {
-      throw parse_error(brace_index,
-                        "Open brace has no matching closing brace.");
+      throw ParseError(brace_index,
+                       "Open brace has no matching closing brace.");
     }
   }
   size_t start = index;
@@ -44,7 +44,7 @@ static std::shared_ptr<ast_node> parse_terminal(const std::string &input,
     index++;
   }
   if (start == index) {
-    throw parse_error(index, "Empty predicate.");
+    throw ParseError(index, "Empty predicate.");
   }
 
   std::string predicate_name = input.substr(start, index - start);
@@ -52,28 +52,28 @@ static std::shared_ptr<ast_node> parse_terminal(const std::string &input,
     return predicates[predicate_name](input, index);
   } else {
     index = start;
-    throw parse_error(index, "Unknown predicate.");
+    throw ParseError(index, "Unknown predicate.");
   }
 }
 
 /**
  * Handle and operators (third step in the recursive descent)
  */
-static std::shared_ptr<ast_node> parse_and(const std::string &input,
-                                           size_t &index,
-                                           predicate_map predicates) {
-  std::vector<std::shared_ptr<ast_node>> items;
+static std::shared_ptr<AstNode> parseAnd(const std::string &input,
+                                         size_t &index,
+                                         PredicateMap predicates) {
+  std::vector<std::shared_ptr<AstNode>> items;
 
-  std::shared_ptr<ast_node> node = parse_terminal(input, index, predicates);
-  parse_space(input, index);
+  std::shared_ptr<AstNode> node = parseTerminal(input, index, predicates);
+  parseSpace(input, index);
   while (index < input.length() && input[index] == '&') {
     index++;
     items.push_back(node);
-    node = parse_terminal(input, index, predicates);
-    parse_space(input, index);
+    node = parseTerminal(input, index, predicates);
+    parseSpace(input, index);
   }
   while (items.size() > 0) {
-    node = std::make_shared<and_node>(items.back(), node);
+    node = std::make_shared<AndNode>(items.back(), node);
     items.pop_back();
   }
   return node;
@@ -82,21 +82,21 @@ static std::shared_ptr<ast_node> parse_and(const std::string &input,
 /**
  * Handle or operators (second step in the recursive descent)
  */
-static std::shared_ptr<ast_node> parse_or(const std::string &input,
-                                          size_t &index,
-                                          predicate_map predicates) {
-  std::vector<std::shared_ptr<ast_node>> items;
+static std::shared_ptr<AstNode> parseOr(const std::string &input,
+                                        size_t &index,
+                                        PredicateMap predicates) {
+  std::vector<std::shared_ptr<AstNode>> items;
 
-  std::shared_ptr<ast_node> node = parse_and(input, index, predicates);
-  parse_space(input, index);
+  std::shared_ptr<AstNode> node = parseAnd(input, index, predicates);
+  parseSpace(input, index);
   while (index < input.length() && input[index] == '|') {
     index++;
     items.push_back(node);
-    node = parse_and(input, index, predicates);
-    parse_space(input, index);
+    node = parseAnd(input, index, predicates);
+    parseSpace(input, index);
   }
   while (items.size() > 0) {
-    node = std::make_shared<or_node>(items.back(), node);
+    node = std::make_shared<OrNode>(items.back(), node);
     items.pop_back();
   }
   return node;
@@ -105,46 +105,46 @@ static std::shared_ptr<ast_node> parse_or(const std::string &input,
 /**
  * Handle conditional operators (first step in the recursive descent)
  */
-static std::shared_ptr<ast_node> parse_conditional(const std::string &input,
-                                                   size_t &index,
-                                                   predicate_map predicates) {
-  auto cond_part = parse_or(input, index, predicates);
-  parse_space(input, index);
-  if (!parse_keyword(input, index, "then")) {
+static std::shared_ptr<AstNode> parseConditional(const std::string &input,
+                                                 size_t &index,
+                                                 PredicateMap predicates) {
+  auto cond_part = parseOr(input, index, predicates);
+  parseSpace(input, index);
+  if (!parseKeyword(input, index, "then")) {
     return cond_part;
   }
-  auto then_part = parse_or(input, index, predicates);
-  if (!parse_keyword(input, index, "else")) {
-    throw parse_error(index, "Ternary operator has no else.");
+  auto then_part = parseOr(input, index, predicates);
+  if (!parseKeyword(input, index, "else")) {
+    throw ParseError(index, "Ternary operator has no else.");
   }
-  auto else_part = parse_or(input, index, predicates);
-  return std::make_shared<conditional_node>(cond_part, then_part, else_part);
+  auto else_part = parseOr(input, index, predicates);
+  return std::make_shared<ConditionalNode>(cond_part, then_part, else_part);
 }
 
 /**
  * Parse a string into a syntax tree using the built-in logical operations and
  * the predicates provided.
  */
-std::shared_ptr<ast_node> ast_node::parse(
-    const std::string &input, predicate_map predicates) throw(parse_error) {
+std::shared_ptr<AstNode> AstNode::parse(
+    const std::string &input, PredicateMap predicates) throw(ParseError) {
   size_t index = 0;
-  std::shared_ptr<ast_node> node = parse_conditional(input, index, predicates);
+  std::shared_ptr<AstNode> node = parseConditional(input, index, predicates);
 
-  parse_space(input, index);
+  parseSpace(input, index);
   // check string is fully consumed
   if (index != input.length()) {
-    throw parse_error(index, "Junk at end of input.");
+    throw ParseError(index, "Junk at end of input.");
   }
   return node;
 }
 
-std::shared_ptr<barf::ast_node> barf::ast_node::parse_with_logging(
-    const std::string &input, predicate_map predicates) {
-  std::shared_ptr<barf::ast_node> ast;
+std::shared_ptr<AstNode> barf::AstNode::parseWithLogging(
+    const std::string &input, PredicateMap predicates) {
+  std::shared_ptr<AstNode> ast;
   try {
-    ast = barf::ast_node::parse(input, predicates);
+    ast = AstNode::parse(input, predicates);
   }
-  catch (barf::parse_error e) {
+  catch (ParseError e) {
     std::cerr << "Error: " << e.what() << std::endl << input << std::endl;
     for (auto i = 0; i < e.where(); i++) {
       std::cerr << " ";

@@ -8,15 +8,15 @@
  * Handler for output collection. Shunts reads into appropriate files and tracks
  * stats.
  */
-class data_collector : public barf::check_iterator {
+class DataCollector : public barf::CheckIterator {
 public:
-  data_collector(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                 llvm::Module *module,
-                 std::shared_ptr<barf::ast_node> &node,
-                 bool verbose_,
-                 std::shared_ptr<htsFile> &a,
-                 std::shared_ptr<htsFile> &r)
-      : barf::check_iterator::check_iterator(
+  DataCollector(std::shared_ptr<llvm::ExecutionEngine> &engine,
+                llvm::Module *module,
+                std::shared_ptr<barf::AstNode> &node,
+                bool verbose_,
+                std::shared_ptr<htsFile> &a,
+                std::shared_ptr<htsFile> &r)
+      : barf::CheckIterator::CheckIterator(
             engine, module, node, std::string("filter")),
         verbose(verbose_), accept(a), reject(r) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
@@ -37,7 +37,7 @@ public:
                 << " Rejected: " << reject_count << std::endl;
     }
   }
-  void write_summary() {
+  void writeSummary() {
     std::cout << "Accepted: " << accept_count << std::endl
               << "Rejected: " << reject_count << std::endl;
   }
@@ -130,8 +130,8 @@ int main(int argc, char *const *argv) {
   }
 
   // Parse the input query.
-  auto ast = barf::ast_node::parse_with_logging(std::string(argv[optind]),
-                                                barf::getDefaultPredicates());
+  auto ast = barf::AstNode::parseWithLogging(std::string(argv[optind]),
+                                             barf::getDefaultPredicates());
   if (!ast) {
     return 1;
   }
@@ -146,9 +146,9 @@ int main(int argc, char *const *argv) {
   }
 
   // Process the input file.
-  data_collector stats(engine, module, ast, verbose, accept, reject);
+  DataCollector stats(engine, module, ast, verbose, accept, reject);
   if (stats.processFile(bam_filename, binary, ignore_index)) {
-    stats.write_summary();
+    stats.writeSummary();
     return 0;
   } else {
     return 1;

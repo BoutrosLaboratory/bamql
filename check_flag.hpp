@@ -6,7 +6,7 @@ namespace barf {
 /**
  * A predicate that checks of the read's flag.
  */
-template <unsigned int F> class check_flag : public ast_node {
+template <unsigned int F> class CheckFlag : public AstNode {
 public:
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
@@ -20,9 +20,9 @@ public:
                                F));
   }
 
-  static std::shared_ptr<ast_node> parse(const std::string &input,
-                                         size_t &index) throw(parse_error) {
-    static auto result = std::make_shared<check_flag<F>>();
+  static std::shared_ptr<AstNode> parse(const std::string &input,
+                                        size_t &index) throw(ParseError) {
+    static auto result = std::make_shared<CheckFlag<F>>();
     return result;
   }
 };

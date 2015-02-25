@@ -3,13 +3,13 @@
 #include "barf.hpp"
 
 namespace barf {
-parse_error::parse_error(size_t index, std::string what)
+ParseError::ParseError(size_t index, std::string what)
     : std::runtime_error(what) {
   this->index = index;
 }
-size_t parse_error::where() { return index; }
+size_t ParseError::where() { return index; }
 
-int parse_int(const std::string &input, size_t &index) throw(parse_error) {
+int parseInt(const std::string &input, size_t &index) throw(ParseError) {
   size_t start = index;
   int accumulator = 0;
   while (index < input.length() && input[index] >= '0' && input[index] <= '9') {
@@ -17,36 +17,35 @@ int parse_int(const std::string &input, size_t &index) throw(parse_error) {
     index++;
   }
   if (start == index) {
-    throw parse_error(start, "Expected integer.");
+    throw ParseError(start, "Expected integer.");
   }
   return accumulator;
 }
-double parse_double(const std::string &input,
-                    size_t &index) throw(parse_error) {
+double parseDouble(const std::string &input, size_t &index) throw(ParseError) {
   size_t start = index;
   char *end_ptr = nullptr;
   auto result = strtod(input.c_str() + start, &end_ptr);
   index = end_ptr - input.c_str();
   if (index == start) {
-    throw parse_error(index, "Expected floating point number.");
+    throw ParseError(index, "Expected floating point number.");
   }
   return result;
 }
-std::string parse_str(const std::string &input,
-                      size_t &index,
-                      const std::string &accept_chars,
-                      bool reject) throw(parse_error) {
+std::string parseStr(const std::string &input,
+                     size_t &index,
+                     const std::string &accept_chars,
+                     bool reject) throw(ParseError) {
   size_t start = index;
   while (index < input.length() &&
          ((accept_chars.find(input[index]) != std::string::npos) ^ reject)) {
     index++;
   }
   if (start == index) {
-    throw parse_error(start, "Unexpected character.");
+    throw ParseError(start, "Unexpected character.");
   }
   return input.substr(start, index - start);
 }
-bool parse_space(const std::string &input, size_t &index) {
+bool parseSpace(const std::string &input, size_t &index) {
   size_t start = index;
   while (index < input.length() &&
          (input[index] == ' ' || input[index] == '\t' || input[index] == '\n' ||
@@ -55,21 +54,21 @@ bool parse_space(const std::string &input, size_t &index) {
   }
   return start != index;
 }
-void parse_char_in_space(const std::string &input,
-                         size_t &index,
-                         char c) throw(parse_error) {
-  parse_space(input, index);
+void parseCharInSpace(const std::string &input,
+                      size_t &index,
+                      char c) throw(ParseError) {
+  parseSpace(input, index);
   if (index >= input.length() || input[index] != c) {
     std::ostringstream err_text;
     err_text << "Expected `" << c << "'.";
-    throw parse_error(index, err_text.str());
+    throw ParseError(index, err_text.str());
   }
   index++;
-  parse_space(input, index);
+  parseSpace(input, index);
 }
-bool parse_keyword(const std::string &input,
-                   size_t &index,
-                   const std::string &keyword) {
+bool parseKeyword(const std::string &input,
+                  size_t &index,
+                  const std::string &keyword) {
   for (size_t it = 0; it < keyword.length(); it++) {
     if (index + it >= input.length() || input[index + it] != keyword[it]) {
       return false;

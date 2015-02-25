@@ -10,30 +10,30 @@
  * whether to accept the read on no-match and the next bit is whether to accept
  * the read on match.
  */
-typedef unsigned int chain_pattern;
+typedef unsigned int ChainPattern;
 
 /**
  * The different chaining behaviours allowed.
  */
-std::map<std::string, chain_pattern> known_chains = { { "parallel", 3 },
-                                                      { "series", 2 },
-                                                      { "shuttle", 1 } };
+std::map<std::string, ChainPattern> known_chains = { { "parallel", 3 },
+                                                     { "series", 2 },
+                                                     { "shuttle", 1 } };
 
 /**
  * One link of a chain. It checks the filter, writes matching reads to a file,
  * and propagates the read to the next link in the chain.
  */
-class output_wrangler : public barf::check_iterator {
+class OutputWrangler : public barf::CheckIterator {
 public:
-  output_wrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                  llvm::Module *module,
-                  std::shared_ptr<barf::ast_node> &node,
-                  std::string name,
-                  chain_pattern c,
-                  std::string file_name_,
-                  std::shared_ptr<htsFile> o,
-                  std::shared_ptr<output_wrangler> n)
-      : barf::check_iterator::check_iterator(engine, module, node, name),
+  OutputWrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
+                 llvm::Module *module,
+                 std::shared_ptr<barf::AstNode> &node,
+                 std::string name,
+                 ChainPattern c,
+                 std::string file_name_,
+                 std::shared_ptr<htsFile> o,
+                 std::shared_ptr<OutputWrangler> n)
+      : barf::CheckIterator::CheckIterator(engine, module, node, name),
         chain(c), file_name(file_name_), output_file(o), next(n) {}
 
   /**
@@ -42,7 +42,7 @@ public:
    * is determined by ours.
    */
   bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid) {
-    return check_iterator::wantChromosome(header, tid) ||
+    return CheckIterator::wantChromosome(header, tid) ||
            next && chain & 1 && next->wantChromosome(header, tid);
   }
 
@@ -76,11 +76,11 @@ public:
   }
 
 private:
-  chain_pattern chain;
+  ChainPattern chain;
   std::shared_ptr<htsFile> output_file;
-  barf::filter_function filter;
-  barf::index_function index;
-  std::shared_ptr<output_wrangler> next;
+  barf::FilterFunction filter;
+  barf::IndexFunction index;
+  std::shared_ptr<OutputWrangler> next;
   std::string file_name;
   size_t count = 0;
 };
@@ -92,7 +92,7 @@ private:
 int main(int argc, char *const *argv) {
   const char *input_filename = nullptr;
   bool binary = false;
-  chain_pattern chain = known_chains["parallel"];
+  ChainPattern chain = known_chains["parallel"];
   bool help = false;
   bool ignore_index = false;
   int c;
@@ -161,7 +161,7 @@ int main(int argc, char *const *argv) {
   }
 
   // Prepare a chain of wranglers.
-  std::shared_ptr<output_wrangler> output;
+  std::shared_ptr<OutputWrangler> output;
   for (auto it = argc - 2; it >= optind; it -= 2) {
     // Prepare the output file.
     auto output_file =
@@ -171,8 +171,8 @@ int main(int argc, char *const *argv) {
       return 1;
     }
     // Parse the input query.
-    std::shared_ptr<barf::ast_node> ast = barf::ast_node::parse_with_logging(
-        std::string(argv[it]), barf::getDefaultPredicates());
+    auto ast = barf::AstNode::parseWithLogging(std::string(argv[it]),
+                                               barf::getDefaultPredicates());
     if (!ast) {
       return 1;
     }
@@ -180,21 +180,21 @@ int main(int argc, char *const *argv) {
     // Add the link to the chain.
     std::stringstream function_name;
     function_name << "filter" << it;
-    output = std::make_shared<output_wrangler>(engine,
-                                               module,
-                                               ast,
-                                               function_name.str(),
-                                               chain,
-                                               std::string(argv[it + 1]),
-                                               output_file,
-                                               output);
+    output = std::make_shared<OutputWrangler>(engine,
+                                              module,
+                                              ast,
+                                              function_name.str(),
+                                              chain,
+                                              std::string(argv[it + 1]),
+                                              output_file,
+                                              output);
   }
 
   // Run the chain.
   if (output->processFile(input_filename, binary, ignore_index)) {
     output->write_summary();
-  	return 0;
+    return 0;
   } else {
-  	return 1;
-	}
+    return 1;
+  }
 }

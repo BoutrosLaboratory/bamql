@@ -1,17 +1,16 @@
 #include "barf.hpp"
 
-barf::short_circuit_node::short_circuit_node(std::shared_ptr<ast_node> left,
-                                             std::shared_ptr<ast_node> right) {
+barf::ShortCircuitNode::ShortCircuitNode(std::shared_ptr<AstNode> left,
+                                         std::shared_ptr<AstNode> right) {
   this->left = left;
   this->right = right;
 }
 
-llvm::Value *barf::short_circuit_node::generate_generic(
-    generate_member member,
-    llvm::Module *module,
-    llvm::IRBuilder<> &builder,
-    llvm::Value *param,
-    llvm::Value *header) {
+llvm::Value *barf::ShortCircuitNode::generateGeneric(GenerateMember member,
+                                                     llvm::Module *module,
+                                                     llvm::IRBuilder<> &builder,
+                                                     llvm::Value *param,
+                                                     llvm::Value *header) {
   /* Create two basic blocks for the possibly executed right-hand expression and
    * the final block. */
   auto function = builder.GetInsertBlock()->getParent();
@@ -45,67 +44,65 @@ llvm::Value *barf::short_circuit_node::generate_generic(
   return phi;
 }
 
-llvm::Value *barf::short_circuit_node::generate(llvm::Module *module,
-                                                llvm::IRBuilder<> &builder,
-                                                llvm::Value *read,
-                                                llvm::Value *header) {
-  return generate_generic(
-      &barf::ast_node::generate, module, builder, read, header);
+llvm::Value *barf::ShortCircuitNode::generate(llvm::Module *module,
+                                              llvm::IRBuilder<> &builder,
+                                              llvm::Value *read,
+                                              llvm::Value *header) {
+  return generateGeneric(
+      &barf::AstNode::generate, module, builder, read, header);
 }
 
-llvm::Value *barf::short_circuit_node::generate_index(
-    llvm::Module *module,
-    llvm::IRBuilder<> &builder,
-    llvm::Value *tid,
-    llvm::Value *header) {
-  return generate_generic(
-      &barf::ast_node::generate_index, module, builder, tid, header);
+llvm::Value *barf::ShortCircuitNode::generateIndex(llvm::Module *module,
+                                                   llvm::IRBuilder<> &builder,
+                                                   llvm::Value *tid,
+                                                   llvm::Value *header) {
+  return generateGeneric(
+      &barf::AstNode::generateIndex, module, builder, tid, header);
 }
 
-barf::and_node::and_node(std::shared_ptr<ast_node> left,
-                         std::shared_ptr<ast_node> right)
-    : short_circuit_node(left, right) {}
-llvm::Value *barf::and_node::branchValue() {
+barf::AndNode::AndNode(std::shared_ptr<AstNode> left,
+                       std::shared_ptr<AstNode> right)
+    : ShortCircuitNode(left, right) {}
+llvm::Value *barf::AndNode::branchValue() {
   return llvm::ConstantInt::getFalse(llvm::getGlobalContext());
 }
 
-barf::or_node::or_node(std::shared_ptr<ast_node> left,
-                       std::shared_ptr<ast_node> right)
-    : short_circuit_node(left, right) {}
-llvm::Value *barf::or_node::branchValue() {
+barf::OrNode::OrNode(std::shared_ptr<AstNode> left,
+                     std::shared_ptr<AstNode> right)
+    : ShortCircuitNode(left, right) {}
+llvm::Value *barf::OrNode::branchValue() {
   return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 
-barf::not_node::not_node(std::shared_ptr<ast_node> expr) { this->expr = expr; }
-llvm::Value *barf::not_node::generate(llvm::Module *module,
-                                      llvm::IRBuilder<> &builder,
-                                      llvm::Value *read,
-                                      llvm::Value *header) {
+barf::NotNode::NotNode(std::shared_ptr<AstNode> expr) { this->expr = expr; }
+llvm::Value *barf::NotNode::generate(llvm::Module *module,
+                                     llvm::IRBuilder<> &builder,
+                                     llvm::Value *read,
+                                     llvm::Value *header) {
   llvm::Value *result = this->expr->generate(module, builder, read, header);
   return builder.CreateNot(result);
 }
 
-llvm::Value *barf::not_node::generate_index(llvm::Module *module,
-                                            llvm::IRBuilder<> &builder,
-                                            llvm::Value *tid,
-                                            llvm::Value *header) {
-  llvm::Value *result =
-      this->expr->generate_index(module, builder, tid, header);
+llvm::Value *barf::NotNode::generateIndex(llvm::Module *module,
+                                          llvm::IRBuilder<> &builder,
+                                          llvm::Value *tid,
+                                          llvm::Value *header) {
+  llvm::Value *result = this->expr->generateIndex(module, builder, tid, header);
   return builder.CreateNot(result);
 }
 
-barf::conditional_node::conditional_node(std::shared_ptr<ast_node> condition,
-                                         std::shared_ptr<ast_node> then_part,
-                                         std::shared_ptr<ast_node> else_part) {
+barf::ConditionalNode::ConditionalNode(std::shared_ptr<AstNode> condition,
+                                       std::shared_ptr<AstNode> then_part,
+                                       std::shared_ptr<AstNode> else_part) {
   this->condition = condition;
   this->then_part = then_part;
   this->else_part = else_part;
 }
 
-llvm::Value *barf::conditional_node::generate(llvm::Module *module,
-                                              llvm::IRBuilder<> &builder,
-                                              llvm::Value *read,
-                                              llvm::Value *header) {
+llvm::Value *barf::ConditionalNode::generate(llvm::Module *module,
+                                             llvm::IRBuilder<> &builder,
+                                             llvm::Value *read,
+                                             llvm::Value *header) {
   /* Create three blocks: one for the “then”, one for the “else” and one for the
    * final. */
   auto function = builder.GetInsertBlock()->getParent();
@@ -143,10 +140,10 @@ llvm::Value *barf::conditional_node::generate(llvm::Module *module,
   return phi;
 }
 
-llvm::Value *barf::conditional_node::generate_index(llvm::Module *module,
-                                                    llvm::IRBuilder<> &builder,
-                                                    llvm::Value *tid,
-                                                    llvm::Value *header) {
+llvm::Value *barf::ConditionalNode::generateIndex(llvm::Module *module,
+                                                  llvm::IRBuilder<> &builder,
+                                                  llvm::Value *tid,
+                                                  llvm::Value *header) {
   /*
    * The logic in this function is twisty, so here is the explanation. Given we
    * have `C ? T : E`, consider the following cases during index building:
@@ -173,19 +170,19 @@ llvm::Value *barf::conditional_node::generate_index(llvm::Module *module,
    * If true, try to make a decision based on the “then” block, otherwise, only
    * make a decision based on the “else” block. */
   auto conditional_result =
-      condition->generate_index(module, builder, tid, header);
+      condition->generateIndex(module, builder, tid, header);
   builder.CreateCondBr(conditional_result, then_block, else_block);
 
   /* Generate the “then” block. */
   builder.SetInsertPoint(then_block);
-  auto then_result = then_part->generate_index(module, builder, tid, header);
+  auto then_result = then_part->generateIndex(module, builder, tid, header);
   /* If we fail, the “else” block might still be interested. */
   builder.CreateCondBr(then_result, merge_block, else_block);
   then_block = builder.GetInsertBlock();
 
   /* Generate the “else” block. */
   builder.SetInsertPoint(else_block);
-  auto else_result = else_part->generate_index(module, builder, tid, header);
+  auto else_result = else_part->generateIndex(module, builder, tid, header);
   /* Jump to the final block. */
   builder.CreateBr(merge_block);
   else_block = builder.GetInsertBlock();
