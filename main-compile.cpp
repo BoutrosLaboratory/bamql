@@ -95,9 +95,17 @@ int main(int argc, char *const *argv) {
   }
 
   // Write the header file to stdout.
-  std::cout << "#include <stdbool.h>\n#include <htslib/sam.h>\nextern bool "
-            << name << "(bam_hdr_t*, bam1_t*)\nextern bool " << index_name.str()
-            << "(bam_hdr_t*, uint32_t)" << std::endl;
+  std::cout << "#include <stdbool.h>" << std::endl;
+  std::cout << "#include <htslib/sam.h>" << std::endl;
+  std::cout << "#ifdef __cplusplus" << std::endl;
+  std::cout << "extern \"C\" {" << std::endl;
+  std::cout << "#endif" << std::endl;
+  std::cout << "extern bool " << name << "(bam_hdr_t*, bam1_t*);" << std::endl;
+  std::cout << "extern bool " << index_name.str() << "(bam_hdr_t*, uint32_t);"
+            << std::endl;
+  std::cout << "#ifdef __cplusplus" << std::endl;
+  std::cout << "}" << std::endl;
+  std::cout << "#endif" << std::endl;
   delete module;
   return 0;
 }
