@@ -43,7 +43,7 @@ The read is paired in sequencing.
 
 .B proper_pair?
 
-The read is mapped in a proper pair.
+The read is mapped in a proper pair; that is, the aligner thought the insert size implied by the paired-end reads seemed correct.
 
 .B unmapped?
 
@@ -88,7 +88,7 @@ The alignment is supplementary.
 .SS MAPPING INFORMATION
 \fBchr(\fRglob\fB)\fR
 
-Matches the chromosome name to which the read is mapped. Chromosome names should not start with \fBchr\fR, as that will be automatically checked. Moreover, some human chromosome have differing names have differing names; both are checked. The known rules are:
+Matches the chromosome name to which the read is mapped. Chromosome names should not start with \fBchr\fR, as that will be automatically checked. Moreover, some human chromosome have differing names, so both are checked. The known rules are:
 
 X == 23
 .br
@@ -97,16 +97,16 @@ Y == 24
 M == 25
 
 
-Also, case is ignored. Additionally, the chromosome is matched using
+Also, case is ignored. Additionally, the chromosome is matched using wildcards from 
 .BR glob (7).
 
 \fBmapping_quality(\fRprobability\fB)\fR
 
-Matches the read if the probability of error is less than \fIprobability\fR. The mapping quality is approximated in the SAM format, so this will be imperfect. For clarity, setting the probability to 0 will be so stringent as to reject all reads, while setting it to 1 will be so liberally as to accept all reads.
+Matches the read if the probability of error is less than \fIprobability\fR. The mapping quality is approximated in the SAM format, so this will be imperfect. For clarity, setting the probability to 0 will be so stringent as to reject all reads, while setting it to 1 will be so liberal as to accept all reads.
 
 \fBmate_chr(\fRglob\fB)\fR
 
-This works identically to \fBchr\fR, but on the chromosome of the mate pair, if one exists.
+This works identically to \fBchr\fR, but on the chromosome of the mate pair, if one exists. If the mate is unmapped, this returns false.
 
 .SS OTHER READ INFORMATION
 \fBread_group(\fRglob\fB)\fR
@@ -137,7 +137,7 @@ Match sequences on chromosome 7 which are from the read group labelled \fBRUN3\f
 
 .B "chr(7) & read_group(RUN3)"
 
-Sub-sample for mitochondrial sequences and all the sequences that have matched to chromosomes starting with \fBug\fR.
+Sub-sample mitochondrial reads and all the reads that have matched to chromosomes starting with \fBug\fR.
 
 .B "chr(M) & random(0.2) | chr(ug*)"
 

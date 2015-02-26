@@ -31,6 +31,9 @@ The query language is described in
 \-b
 Opens the input as BAM format, rather than SAM format.
 .TP
+\-f input.bam
+The input BAM file.
+.TP
 \-I
 Ignore the index, if present. BAM files can be indexed, allowing more efficient searching of the file. If an index is found, it will be automatically used. This switch ignore the index even if it is present; it makes no difference if it is not.
 .TP
@@ -46,7 +49,7 @@ This extracts all the reads on chromosome 7:
 .B barf -o chromo7.bam -b genome.bam 'chr(7)'
 
 .SH SEE ALSO
-.BR barf (1),
+.BR barf-chain (1),
 .BR barf-compile (1),
 .BR barf_queries (7),
 .BR samtools (1).

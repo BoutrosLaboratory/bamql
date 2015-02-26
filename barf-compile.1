@@ -54,10 +54,10 @@ The name of the generated function. If none is specified, it will be
 .I filter
 which maybe unhelpful if developing a library or multiple 
 .TP
-\-O rejected_output.bam
-Any reads which are rejected by the query, that is, for which the query is false, will be placed in this file. If omitted, the number of queries will be tallied, but discarded
+\-o output.bc
+The file containing the generated bitcode. It none is specified, it is the filter name, suffixed with \fB.bc\fR.
 .TP
 .SH SEE ALSO
-.BR barf-compile (1),
+.BR barf (1),
 .BR barf_queries (7),
 .BR samtools (1).

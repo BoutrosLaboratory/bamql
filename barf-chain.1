@@ -39,11 +39,11 @@ Opens the input as BAM format, rather than SAM format.
 \-c method
 Arrange the queries. See \fBCHAINING\fR for details.
 .TP
-\-I
-Ignore the index, if present. BAM files can be indexed, allowing more efficient searching of the file. If an index is found, it will be automatically used. This switch ignore the index even if it is present; it makes no difference if it is not.
-.TP
 \-f input.bam
 The input BAM file.
+.TP
+\-I
+Ignore the index, if present. BAM files can be indexed, allowing more efficient searching of the file. If an index is found, it will be automatically used. This switch ignore the index even if it is present; it makes no difference if it is not.
 
 .SH CHAINING
 Chains of queries can be put into several configurations.
@@ -67,7 +67,7 @@ This extracts all the reads on chromosome 7 and all the paired reads on chromoso
 
 .B barf-chain -b -f genome.bam -c series 'chr(7)' chromo7.bam 'paired?' chromo7_paired.bam
 
-This extracts all the reads on chromosome 7 and all the paired reads that on other chromosomes:
+This extracts all the reads on chromosome 7 and all the paired reads that are on other chromosomes:
 
 .B barf-chain -b -f genome.bam -c shuttle 'chr(7)' chromo7.bam 'paired?' paired_except_chr7.bam
 
