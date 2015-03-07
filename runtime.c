@@ -96,6 +96,15 @@ bool check_mapping_quality(bam1_t *read, uint8_t quality)
 	return read->core.qual != 255 && read->core.qual >= quality;
 }
 
+bool check_position(bam1_t *read, int32_t start, int32_t end)
+{
+	if (read->core.flag & BAM_FUNMAP) {
+		return false;
+	}
+	return read->core.pos <= end
+	    && read->core.pos + read->core.l_qseq >= start;
+}
+
 bool check_aux_str(bam1_t *read, const char *pattern, char group1, char group2)
 {
 	char const id[] = { group1, group2 };

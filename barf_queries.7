@@ -115,6 +115,19 @@ Matches the read group, if specified in the input. The read group may be specifi
 .BR glob (7)
 to match multiple read groups. 
 
+.SS POSITION
+\fBafter(\fRposition\fB)\fR
+
+Matches all sequences that cover the specified position or any higher position (more \fIq\fR-ward on the chromosome).
+
+\fBbefore(\fRposition\fB)\fR
+
+Matches all sequences that cover the specified position or any lower position (more \fIp\fR-ward on the chromosome).
+
+\fBposition(\fRstart\fB,\fR end\fB)\fR
+
+Matches all sequences that cover the range of position from \fIstart\fR to \fIend\fR.
+
 .SS MISCELLANEOUS
 
 .B true

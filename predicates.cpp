@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <htslib/sam.h>
 #include "barf.hpp"
 #include "boolean_constant.hpp"
@@ -84,6 +85,55 @@ private:
 };
 
 /**
+ * A predicate that check mapped positions.
+ */
+class PositionNode : public AstNode {
+public:
+  PositionNode(int32_t start_, int32_t end_) : start(start_), end(end_) {}
+  virtual llvm::Value *generate(llvm::Module *module,
+                                llvm::IRBuilder<> &builder,
+                                llvm::Value *read,
+                                llvm::Value *header) {
+    auto function = module->getFunction("check_position");
+    return builder.CreateCall3(
+        function,
+        read,
+        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+                               start),
+        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+                               end));
+  }
+
+  static std::shared_ptr<AstNode> parse(const std::string &input,
+                                        size_t &index) throw(ParseError) {
+    parseCharInSpace(input, index, '(');
+    auto start = parseInt(input, index);
+    parseCharInSpace(input, index, ',');
+    auto end = parseInt(input, index);
+    parseCharInSpace(input, index, ')');
+    return std::make_shared<PositionNode>(start, end);
+  }
+  static std::shared_ptr<AstNode> parseAfter(const std::string &input,
+                                             size_t &index) throw(ParseError) {
+    parseCharInSpace(input, index, '(');
+    auto pos = parseInt(input, index);
+    parseCharInSpace(input, index, ')');
+    return std::make_shared<PositionNode>(pos, INT32_MAX);
+  }
+  static std::shared_ptr<AstNode> parseBefore(const std::string &input,
+                                              size_t &index) throw(ParseError) {
+    parseCharInSpace(input, index, '(');
+    auto pos = parseInt(input, index);
+    parseCharInSpace(input, index, ')');
+    return std::make_shared<PositionNode>(0, pos);
+  }
+
+private:
+  int32_t start;
+  int32_t end;
+};
+
+/**
  * All the predicates known to the system.
  */
 PredicateMap getDefaultPredicates() {
@@ -114,6 +164,11 @@ PredicateMap getDefaultPredicates() {
     // Constants
     { std::string("false"), ConstantNode<llvm::ConstantInt::getFalse>::parse },
     { std::string("true"), ConstantNode<llvm::ConstantInt::getTrue>::parse },
+
+    // Position
+    { std::string("after"), PositionNode::parseAfter },
+    { std::string("before"), PositionNode::parseBefore },
+    { std::string("position"), PositionNode::parse },
 
     // Miscellaneous
     { std::string("mapping_quality"), MappingQualityNode::parse },
