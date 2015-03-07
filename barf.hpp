@@ -234,6 +234,11 @@ bool parseKeyword(const std::string &input,
                   size_t &index,
                   const std::string &keyword);
 /**
+ * Parse an IUPAC nucleotide and return a BAM-compatible bitmap of nucleotide
+ * possibilities.
+ */
+unsigned char parseNucleotide(const std::string &input, size_t &index);
+/**
  * This helper function puts a string into a global constant and then
  * returns a pointer to it.
  *

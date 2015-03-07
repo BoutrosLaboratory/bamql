@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <cctype>
 #include <sstream>
 #include "barf.hpp"
 
@@ -76,5 +76,41 @@ bool parseKeyword(const std::string &input,
   }
   index += keyword.length();
   return true;
+}
+
+unsigned int degen_nt[32] = {
+  /*A*/ 1,
+  /*B*/ 2 | 4 | 8,
+  /*C*/ 2,
+  /*D*/ 1 | 4 | 8,
+  /*E*/ 0,
+  /*F*/ 0,
+  /*G*/ 4,
+  /*H*/ 1 | 2 | 8,
+  /*I*/ 0,
+  /*J*/ 0,
+  /*K*/ 4 | 8,
+  /*L*/ 0,
+  /*M*/ 1 | 2,
+  /*N*/ 1 | 2 | 4 | 8,
+  /*O*/ 0,
+  /*P*/ 0,
+  /*Q*/ 0,
+  /*R*/ 1 | 4,
+  /*S*/ 2 | 4,
+  /*T*/ 8,
+  /*U*/ 8,
+  /*V*/ 1 | 2 | 4,
+  /*W*/ 1 | 8,
+  /*X*/ 1 | 2 | 4 | 8,
+  /*Y*/ 2 | 8,
+  /*Z*/ 0
+};
+unsigned char parseNucleotide(const std::string &input, size_t &index) {
+  auto c = tolower(input[index++]);
+  if (c >= 'a' && c <= 'z') {
+    return degen_nt[c - 'a'];
+  }
+  return 0;
 }
 }

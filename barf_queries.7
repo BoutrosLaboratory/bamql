@@ -128,6 +128,15 @@ Matches all sequences that cover the specified position or any lower position (m
 
 Matches all sequences that cover the range of position from \fIstart\fR to \fIend\fR.
 
+.SS SEQUENCE
+\fBnt(\fRposition\fB,\fR n\fB)\fR
+
+Matches a read has nucleotide \fIn\fR at the provided position, relative to the chromosome. The nucleotide can be any IUPAC-style base (ACGTU, KMYR, BDHV, and N). The match is degenerate; that is, if the nucleotide specified is N, any base will match. It will reject unmapped reads and reads which do not contain the required position.
+
+\fBnt_exact(\fRposition\fB,\fR n\fB)\fR
+
+Matches a read has nucleotide \fIn\fR at the provided position, relative to the chromosome. The nucleotide can be any IUPAC-style base (ACGTU, KMYR, BDHV, and N). The match is exact; that is, if the nucleotide specified is N, the base in the read must be N too. It will reject unmapped reads and reads which do not contain the required position.
+
 .SS MISCELLANEOUS
 
 .B true

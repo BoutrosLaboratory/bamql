@@ -5,6 +5,7 @@
 #include "check_aux.hpp"
 #include "check_chromosome.hpp"
 #include "check_flag.hpp"
+#include "check_nt.hpp"
 
 // Please keep the predicates in alphabetical order.
 namespace barf {
@@ -172,6 +173,9 @@ PredicateMap getDefaultPredicates() {
 
     // Miscellaneous
     { std::string("mapping_quality"), MappingQualityNode::parse },
+    { std::string("nt"), NucleotideNode<llvm::ConstantInt::getFalse>::parse },
+    { std::string("nt_exact"),
+      NucleotideNode<llvm::ConstantInt::getTrue>::parse },
     { std::string("random"), RandomlyNode::parse }
   };
 }

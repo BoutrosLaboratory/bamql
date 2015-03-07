@@ -96,6 +96,20 @@ bool check_mapping_quality(bam1_t *read, uint8_t quality)
 	return read->core.qual != 255 && read->core.qual >= quality;
 }
 
+bool check_nt(bam1_t *read, int32_t position, unsigned char nt, bool exact)
+{
+	unsigned char read_nt;
+	if (read->core.flag & BAM_FUNMAP) {
+		return false;
+	}
+	if (read->core.pos > position ||
+	    read->core.pos + read->core.l_qseq < position) {
+		return false;
+	}
+	read_nt = bam_seqi(bam_get_seq(read), position - read->core.pos);
+	return exact ? (read_nt == nt) : (read_nt != 0);
+}
+
 bool check_position(bam1_t *read, int32_t start, int32_t end)
 {
 	if (read->core.flag & BAM_FUNMAP) {

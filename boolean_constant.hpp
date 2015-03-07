@@ -1,3 +1,4 @@
+#pragma once
 #include <htslib/sam.h>
 #include "barf.hpp"
 
