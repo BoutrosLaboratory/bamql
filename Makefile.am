@@ -12,7 +12,7 @@ man7_MANS = barf_queries.7
 libbarf_la_CPPFLAGS = \
 	-std=c++11 \
 	$(LLVM_CORE_CPPFLAGS) -fexceptions \
-	$(HTS_CFLAGS) -O2 \
+	$(HTS_CFLAGS) -g -O2 \
 	$(NULL)
 libbarf_la_LIBADD = \
 	$(LLVM_CORE_LIBS) \
@@ -34,7 +34,7 @@ libbarf_la_SOURCES = \
 libbarf_jit_la_CPPFLAGS = \
 	-std=c++11 \
 	$(LLVM_RUN_CPPFLAGS) -fexceptions \
-	$(HTS_CFLAGS) -O2 \
+	$(HTS_CFLAGS) -g -O2 \
 	$(NULL)
 libbarf_jit_la_LIBADD = \
 	libbarf.la \
@@ -56,7 +56,7 @@ barf_SOURCES = \
 	$(NULL)
 barf_CPPFLAGS = \
 	-std=c++11 \
-	$(HTS_CFLAGS) -O2 \
+	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) -fexceptions \
 	$(NULL)
 barf_LDFLAGS =\
@@ -74,7 +74,7 @@ barf_chain_SOURCES = \
 	$(NULL)
 barf_chain_CPPFLAGS = \
 	-std=c++11 \
-	$(HTS_CFLAGS) -O2 \
+	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) -fexceptions \
 	$(NULL)
 barf_chain_LDFLAGS =\
@@ -93,6 +93,7 @@ barf_compile_SOURCES = \
 barf_compile_CPPFLAGS = \
 	-std=c++11 \
 	$(LLVM_WRITE_CPPFLAGS) -fexceptions \
+	-g -O2 \
 	$(NULL)
 barf_compile_LDFLAGS =\
 	$(LLVM_WRITE_LDFLAGS) \

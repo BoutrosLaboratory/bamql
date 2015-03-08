@@ -1,0 +1,10 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+export DH_OPTIONS
+
+%:
+	dh $@ 
+
+.PHONY: override_dh_strip
+override_dh_strip:
+	dh_strip --dbg-package=barf-dbg

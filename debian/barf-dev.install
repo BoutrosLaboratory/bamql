@@ -1,0 +1,5 @@
+usr/bin/barf-compile
+usr/include/*
+usr/lib/*.so
+usr/lib/pkgconfig
+usr/share/man/man1/barf-compile.1

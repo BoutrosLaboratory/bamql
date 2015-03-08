@@ -18,6 +18,13 @@ barf-compile
 compile
 config.*
 configure
+debian/*debhelper*
+debian/*substvars
+debian/files
+debian/libbarf*/
+debian/barf-dbg
+debian/barf-dev
+debian/tmp/
 depcomp
 install-sh
 libtool
