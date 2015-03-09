@@ -5,7 +5,7 @@ lib_LTLIBRARIES = libbarf.la libbarf-jit.la
 library_includedir=$(includedir)/barf
 library_include_HEADERS = barf.hpp barf-jit.hpp
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = barf.pc
+pkgconfig_DATA = barf.pc barf-jit.pc
 man1_MANS = barf.1 barf-chain.1 barf-compile.1
 man7_MANS = barf_queries.7
 
