@@ -20,8 +20,7 @@ public:
                                F));
   }
 
-  static std::shared_ptr<AstNode> parse(const std::string &input,
-                                        size_t &index) throw(ParseError) {
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     static auto result = std::make_shared<CheckFlag<F>>();
     return result;
   }

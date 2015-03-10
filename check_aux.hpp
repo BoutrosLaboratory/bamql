@@ -26,24 +26,22 @@ public:
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
                                G2));
   }
-  static std::shared_ptr<AstNode> parse(const std::string &input,
-                                        size_t &index) throw(ParseError) {
-    parseCharInSpace(input, index, '(');
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
 
-    auto name_start = index;
-    while (index < input.length() && input[index] != ')' &&
-           VC(input[index], index > name_start)) {
-      index++;
+    auto name_start = state.where();
+    while (!state.empty() && *state != ')' &&
+           VC(*state, state.where() > name_start)) {
+      state.next();
     }
-    if (name_start == index) {
-      throw ParseError(index, "Expected valid identifier.");
+    if (name_start == state.where()) {
+      throw ParseError(state.where(), "Expected valid identifier.");
     }
-    auto name_length = index - name_start;
+    auto match = state.strFrom(name_start);
 
-    parseCharInSpace(input, index, ')');
+    state.parseCharInSpace(')');
 
-    return std::make_shared<CheckAuxStringNode<G1, G2, VC>>(
-        input.substr(name_start, name_length));
+    return std::make_shared<CheckAuxStringNode<G1, G2, VC>>(match);
   }
 
 private:

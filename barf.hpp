@@ -34,13 +34,14 @@ private:
 };
 
 class AstNode;
+class ParseState;
 
 /**
  * A predicate is a function that parses a named predicate, and, upon success,
  * returns a syntax node.
  */
-typedef std::function<std::shared_ptr<AstNode>(
-    const std::string &input, size_t &index) throw(ParseError)> Predicate;
+typedef std::function<
+    std::shared_ptr<AstNode>(ParseState &state) throw(ParseError)> Predicate;
 
 /**
  * A collection of predicates, where the name is the keyword in the query
@@ -196,48 +197,62 @@ private:
   std::shared_ptr<AstNode> then_part;
   std::shared_ptr<AstNode> else_part;
 };
+class ParseState {
+public:
+  ParseState(const std::string &input);
+  unsigned int currentLine() const;
+  unsigned int currentColumn() const;
+  bool empty() const;
+  void next();
+  /**
+   * A function to parse a valid non-empty integer.
+   */
+  int parseInt() throw(ParseError);
+  /**
+   * A function to parse a valid non-empty floating point value.
+   */
+  double parseDouble() throw(ParseError);
+  /**
+   * A function to parse a non-empty string.
+   * @param accept_chars: A list of valid characters that may be present in the
+   * string.
+   * @param reject: If true, this inverts the meaning of `accept_chars`,
+   * accepting
+   * any character execpt those listed.
+   */
+  std::string parseStr(const std::string &accept_chars,
+                       bool reject = false) throw(ParseError);
+  /**
+   * Consume whitespace in the parse stream.
+   * @returns: true if any whitespace was consumed.
+   */
+  bool parseSpace();
+  /**
+   * Consume the specified character with optional whitespace before and after.
+   */
+  void parseCharInSpace(char c) throw(ParseError);
+  /**
+   * Attempt to parse the supplied keyword, returing true if it could be parsed.
+   */
+  bool parseKeyword(const std::string &keyword);
+  /**
+   * Parse an IUPAC nucleotide and return a BAM-compatible bitmap of nucleotide
+   * possibilities.
+   */
+  unsigned char parseNucleotide();
 
-/**
- * A function to parse a valid non-empty integer.
- */
-int parseInt(const std::string &input, size_t &index) throw(ParseError);
-/**
- * A function to parse a valid non-empty floating point value.
- */
-double parseDouble(const std::string &input, size_t &index) throw(ParseError);
-/**
- * A function to parse a non-empty string.
- * @param accept_chars: A list of valid characters that may be present in the
- * string.
- * @param reject: If true, this inverts the meaning of `accept_chars`, accepting
- * any character execpt those listed.
- */
-std::string parseStr(const std::string &input,
-                     size_t &index,
-                     const std::string &accept_chars,
-                     bool reject = false) throw(ParseError);
-/**
- * Consume whitespace in the parse stream.
- * @returns: true if any whitespace was consumed.
- */
-bool parseSpace(const std::string &input, size_t &index);
-/**
- * Consume the specified character with optional whitespace before and after.
- */
-void parseCharInSpace(const std::string &input,
-                      size_t &index,
-                      char c) throw(ParseError);
-/**
- * Attempt to parse the supplied keyword, returing true if it could be parsed.
- */
-bool parseKeyword(const std::string &input,
-                  size_t &index,
-                  const std::string &keyword);
-/**
- * Parse an IUPAC nucleotide and return a BAM-compatible bitmap of nucleotide
- * possibilities.
- */
-unsigned char parseNucleotide(const std::string &input, size_t &index);
+  std::string strFrom(size_t start) const;
+
+  size_t where() const;
+
+  char operator*() const;
+
+private:
+  const std::string &input;
+  size_t index;
+  unsigned int line;
+  unsigned int column;
+};
 /**
  * This helper function puts a string into a global constant and then
  * returns a pointer to it.

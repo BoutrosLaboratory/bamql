@@ -34,19 +34,17 @@ public:
         function, chromosome, header, createString(module, name));
   }
 
-  static std::shared_ptr<AstNode> parse(const std::string &input,
-                                        size_t &index) throw(ParseError) {
-    parseCharInSpace(input, index, '(');
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
 
-    auto str = parseStr(
-        input,
-        index,
+    auto str = state.parseStr(
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_*?.");
     if (str.compare(0, 3, "chr") == 0) {
-      throw ParseError(index, "Chromosome names must not start with `chr'.");
+      throw ParseError(state.where(),
+                       "Chromosome names must not start with `chr'.");
     }
 
-    parseCharInSpace(input, index, ')');
+    state.parseCharInSpace(')');
 
     // If we are dealing with a chromosome that goes by many names, match all of
     // them.

@@ -24,13 +24,12 @@ public:
         EXACT(llvm::getGlobalContext()));
   }
 
-  static std::shared_ptr<AstNode> parse(const std::string &input,
-                                        size_t &index) throw(ParseError) {
-    parseCharInSpace(input, index, '(');
-    auto position = parseInt(input, index);
-    parseCharInSpace(input, index, ',');
-    auto nt = parseNucleotide(input, index);
-    parseCharInSpace(input, index, ')');
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
+    auto position = state.parseInt();
+    state.parseCharInSpace(',');
+    auto nt = state.parseNucleotide();
+    state.parseCharInSpace(')');
     return std::make_shared<NucleotideNode<EXACT>>(position, nt);
   }
 

@@ -32,16 +32,16 @@ public:
                                -10 * log(probability)));
   }
 
-  static std::shared_ptr<AstNode> parse(const std::string &input,
-                                        size_t &index) throw(ParseError) {
-    parseCharInSpace(input, index, '(');
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
 
-    auto probability = parseDouble(input, index);
+    auto probability = state.parseDouble();
     if (probability <= 0 || probability >= 1) {
-      throw ParseError(index, "The provided probability is not probable.");
+      throw ParseError(state.where(),
+                       "The provided probability is not probable.");
     }
 
-    parseCharInSpace(input, index, ')');
+    state.parseCharInSpace(')');
 
     return std::make_shared<MappingQualityNode>(probability);
   }
@@ -67,16 +67,16 @@ public:
                               probability));
   }
 
-  static std::shared_ptr<AstNode> parse(const std::string &input,
-                                        size_t &index) throw(ParseError) {
-    parseCharInSpace(input, index, '(');
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
 
-    auto probability = parseDouble(input, index);
+    auto probability = state.parseDouble();
     if (probability < 0 || probability > 1) {
-      throw ParseError(index, "The provided probability is not probable.");
+      throw ParseError(state.where(),
+                       "The provided probability is not probable.");
     }
 
-    parseCharInSpace(input, index, ')');
+    state.parseCharInSpace(')');
 
     return std::make_shared<RandomlyNode>(probability);
   }
@@ -105,27 +105,26 @@ public:
                                end));
   }
 
-  static std::shared_ptr<AstNode> parse(const std::string &input,
-                                        size_t &index) throw(ParseError) {
-    parseCharInSpace(input, index, '(');
-    auto start = parseInt(input, index);
-    parseCharInSpace(input, index, ',');
-    auto end = parseInt(input, index);
-    parseCharInSpace(input, index, ')');
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
+    auto start = state.parseInt();
+    state.parseCharInSpace(',');
+    auto end = state.parseInt();
+    state.parseCharInSpace(')');
     return std::make_shared<PositionNode>(start, end);
   }
-  static std::shared_ptr<AstNode> parseAfter(const std::string &input,
-                                             size_t &index) throw(ParseError) {
-    parseCharInSpace(input, index, '(');
-    auto pos = parseInt(input, index);
-    parseCharInSpace(input, index, ')');
+  static std::shared_ptr<AstNode> parseAfter(ParseState &state) throw(
+      ParseError) {
+    state.parseCharInSpace('(');
+    auto pos = state.parseInt();
+    state.parseCharInSpace(')');
     return std::make_shared<PositionNode>(pos, INT32_MAX);
   }
-  static std::shared_ptr<AstNode> parseBefore(const std::string &input,
-                                              size_t &index) throw(ParseError) {
-    parseCharInSpace(input, index, '(');
-    auto pos = parseInt(input, index);
-    parseCharInSpace(input, index, ')');
+  static std::shared_ptr<AstNode> parseBefore(ParseState &state) throw(
+      ParseError) {
+    state.parseCharInSpace('(');
+    auto pos = state.parseInt();
+    state.parseCharInSpace(')');
     return std::make_shared<PositionNode>(0, pos);
   }
 

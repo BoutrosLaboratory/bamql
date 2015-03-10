@@ -3,74 +3,70 @@
 
 namespace barf {
 
-static std::shared_ptr<AstNode> parseConditional(const std::string &input,
-                                                 size_t &index,
+static std::shared_ptr<AstNode> parseConditional(ParseState &state,
                                                  PredicateMap predicates);
 
 /**
  * Handle terminal operators (final step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseTerminal(const std::string &input,
-                                              size_t &index,
+static std::shared_ptr<AstNode> parseTerminal(ParseState &state,
                                               PredicateMap predicates) {
 
-  parseSpace(input, index);
-  if (index >= input.length()) {
-    throw ParseError(index, "Reached end of input before completing parsing.");
+  state.parseSpace();
+  if (state.empty()) {
+    throw ParseError(state.where(),
+                     "Reached end of input before completing parsing.");
   }
-  if (input[index] == '!') {
-    index++;
-    return std::make_shared<NotNode>(parseTerminal(input, index, predicates));
+  if (*state == '!') {
+    state.next();
+    return std::make_shared<NotNode>(parseTerminal(state, predicates));
   }
-  if (input[index] == '(') {
-    index++;
-    size_t brace_index = index;
-    auto node = parseConditional(input, index, predicates);
-    parseSpace(input, index);
-    if (index < input.length() && input[index] == ')') {
-      index++;
+  if (*state == '(') {
+    state.next();
+    size_t brace_index = state.where();
+    auto node = parseConditional(state, predicates);
+    state.parseSpace();
+    if (!state.empty() && *state == ')') {
+      state.next();
       return node;
     } else {
       throw ParseError(brace_index,
                        "Open brace has no matching closing brace.");
     }
   }
-  size_t start = index;
-  while (
-      index < input.length() &&
-      (input[index] >= 'a' && input[index] <= 'z' ||
-       ((index - start) > 0) && (input[index] == '_' || input[index] == '?' ||
-                                 input[index] >= '0' && input[index] <= '9'))) {
-    index++;
+  size_t start = state.where();
+  while (!state.empty() &&
+         (*state >= 'a' && *state <= 'z' ||
+          ((state.where() - start) > 0) && (*state == '_' || *state == '?' ||
+                                            *state >= '0' && *state <= '9'))) {
+    state.next();
   }
-  if (start == index) {
-    throw ParseError(index, "Empty predicate.");
+  if (start == state.where()) {
+    throw ParseError(state.where(), "Missing predicate.");
   }
 
-  std::string predicate_name = input.substr(start, index - start);
+  std::string predicate_name = state.strFrom(start);
   if (predicates.count(predicate_name)) {
-    return predicates[predicate_name](input, index);
+    return predicates[predicate_name](state);
   } else {
-    index = start;
-    throw ParseError(index, "Unknown predicate.");
+    throw ParseError(start, "Unknown predicate.");
   }
 }
 
 /**
  * Handle and operators (third step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseAnd(const std::string &input,
-                                         size_t &index,
+static std::shared_ptr<AstNode> parseAnd(ParseState &state,
                                          PredicateMap predicates) {
   std::vector<std::shared_ptr<AstNode>> items;
 
-  std::shared_ptr<AstNode> node = parseTerminal(input, index, predicates);
-  parseSpace(input, index);
-  while (index < input.length() && input[index] == '&') {
-    index++;
+  std::shared_ptr<AstNode> node = parseTerminal(state, predicates);
+  state.parseSpace();
+  while (!state.empty() && *state == '&') {
+    state.next();
     items.push_back(node);
-    node = parseTerminal(input, index, predicates);
-    parseSpace(input, index);
+    node = parseTerminal(state, predicates);
+    state.parseSpace();
   }
   while (items.size() > 0) {
     node = std::make_shared<AndNode>(items.back(), node);
@@ -82,18 +78,17 @@ static std::shared_ptr<AstNode> parseAnd(const std::string &input,
 /**
  * Handle or operators (second step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseOr(const std::string &input,
-                                        size_t &index,
+static std::shared_ptr<AstNode> parseOr(ParseState &state,
                                         PredicateMap predicates) {
   std::vector<std::shared_ptr<AstNode>> items;
 
-  std::shared_ptr<AstNode> node = parseAnd(input, index, predicates);
-  parseSpace(input, index);
-  while (index < input.length() && input[index] == '|') {
-    index++;
+  std::shared_ptr<AstNode> node = parseAnd(state, predicates);
+  state.parseSpace();
+  while (!state.empty() && *state == '|') {
+    state.next();
     items.push_back(node);
-    node = parseAnd(input, index, predicates);
-    parseSpace(input, index);
+    node = parseAnd(state, predicates);
+    state.parseSpace();
   }
   while (items.size() > 0) {
     node = std::make_shared<OrNode>(items.back(), node);
@@ -105,19 +100,18 @@ static std::shared_ptr<AstNode> parseOr(const std::string &input,
 /**
  * Handle conditional operators (first step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseConditional(const std::string &input,
-                                                 size_t &index,
+static std::shared_ptr<AstNode> parseConditional(ParseState &state,
                                                  PredicateMap predicates) {
-  auto cond_part = parseOr(input, index, predicates);
-  parseSpace(input, index);
-  if (!parseKeyword(input, index, "then")) {
+  auto cond_part = parseOr(state, predicates);
+  state.parseSpace();
+  if (!state.parseKeyword("then")) {
     return cond_part;
   }
-  auto then_part = parseOr(input, index, predicates);
-  if (!parseKeyword(input, index, "else")) {
-    throw ParseError(index, "Ternary operator has no else.");
+  auto then_part = parseOr(state, predicates);
+  if (!state.parseKeyword("else")) {
+    throw ParseError(state.where(), "Ternary operator has no else.");
   }
-  auto else_part = parseOr(input, index, predicates);
+  auto else_part = parseOr(state, predicates);
   return std::make_shared<ConditionalNode>(cond_part, then_part, else_part);
 }
 
@@ -127,13 +121,13 @@ static std::shared_ptr<AstNode> parseConditional(const std::string &input,
  */
 std::shared_ptr<AstNode> AstNode::parse(
     const std::string &input, PredicateMap predicates) throw(ParseError) {
-  size_t index = 0;
-  std::shared_ptr<AstNode> node = parseConditional(input, index, predicates);
+  ParseState state(input);
+  std::shared_ptr<AstNode> node = parseConditional(state, predicates);
 
-  parseSpace(input, index);
+  state.parseSpace();
   // check string is fully consumed
-  if (index != input.length()) {
-    throw ParseError(index, "Junk at end of input.");
+  if (!state.empty()) {
+    throw ParseError(state.where(), "Junk at end of input.");
   }
   return node;
 }

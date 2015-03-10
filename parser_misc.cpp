@@ -9,7 +9,22 @@ ParseError::ParseError(size_t index, std::string what)
 }
 size_t ParseError::where() { return index; }
 
-int parseInt(const std::string &input, size_t &index) throw(ParseError) {
+ParseState::ParseState(const std::string &input_)
+    : input(input_), index(0), line(0), column(0) {}
+unsigned int ParseState::currentLine() const { return line; }
+unsigned int ParseState::currentColumn() const { return column; }
+
+bool ParseState::empty() const { return index >= input.length(); }
+void ParseState::next() {
+  index++;
+  column++;
+  if (index >= input.length() && input[index] == '\n') {
+    column = 0;
+    line++;
+  }
+}
+
+int ParseState::parseInt() throw(ParseError) {
   size_t start = index;
   int accumulator = 0;
   while (index < input.length() && input[index] >= '0' && input[index] <= '9') {
@@ -21,7 +36,7 @@ int parseInt(const std::string &input, size_t &index) throw(ParseError) {
   }
   return accumulator;
 }
-double parseDouble(const std::string &input, size_t &index) throw(ParseError) {
+double ParseState::parseDouble() throw(ParseError) {
   size_t start = index;
   char *end_ptr = nullptr;
   auto result = strtod(input.c_str() + start, &end_ptr);
@@ -31,10 +46,8 @@ double parseDouble(const std::string &input, size_t &index) throw(ParseError) {
   }
   return result;
 }
-std::string parseStr(const std::string &input,
-                     size_t &index,
-                     const std::string &accept_chars,
-                     bool reject) throw(ParseError) {
+std::string ParseState::parseStr(const std::string &accept_chars,
+                                 bool reject) throw(ParseError) {
   size_t start = index;
   while (index < input.length() &&
          ((accept_chars.find(input[index]) != std::string::npos) ^ reject)) {
@@ -45,7 +58,7 @@ std::string parseStr(const std::string &input,
   }
   return input.substr(start, index - start);
 }
-bool parseSpace(const std::string &input, size_t &index) {
+bool ParseState::parseSpace() {
   size_t start = index;
   while (index < input.length() &&
          (input[index] == ' ' || input[index] == '\t' || input[index] == '\n' ||
@@ -54,21 +67,17 @@ bool parseSpace(const std::string &input, size_t &index) {
   }
   return start != index;
 }
-void parseCharInSpace(const std::string &input,
-                      size_t &index,
-                      char c) throw(ParseError) {
-  parseSpace(input, index);
+void ParseState::parseCharInSpace(char c) throw(ParseError) {
+  parseSpace();
   if (index >= input.length() || input[index] != c) {
     std::ostringstream err_text;
     err_text << "Expected `" << c << "'.";
     throw ParseError(index, err_text.str());
   }
   index++;
-  parseSpace(input, index);
+  parseSpace();
 }
-bool parseKeyword(const std::string &input,
-                  size_t &index,
-                  const std::string &keyword) {
+bool ParseState::parseKeyword(const std::string &keyword) {
   for (size_t it = 0; it < keyword.length(); it++) {
     if (index + it >= input.length() || input[index + it] != keyword[it]) {
       return false;
@@ -106,11 +115,17 @@ unsigned int degen_nt[32] = {
   /*Y*/ 2 | 8,
   /*Z*/ 0
 };
-unsigned char parseNucleotide(const std::string &input, size_t &index) {
+unsigned char ParseState::parseNucleotide() {
   auto c = tolower(input[index++]);
   if (c >= 'a' && c <= 'z') {
     return degen_nt[c - 'a'];
   }
   return 0;
 }
+std::string ParseState::strFrom(size_t start) const {
+  return input.substr(start, index - start);
+}
+
+size_t ParseState::where() const { return index; }
+char ParseState::operator*() const { return input[index]; }
 }
