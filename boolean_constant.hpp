@@ -22,8 +22,7 @@ public:
                                      llvm::Value *header) {
     return CF(llvm::getGlobalContext());
   }
-  static std::shared_ptr<AstNode> parse(const std::string &input,
-                                        size_t &index) throw(ParseError) {
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     static auto result = std::make_shared<ConstantNode<CF>>();
     return result;
   }
