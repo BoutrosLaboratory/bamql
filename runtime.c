@@ -71,7 +71,7 @@ bool globish_match(const char *pattern, const char *input)
 
 bool check_flag(bam1_t *read, uint16_t flag)
 {
-	return flag & read->core.flag;
+	return (flag & read->core.flag) == flag;
 }
 
 bool check_chromosome_id(uint32_t chr_id, bam_hdr_t *header,
