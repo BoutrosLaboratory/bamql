@@ -20,7 +20,8 @@
 
 bool globish_match(const char *pattern, const char *input)
 {
-	for (; *pattern != '\0' && *input != '\0'; pattern++, input++) {
+	for (; *pattern != '\0'; pattern++) {
+		const char *next_input;
 		switch (*pattern) {
 		case '?':
 			/*
@@ -28,6 +29,7 @@ bool globish_match(const char *pattern, const char *input)
 			 */
 			if (*input == '\0')
 				return false;
+			input++;
 			break;
 		case '*':
 			/*
@@ -39,7 +41,7 @@ bool globish_match(const char *pattern, const char *input)
 			/*
 			 * If there is no more pattern, then whatever remaining input matches.
 			 */
-			if (*pattern == '\0') {
+			if (pattern[1] == '\0') {
 				return true;
 			}
 
@@ -48,16 +50,19 @@ bool globish_match(const char *pattern, const char *input)
 			 * the star, so consume the input, character by character, each time
 			 * recursively checking if the input matches the rest of the string.
 			 */
-			while (*(input++) != '\0') {
-				if (globish_match(pattern, input)) {
+			for (next_input = input; *next_input != '\0';
+			     next_input++) {
+				if (globish_match(pattern, next_input + 1)) {
 					return true;
 				}
 			}
-			return false;
+			break;
 		default:
-			if (tolower(*pattern) != tolower(*input)) {
+			if (*input == '\0'
+			    || tolower(*pattern) != tolower(*input)) {
 				return false;
 			}
+			input++;
 			break;
 		}
 	}
