@@ -27,6 +27,7 @@ class OutputWrangler : public barf::CheckIterator {
 public:
   OutputWrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
                  llvm::Module *module,
+                 std::string &query_,
                  std::shared_ptr<barf::AstNode> &node,
                  std::string name,
                  ChainPattern c,
@@ -34,7 +35,8 @@ public:
                  std::shared_ptr<htsFile> o,
                  std::shared_ptr<OutputWrangler> n)
       : barf::CheckIterator::CheckIterator(engine, module, node, name),
-        chain(c), file_name(file_name_), output_file(o), next(n) {}
+        chain(c), file_name(file_name_), output_file(o), query(query_),
+        next(n) {}
 
   /**
    * We want this chromosome if our query is interested or the next link can
@@ -47,9 +49,22 @@ public:
   }
 
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
-    sam_hdr_write(output_file.get(), header.get());
+    auto version = barf::version();
+    std::stringstream name;
+    name << "barf-chain ";
+    for (auto chains = known_chains.begin(); chains != known_chains.end();
+         chains++) {
+      if (chains->second == chain) {
+        name << chains->first;
+        break;
+      }
+    }
+
+    auto copy =
+        barf::appendProgramToHeader(header.get(), name.str(), version, query);
+    sam_hdr_write(output_file.get(), chain == 3 ? header.get() : copy.get());
     if (next)
-      next->ingestHeader(header);
+      next->ingestHeader(copy);
   }
 
   /**
@@ -82,6 +97,7 @@ private:
   barf::IndexFunction index;
   std::shared_ptr<OutputWrangler> next;
   std::string file_name;
+  std::string query;
   size_t count = 0;
 };
 
@@ -171,8 +187,9 @@ int main(int argc, char *const *argv) {
       return 1;
     }
     // Parse the input query.
-    auto ast = barf::AstNode::parseWithLogging(std::string(argv[it]),
-                                               barf::getDefaultPredicates());
+    std::string query(argv[it]);
+    auto ast =
+        barf::AstNode::parseWithLogging(query, barf::getDefaultPredicates());
     if (!ast) {
       return 1;
     }
@@ -182,6 +199,7 @@ int main(int argc, char *const *argv) {
     function_name << "filter" << it;
     output = std::make_shared<OutputWrangler>(engine,
                                               module,
+                                              query,
                                               ast,
                                               function_name.str(),
                                               chain,

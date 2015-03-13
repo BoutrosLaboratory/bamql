@@ -12,18 +12,28 @@ class DataCollector : public barf::CheckIterator {
 public:
   DataCollector(std::shared_ptr<llvm::ExecutionEngine> &engine,
                 llvm::Module *module,
+                std::string &query_,
                 std::shared_ptr<barf::AstNode> &node,
                 bool verbose_,
                 std::shared_ptr<htsFile> &a,
                 std::shared_ptr<htsFile> &r)
       : barf::CheckIterator::CheckIterator(
             engine, module, node, std::string("filter")),
-        verbose(verbose_), accept(a), reject(r) {}
+        query(query_), verbose(verbose_), accept(a), reject(r) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
-    if (accept)
-      sam_hdr_write(accept.get(), header.get());
-    if (reject)
-      sam_hdr_write(reject.get(), header.get());
+    auto version = barf::version();
+    if (accept) {
+      std::string name("barf-accept");
+      auto copy =
+          barf::appendProgramToHeader(header.get(), name, version, query);
+      sam_hdr_write(accept.get(), copy.get());
+    }
+    if (reject) {
+      std::string name("barf-reject");
+      auto copy =
+          barf::appendProgramToHeader(header.get(), name, version, query);
+      sam_hdr_write(reject.get(), copy.get());
+    }
   }
   void readMatch(bool matches,
                  std::shared_ptr<bam_hdr_t> &header,
@@ -47,6 +57,7 @@ private:
   std::shared_ptr<htsFile> reject;
   size_t accept_count = 0;
   size_t reject_count = 0;
+  std::string query;
   bool verbose;
 };
 
@@ -146,7 +157,8 @@ int main(int argc, char *const *argv) {
   }
 
   // Process the input file.
-  DataCollector stats(engine, module, ast, verbose, accept, reject);
+  std::string query(argv[optind]);
+  DataCollector stats(engine, module, query, ast, verbose, accept, reject);
   if (stats.processFile(bam_filename, binary, ignore_index)) {
     stats.writeSummary();
     return 0;
