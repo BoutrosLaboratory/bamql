@@ -26,8 +26,9 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = module->getFunction("check_mapping_quality");
-    return builder.CreateCall(
+    return builder.CreateCall2(
         function,
+        read,
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
                                -10 * log(probability)));
   }
