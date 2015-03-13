@@ -93,4 +93,9 @@ private:
   barf::IndexFunction index;
   std::shared_ptr<llvm::ExecutionEngine> engine;
 };
+
+std::shared_ptr<bam_hdr_t> appendProgramToHeader(const bam_hdr_t *original,
+                                                 const std::string &id,
+                                                 const std::string &version,
+                                                 const std::string &args);
 }
