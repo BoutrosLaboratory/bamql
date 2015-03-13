@@ -120,8 +120,7 @@ bool check_position(bam1_t *read, int32_t start, int32_t end)
 	if (read->core.flag & BAM_FUNMAP) {
 		return false;
 	}
-	return read->core.pos <= end
-	    && read->core.pos + read->core.l_qseq >= start;
+	return read->core.pos <= end && bam_endpos(read) >= start;
 }
 
 bool check_aux_str(bam1_t *read, const char *pattern, char group1, char group2)
