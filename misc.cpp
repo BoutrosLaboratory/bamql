@@ -1,4 +1,5 @@
 #include "barf.hpp"
+#include "config.h"
 
 namespace barf {
 extern llvm::Module *define_runtime(llvm::Module *module);
@@ -91,4 +92,6 @@ llvm::Value *createString(llvm::Module *module, std::string str) {
   indicies.push_back(zero);
   return llvm::ConstantExpr::getGetElementPtr(global_variable, indicies);
 }
+
+std::string version() { return std::string(VERSION); }
 }

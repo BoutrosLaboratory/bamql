@@ -260,4 +260,9 @@ private:
  * One would think this is trivial, but it isn't.
  */
 llvm::Value *createString(llvm::Module *module, std::string str);
+
+/**
+ * The current version of the library.
+ */
+std::string version();
 }
