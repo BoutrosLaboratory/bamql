@@ -9,6 +9,9 @@ pkgconfig_DATA = barf.pc barf-jit.pc
 man1_MANS = barf.1 barf-chain.1 barf-compile.1
 man7_MANS = barf_queries.7
 
+TESTS = check_barf
+check_PROGRAMS = check_barf
+
 libbarf_la_CPPFLAGS = \
 	-std=c++11 \
 	$(LLVM_CORE_CPPFLAGS) -fexceptions \
@@ -101,6 +104,24 @@ barf_compile_LDFLAGS =\
 barf_compile_LDADD = \
 	libbarf.la \
 	$(LLVM_WRITE_LIBS) \
+	$(NULL)
+
+check_barf_SOURCES = \
+	check.cpp \
+	$(NULL)
+check_barf_CPPFLAGS = \
+	-std=c++11 \
+	$(HTS_CFLAGS) -g -O2 \
+	$(LLVM_RUN_CPPFLAGS) -fexceptions \
+	$(NULL)
+check_barf_LDFLAGS =\
+	$(LLVM_RUN_LDFLAGS) \
+	$(NULL)
+check_barf_LDADD = \
+	libbarf.la \
+	libbarf-jit.la \
+	$(HTS_LIBS) \
+	$(LLVM_RUN_LIBS) \
 	$(NULL)
 
 runtime.bc: runtime.c

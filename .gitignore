@@ -1,10 +1,10 @@
-*~
 *.bc
 *.la
 *.lo
 *.o
 *.pc
 *.swp
+*~
 .deps
 .libs
 Makefile
@@ -15,15 +15,16 @@ autom4te.cache
 barf
 barf-chain
 barf-compile
+check_barf*
 compile
 config.*
 configure
 debian/*debhelper*
 debian/*substvars
-debian/files
-debian/libbarf*/
 debian/barf-dbg
 debian/barf-dev
+debian/files
+debian/libbarf*/
 debian/tmp/
 depcomp
 install-sh
@@ -38,3 +39,5 @@ missing
 runtime.bc
 runtime.cpp
 stamp-h1
+test-driver
+test-suite.log
