@@ -63,6 +63,9 @@ public:
    * @param ignore_index: Do not use the index even if one is found.
    */
   bool processFile(const char *file_name, bool binary, bool ignore_index);
+
+private:
+  bool wantAll(std::shared_ptr<bam_hdr_t> &header);
 };
 /**
  * Iterate over the reads in a BAM file, preselecting those through a filter.

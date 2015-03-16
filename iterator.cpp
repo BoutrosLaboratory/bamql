@@ -21,6 +21,14 @@ static bool checkHtsError(int result) {
   return false;
 }
 
+bool barf::ReadIterator::wantAll(std::shared_ptr<bam_hdr_t> &header) {
+  for (auto tid = 0; tid < header->n_targets; tid++) {
+    if (!wantChromosome(header, tid)) {
+      return false;
+    }
+  }
+  return true;
+}
 bool barf::ReadIterator::processFile(const char *file_name,
                                      bool binary,
                                      bool ignore_index) {
@@ -41,7 +49,7 @@ bool barf::ReadIterator::processFile(const char *file_name,
       ignore_index ? nullptr : hts_idx_load(file_name, HTS_FMT_BAI),
       hts_idx_destroy);
 
-  if (index) {
+  if (index && !wantAll(header)) {
     std::shared_ptr<bam1_t> read(bam_init1(), bam_destroy1);
     // Rummage through all the chromosomes in the header...
     for (auto tid = 0; tid < header->n_targets; tid++) {
