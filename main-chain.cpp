@@ -19,6 +19,10 @@ std::map<std::string, ChainPattern> known_chains = { { "parallel", 3 },
                                                      { "series", 2 },
                                                      { "shuttle", 1 } };
 
+bool checkChain(ChainPattern chain, bool matches) {
+  return chain & (1 << matches);
+}
+
 /**
  * One link of a chain. It checks the filter, writes matching reads to a file,
  * and propagates the read to the next link in the chain.
@@ -45,7 +49,8 @@ public:
    */
   bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid) {
     return CheckIterator::wantChromosome(header, tid) ||
-           next && chain & 1 && next->wantChromosome(header, tid);
+           next && checkChain(chain, false) &&
+               next->wantChromosome(header, tid);
   }
 
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
@@ -78,7 +83,7 @@ public:
       count++;
       sam_write1(output_file.get(), header.get(), read.get());
     }
-    if (next && chain & (1 << matches)) {
+    if (next && checkChain(chain, matches)) {
       next->processRead(header, read);
     }
   }
