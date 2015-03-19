@@ -7,7 +7,8 @@ extern llvm::Module *define_runtime(llvm::Module *module);
 llvm::Value *AstNode::generateIndex(llvm::Module *module,
                                     llvm::IRBuilder<> &builder,
                                     llvm::Value *read,
-                                    llvm::Value *header) {
+                                    llvm::Value *header,
+                                    llvm::DIScope *debug_scope) {
   return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 
@@ -15,6 +16,7 @@ llvm::Function *AstNode::createFunction(llvm::Module *module,
                                         llvm::StringRef name,
                                         llvm::StringRef param_name,
                                         llvm::Type *param_type,
+                                        llvm::DIScope *debug_scope,
                                         GenerateMember member) {
   auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
       name,
@@ -31,28 +33,43 @@ llvm::Function *AstNode::createFunction(llvm::Module *module,
   header_value->setName("header");
   auto param_value = args++;
   param_value->setName(param_name);
+  this->writeDebug(module, builder, debug_scope);
   builder.CreateRet(
-      (this->*member)(module, builder, param_value, header_value));
+      (this->*member)(module, builder, param_value, header_value, debug_scope));
 
   return func;
 }
 
 llvm::Function *AstNode::createFilterFunction(llvm::Module *module,
-                                              llvm::StringRef name) {
+                                              llvm::StringRef name,
+                                              llvm::DIScope *debug_scope) {
   return createFunction(module,
                         name,
                         "read",
                         llvm::PointerType::get(barf::getBamType(module), 0),
+                        debug_scope,
                         &barf::AstNode::generate);
 }
 
 llvm::Function *AstNode::createIndexFunction(llvm::Module *module,
-                                             llvm::StringRef name) {
+                                             llvm::StringRef name,
+                                             llvm::DIScope *debug_scope) {
   return createFunction(module,
                         name,
                         "tid",
                         llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+                        debug_scope,
                         &barf::AstNode::generateIndex);
+}
+
+DebuggableNode::DebuggableNode(ParseState &state)
+    : line(state.currentLine()), column(state.currentColumn()) {}
+void DebuggableNode::writeDebug(llvm::Module *module,
+                                llvm::IRBuilder<> &builder,
+                                llvm::DIScope *debug_scope) {
+  if (debug_scope != nullptr)
+    builder.SetCurrentDebugLocation(
+        llvm::DebugLoc::get(line, column, *debug_scope));
 }
 
 llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {

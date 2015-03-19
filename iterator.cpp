@@ -87,11 +87,11 @@ barf::CheckIterator::CheckIterator(std::shared_ptr<llvm::ExecutionEngine> &e,
   // Compile the query into native functions. We must hold a reference to the
   // execution engine as long as we intend for these pointers to be valid.
   filter = getNativeFunction<FilterFunction>(
-      e, node->createFilterFunction(module, name));
+      e, node->createFilterFunction(module, name, nullptr));
   std::stringstream index_function_name;
   index_function_name << name << "_index";
   index = getNativeFunction<IndexFunction>(
-      e, node->createIndexFunction(module, index_function_name.str()));
+      e, node->createIndexFunction(module, index_function_name.str(), nullptr));
 }
 
 bool barf::CheckIterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,

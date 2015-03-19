@@ -5,14 +5,15 @@ namespace barf {
 /**
  * A predicate that matches a particular nucleotide.
  */
-template <BoolConstant EXACT> class NucleotideNode : public AstNode {
+template <BoolConstant EXACT> class NucleotideNode : public DebuggableNode {
 public:
-  NucleotideNode(int32_t position_, unsigned char nt_)
-      : position(position_), nt(nt_) {}
+  NucleotideNode(int32_t position_, unsigned char nt_, ParseState &state)
+      : DebuggableNode(state), position(position_), nt(nt_) {}
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header) {
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope) {
     auto function = module->getFunction("check_nt");
     return builder.CreateCall4(
         function,
@@ -30,7 +31,7 @@ public:
     state.parseCharInSpace(',');
     auto nt = state.parseNucleotide();
     state.parseCharInSpace(')');
-    return std::make_shared<NucleotideNode<EXACT>>(position, nt);
+    return std::make_shared<NucleotideNode<EXACT>>(position, nt, state);
   }
 
 private:

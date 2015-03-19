@@ -6,13 +6,15 @@ namespace barf {
 /**
  * A predicate that checks of the chromosome name.
  */
-template <bool mate> class CheckChromosomeNode : public AstNode {
+template <bool mate> class CheckChromosomeNode : public DebuggableNode {
 public:
-  CheckChromosomeNode(std::string name_) : name(name_) {}
+  CheckChromosomeNode(std::string name_, ParseState &state)
+      : DebuggableNode(state), name(name_) {}
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header) {
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope) {
     auto function = module->getFunction("check_chromosome");
     return builder.CreateCall4(
         function,
@@ -25,7 +27,8 @@ public:
   virtual llvm::Value *generateIndex(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
                                      llvm::Value *chromosome,
-                                     llvm::Value *header) {
+                                     llvm::Value *header,
+                                     llvm::DIScope *debug_scope) {
     if (mate) {
       return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
     }
@@ -51,24 +54,24 @@ public:
     if (str.compare("23") == 0 || str.compare("X") == 0 ||
         str.compare("x") == 0) {
       return std::make_shared<OrNode>(
-          std::make_shared<CheckChromosomeNode<mate>>("23"),
-          std::make_shared<CheckChromosomeNode<mate>>("x"));
+          std::make_shared<CheckChromosomeNode<mate>>("23", state),
+          std::make_shared<CheckChromosomeNode<mate>>("x", state));
     }
 
     if (str.compare("24") == 0 || str.compare("Y") == 0 ||
         str.compare("y") == 0) {
       return std::make_shared<OrNode>(
-          std::make_shared<CheckChromosomeNode<mate>>("24"),
-          std::make_shared<CheckChromosomeNode<mate>>("y"));
+          std::make_shared<CheckChromosomeNode<mate>>("24", state),
+          std::make_shared<CheckChromosomeNode<mate>>("y", state));
     }
     if (str.compare("25") == 0 || str.compare("M") == 0 ||
         str.compare("m") == 0) {
       return std::make_shared<OrNode>(
-          std::make_shared<CheckChromosomeNode<mate>>("25"),
-          std::make_shared<CheckChromosomeNode<mate>>("m"));
+          std::make_shared<CheckChromosomeNode<mate>>("25", state),
+          std::make_shared<CheckChromosomeNode<mate>>("m", state));
     }
     // otherwise, just match the provided chromosome.
-    return std::make_shared<CheckChromosomeNode<mate>>(str);
+    return std::make_shared<CheckChromosomeNode<mate>>(str, state);
   }
 
 private:

@@ -6,11 +6,13 @@ barf::ShortCircuitNode::ShortCircuitNode(std::shared_ptr<AstNode> left,
   this->right = right;
 }
 
-llvm::Value *barf::ShortCircuitNode::generateGeneric(GenerateMember member,
-                                                     llvm::Module *module,
-                                                     llvm::IRBuilder<> &builder,
-                                                     llvm::Value *param,
-                                                     llvm::Value *header) {
+llvm::Value *barf::ShortCircuitNode::generateGeneric(
+    GenerateMember member,
+    llvm::Module *module,
+    llvm::IRBuilder<> &builder,
+    llvm::Value *param,
+    llvm::Value *header,
+    llvm::DIScope *debug_scope) {
   /* Create two basic blocks for the possibly executed right-hand expression and
    * the final block. */
   auto function = builder.GetInsertBlock()->getParent();
@@ -20,7 +22,9 @@ llvm::Value *barf::ShortCircuitNode::generateGeneric(GenerateMember member,
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
   /* Generate the left expression in the current block. */
-  auto left_value = ((*this->left).*member)(module, builder, param, header);
+  this->left->writeDebug(module, builder, debug_scope);
+  auto left_value =
+      ((*this->left).*member)(module, builder, param, header, debug_scope);
   auto short_circuit_value =
       builder.CreateICmpEQ(left_value, this->branchValue());
   /* If short circuiting, jump to the final block, otherwise, do the right-hand
@@ -30,7 +34,9 @@ llvm::Value *barf::ShortCircuitNode::generateGeneric(GenerateMember member,
 
   /* Generate the right-hand expression, then jump to the final block.*/
   builder.SetInsertPoint(next_block);
-  auto right_value = ((*this->right).*member)(module, builder, param, header);
+  this->right->writeDebug(module, builder, debug_scope);
+  auto right_value =
+      ((*this->right).*member)(module, builder, param, header, debug_scope);
   builder.CreateBr(merge_block);
   next_block = builder.GetInsertBlock();
 
@@ -47,18 +53,23 @@ llvm::Value *barf::ShortCircuitNode::generateGeneric(GenerateMember member,
 llvm::Value *barf::ShortCircuitNode::generate(llvm::Module *module,
                                               llvm::IRBuilder<> &builder,
                                               llvm::Value *read,
-                                              llvm::Value *header) {
+                                              llvm::Value *header,
+                                              llvm::DIScope *debug_scope) {
   return generateGeneric(
-      &barf::AstNode::generate, module, builder, read, header);
+      &barf::AstNode::generate, module, builder, read, header, debug_scope);
 }
 
 llvm::Value *barf::ShortCircuitNode::generateIndex(llvm::Module *module,
                                                    llvm::IRBuilder<> &builder,
                                                    llvm::Value *tid,
-                                                   llvm::Value *header) {
+                                                   llvm::Value *header,
+                                                   llvm::DIScope *debug_scope) {
   return generateGeneric(
-      &barf::AstNode::generateIndex, module, builder, tid, header);
+      &barf::AstNode::generateIndex, module, builder, tid, header, debug_scope);
 }
+void barf::ShortCircuitNode::writeDebug(llvm::Module *module,
+                                        llvm::IRBuilder<> &builder,
+                                        llvm::DIScope *debug_scope) {}
 
 barf::AndNode::AndNode(std::shared_ptr<AstNode> left,
                        std::shared_ptr<AstNode> right)
@@ -78,18 +89,27 @@ barf::NotNode::NotNode(std::shared_ptr<AstNode> expr) { this->expr = expr; }
 llvm::Value *barf::NotNode::generate(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
                                      llvm::Value *read,
-                                     llvm::Value *header) {
-  llvm::Value *result = this->expr->generate(module, builder, read, header);
+                                     llvm::Value *header,
+                                     llvm::DIScope *debug_scope) {
+  this->expr->writeDebug(module, builder, debug_scope);
+  llvm::Value *result =
+      this->expr->generate(module, builder, read, header, debug_scope);
   return builder.CreateNot(result);
 }
 
 llvm::Value *barf::NotNode::generateIndex(llvm::Module *module,
                                           llvm::IRBuilder<> &builder,
                                           llvm::Value *tid,
-                                          llvm::Value *header) {
-  llvm::Value *result = this->expr->generateIndex(module, builder, tid, header);
+                                          llvm::Value *header,
+                                          llvm::DIScope *debug_scope) {
+  this->expr->writeDebug(module, builder, debug_scope);
+  llvm::Value *result =
+      this->expr->generateIndex(module, builder, tid, header, debug_scope);
   return builder.CreateNot(result);
 }
+void barf::NotNode::writeDebug(llvm::Module *module,
+                               llvm::IRBuilder<> &builder,
+                               llvm::DIScope *debug_scope) {}
 
 barf::ConditionalNode::ConditionalNode(std::shared_ptr<AstNode> condition,
                                        std::shared_ptr<AstNode> then_part,
@@ -102,7 +122,8 @@ barf::ConditionalNode::ConditionalNode(std::shared_ptr<AstNode> condition,
 llvm::Value *barf::ConditionalNode::generate(llvm::Module *module,
                                              llvm::IRBuilder<> &builder,
                                              llvm::Value *read,
-                                             llvm::Value *header) {
+                                             llvm::Value *header,
+                                             llvm::DIScope *debug_scope) {
   /* Create three blocks: one for the “then”, one for the “else” and one for the
    * final. */
   auto function = builder.GetInsertBlock()->getParent();
@@ -114,19 +135,25 @@ llvm::Value *barf::ConditionalNode::generate(llvm::Module *module,
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
   /* Compute the conditional argument and then decide to which block to jump. */
-  auto conditional_result = condition->generate(module, builder, read, header);
+  this->condition->writeDebug(module, builder, debug_scope);
+  auto conditional_result =
+      condition->generate(module, builder, read, header, debug_scope);
   builder.CreateCondBr(conditional_result, then_block, else_block);
 
   /* Generate the “then” block. */
   builder.SetInsertPoint(then_block);
-  auto then_result = then_part->generate(module, builder, read, header);
+  this->then_part->writeDebug(module, builder, debug_scope);
+  auto then_result =
+      then_part->generate(module, builder, read, header, debug_scope);
   /* Jump to the final block. */
   builder.CreateBr(merge_block);
   then_block = builder.GetInsertBlock();
 
   /* Generate the “else” block. */
   builder.SetInsertPoint(else_block);
-  auto else_result = else_part->generate(module, builder, read, header);
+  this->else_part->writeDebug(module, builder, debug_scope);
+  auto else_result =
+      else_part->generate(module, builder, read, header, debug_scope);
   /* Jump to the final block. */
   builder.CreateBr(merge_block);
   else_block = builder.GetInsertBlock();
@@ -143,7 +170,8 @@ llvm::Value *barf::ConditionalNode::generate(llvm::Module *module,
 llvm::Value *barf::ConditionalNode::generateIndex(llvm::Module *module,
                                                   llvm::IRBuilder<> &builder,
                                                   llvm::Value *tid,
-                                                  llvm::Value *header) {
+                                                  llvm::Value *header,
+                                                  llvm::DIScope *debug_scope) {
   /*
    * The logic in this function is twisty, so here is the explanation. Given we
    * have `C ? T : E`, consider the following cases during index building:
@@ -169,20 +197,25 @@ llvm::Value *barf::ConditionalNode::generateIndex(llvm::Module *module,
   /* Compute the conditional argument and then decide to which block to jump.
    * If true, try to make a decision based on the “then” block, otherwise, only
    * make a decision based on the “else” block. */
+  this->condition->writeDebug(module, builder, debug_scope);
   auto conditional_result =
-      condition->generateIndex(module, builder, tid, header);
+      condition->generateIndex(module, builder, tid, header, debug_scope);
   builder.CreateCondBr(conditional_result, then_block, else_block);
 
   /* Generate the “then” block. */
   builder.SetInsertPoint(then_block);
-  auto then_result = then_part->generateIndex(module, builder, tid, header);
+  this->then_part->writeDebug(module, builder, debug_scope);
+  auto then_result =
+      then_part->generateIndex(module, builder, tid, header, debug_scope);
   /* If we fail, the “else” block might still be interested. */
   builder.CreateCondBr(then_result, merge_block, else_block);
   then_block = builder.GetInsertBlock();
 
   /* Generate the “else” block. */
   builder.SetInsertPoint(else_block);
-  auto else_result = else_part->generateIndex(module, builder, tid, header);
+  this->else_part->writeDebug(module, builder, debug_scope);
+  auto else_result =
+      else_part->generateIndex(module, builder, tid, header, debug_scope);
   /* Jump to the final block. */
   builder.CreateBr(merge_block);
   else_block = builder.GetInsertBlock();
@@ -195,3 +228,6 @@ llvm::Value *barf::ConditionalNode::generateIndex(llvm::Module *module,
   phi->addIncoming(else_result, else_block);
   return phi;
 }
+void barf::ConditionalNode::writeDebug(llvm::Module *module,
+                                       llvm::IRBuilder<> &builder,
+                                       llvm::DIScope *debug_scope) {}

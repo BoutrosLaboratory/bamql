@@ -3,6 +3,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <llvm/DIBuilder.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
@@ -59,7 +60,8 @@ typedef llvm::Value *(barf::AstNode::*GenerateMember)(
     llvm::Module *module,
     llvm::IRBuilder<> &builder,
     llvm::Value *read,
-    llvm::Value *header);
+    llvm::Value *header,
+    llvm::DIScope *debug_scope);
 
 /**
  * An abstract syntax node representing a predicate or logical operation.
@@ -84,7 +86,8 @@ public:
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header) = 0;
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope) = 0;
   /**
    * Render this syntax node to LLVM for the purpose of deciding how to access
    * the index.
@@ -95,21 +98,44 @@ public:
   virtual llvm::Value *generateIndex(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
                                      llvm::Value *chromosome,
-                                     llvm::Value *header);
+                                     llvm::Value *header,
+                                     llvm::DIScope *debug_scope);
   /**
    * Generate the LLVM function from the query.
    */
   llvm::Function *createFilterFunction(llvm::Module *module,
-                                       llvm::StringRef name);
+                                       llvm::StringRef name,
+                                       llvm::DIScope *debug_scope);
   llvm::Function *createIndexFunction(llvm::Module *module,
-                                      llvm::StringRef name);
+                                      llvm::StringRef name,
+                                      llvm::DIScope *debug_scope);
+
+  virtual void writeDebug(llvm::Module *module,
+                          llvm::IRBuilder<> &builder,
+                          llvm::DIScope *debug_scope) = 0;
 
 private:
   llvm::Function *createFunction(llvm::Module *module,
                                  llvm::StringRef name,
                                  llvm::StringRef param_name,
                                  llvm::Type *param_type,
+                                 llvm::DIScope *debug_scope,
                                  barf::GenerateMember member);
+};
+/**
+ * This subclass is meant for making predicates, as it automatically fills out
+ * debugging information during code generation.
+ */
+class DebuggableNode : public AstNode {
+public:
+  DebuggableNode(ParseState &state);
+  void writeDebug(llvm::Module *module,
+                  llvm::IRBuilder<> &builder,
+                  llvm::DIScope *debug_scope);
+
+private:
+  unsigned int line;
+  unsigned int column;
 };
 
 /**
@@ -122,22 +148,29 @@ public:
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header);
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope);
   virtual llvm::Value *generateIndex(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
                                      llvm::Value *read,
-                                     llvm::Value *header);
+                                     llvm::Value *header,
+                                     llvm::DIScope *debug_scope);
   /**
    * The value that causes short circuting.
    */
   virtual llvm::Value *branchValue() = 0;
+
+  void writeDebug(llvm::Module *module,
+                  llvm::IRBuilder<> &builder,
+                  llvm::DIScope *debug_scope);
 
 private:
   llvm::Value *generateGeneric(GenerateMember member,
                                llvm::Module *module,
                                llvm::IRBuilder<> &builder,
                                llvm::Value *param,
-                               llvm::Value *header);
+                               llvm::Value *header,
+                               llvm::DIScope *debug_scope);
   std::shared_ptr<AstNode> left;
   std::shared_ptr<AstNode> right;
 };
@@ -166,11 +199,17 @@ public:
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header);
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope);
   virtual llvm::Value *generateIndex(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
                                      llvm::Value *read,
-                                     llvm::Value *header);
+                                     llvm::Value *header,
+                                     llvm::DIScope *debug_scope);
+
+  void writeDebug(llvm::Module *module,
+                  llvm::IRBuilder<> &builder,
+                  llvm::DIScope *debug_scope);
 
 private:
   std::shared_ptr<AstNode> expr;
@@ -186,11 +225,17 @@ public:
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header);
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope);
   virtual llvm::Value *generateIndex(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
                                      llvm::Value *read,
-                                     llvm::Value *header);
+                                     llvm::Value *header,
+                                     llvm::DIScope *debug_scope);
+
+  void writeDebug(llvm::Module *module,
+                  llvm::IRBuilder<> &builder,
+                  llvm::DIScope *debug_scope);
 
 private:
   std::shared_ptr<AstNode> condition;

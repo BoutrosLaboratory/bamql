@@ -9,13 +9,15 @@ typedef bool (*ValidChar)(char, bool not_first);
  * A predicate that checks of name of a string in the BAM auxiliary data.
  */
 template <char G1, char G2, ValidChar VC>
-class CheckAuxStringNode : public AstNode {
+class CheckAuxStringNode : public DebuggableNode {
 public:
-  CheckAuxStringNode(std::string name_) : name(name_) {}
+  CheckAuxStringNode(std::string name_, ParseState &state)
+      : DebuggableNode(state), name(name_) {}
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header) {
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope) {
     auto function = module->getFunction("check_aux_str");
     return builder.CreateCall4(
         function,
@@ -41,7 +43,7 @@ public:
 
     state.parseCharInSpace(')');
 
-    return std::make_shared<CheckAuxStringNode<G1, G2, VC>>(match);
+    return std::make_shared<CheckAuxStringNode<G1, G2, VC>>(match, state);
   }
 
 private:

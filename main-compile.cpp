@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <system_error>
+#include <llvm/DIBuilder.h>
 #include <llvm/IR/Module.h>
 #include <llvm/PassManager.h>
 #include <llvm/Support/FormattedStream.h>
@@ -77,12 +78,19 @@ int main(int argc, char *const *argv) {
 
   // Create a new LLVM module and our functions
   auto module = std::make_shared<llvm::Module>(name, llvm::getGlobalContext());
+  auto debug_builder = std::make_shared<llvm::DIBuilder>(*module);
+  module->addModuleFlag(llvm::Module::Warning,
+                        "Debug Info Version",
+                        llvm::DEBUG_METADATA_VERSION);
+  llvm::DIScope scope = debug_builder->createCompileUnit(
+      llvm::dwarf::DW_LANG_C, name, ".", "BARF Compiler", false, "", 0);
 
-  auto filter_func = ast->createFilterFunction(module.get(), name);
+  auto filter_func = ast->createFilterFunction(module.get(), name, &scope);
 
   std::stringstream index_name;
   index_name << name << "_index";
-  auto index_func = ast->createIndexFunction(module.get(), index_name.str());
+  auto index_func =
+      ast->createIndexFunction(module.get(), index_name.str(), &scope);
 
   if (dump) {
     module->dump();

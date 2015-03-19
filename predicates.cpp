@@ -18,13 +18,15 @@ static bool readGroupChar(char input, bool not_first) {
 /**
  * A predicate that is true if the mapping quality is sufficiently good.
  */
-class MappingQualityNode : public AstNode {
+class MappingQualityNode : public DebuggableNode {
 public:
-  MappingQualityNode(double probability_) : probability(probability_) {}
+  MappingQualityNode(double probability_, ParseState &state)
+      : DebuggableNode(state), probability(probability_) {}
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header) {
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope) {
     auto function = module->getFunction("check_mapping_quality");
     return builder.CreateCall2(
         function,
@@ -44,7 +46,7 @@ public:
 
     state.parseCharInSpace(')');
 
-    return std::make_shared<MappingQualityNode>(probability);
+    return std::make_shared<MappingQualityNode>(probability, state);
   }
 
 private:
@@ -54,13 +56,15 @@ private:
 /**
  * A predicate that randomly is true.
  */
-class RandomlyNode : public AstNode {
+class RandomlyNode : public DebuggableNode {
 public:
-  RandomlyNode(double probability_) : probability(probability_) {}
+  RandomlyNode(double probability_, ParseState &state)
+      : DebuggableNode(state), probability(probability_) {}
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header) {
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope) {
     auto function = module->getFunction("randomly");
     return builder.CreateCall(
         function,
@@ -79,7 +83,7 @@ public:
 
     state.parseCharInSpace(')');
 
-    return std::make_shared<RandomlyNode>(probability);
+    return std::make_shared<RandomlyNode>(probability, state);
   }
 
 private:
@@ -89,13 +93,15 @@ private:
 /**
  * A predicate that check mapped positions.
  */
-class PositionNode : public AstNode {
+class PositionNode : public DebuggableNode {
 public:
-  PositionNode(int32_t start_, int32_t end_) : start(start_), end(end_) {}
+  PositionNode(int32_t start_, int32_t end_, ParseState &state)
+      : DebuggableNode(state), start(start_), end(end_) {}
   virtual llvm::Value *generate(llvm::Module *module,
                                 llvm::IRBuilder<> &builder,
                                 llvm::Value *read,
-                                llvm::Value *header) {
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope) {
     auto function = module->getFunction("check_position");
     return builder.CreateCall3(
         function,
@@ -112,21 +118,21 @@ public:
     state.parseCharInSpace(',');
     auto end = state.parseInt();
     state.parseCharInSpace(')');
-    return std::make_shared<PositionNode>(start, end);
+    return std::make_shared<PositionNode>(start, end, state);
   }
   static std::shared_ptr<AstNode> parseAfter(ParseState &state) throw(
       ParseError) {
     state.parseCharInSpace('(');
     auto pos = state.parseInt();
     state.parseCharInSpace(')');
-    return std::make_shared<PositionNode>(pos, INT32_MAX);
+    return std::make_shared<PositionNode>(pos, INT32_MAX, state);
   }
   static std::shared_ptr<AstNode> parseBefore(ParseState &state) throw(
       ParseError) {
     state.parseCharInSpace('(');
     auto pos = state.parseInt();
     state.parseCharInSpace(')');
-    return std::make_shared<PositionNode>(0, pos);
+    return std::make_shared<PositionNode>(0, pos, state);
   }
 
 private:
