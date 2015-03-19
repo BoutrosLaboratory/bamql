@@ -4,9 +4,14 @@
 #include <sstream>
 #include <system_error>
 #include <llvm/IR/Module.h>
-#include <llvm/Bitcode/ReaderWriter.h>
-#include <llvm/Support/FileSystem.h>
+#include <llvm/PassManager.h>
+#include <llvm/Support/FormattedStream.h>
+#include <llvm/Support/Host.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Target/TargetOptions.h>
 #include "barf.hpp"
 
 /**
@@ -56,6 +61,12 @@ int main(int argc, char *const *argv) {
     std::cout << "Need a query." << std::endl;
     return 1;
   }
+  // Initialise all the LLVM magic.
+  llvm::InitializeAllTargetInfos();
+  llvm::InitializeAllTargets();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeNativeTarget();
+  llvm::InitializeAllAsmPrinters();
 
   // Parse the input query.
   auto ast = barf::AstNode::parseWithLogging(std::string(argv[optind]),
@@ -65,13 +76,13 @@ int main(int argc, char *const *argv) {
   }
 
   // Create a new LLVM module and our functions
-  auto module = new llvm::Module(name, llvm::getGlobalContext());
+  auto module = std::make_shared<llvm::Module>(name, llvm::getGlobalContext());
 
-  auto filter_func = ast->createFilterFunction(module, name);
+  auto filter_func = ast->createFilterFunction(module.get(), name);
 
   std::stringstream index_name;
   index_name << name << "_index";
-  auto index_func = ast->createIndexFunction(module, index_name.str());
+  auto index_func = ast->createIndexFunction(module.get(), index_name.str());
 
   if (dump) {
     module->dump();
@@ -80,19 +91,52 @@ int main(int argc, char *const *argv) {
   // Create the output bitcode file.
   std::stringstream output_filename;
   if (output == nullptr) {
-    output_filename << name << ".bc";
+    output_filename << name << ".o";
   } else {
     output_filename << output;
   }
+
+  auto target_triple = llvm::sys::getDefaultTargetTriple();
   std::string error;
-  llvm::raw_fd_ostream out_data(
+
+  const llvm::Target *target =
+      llvm::TargetRegistry::lookupTarget(target_triple, error);
+  if (target == nullptr) {
+    std::cerr << error << std::endl;
+    return 1;
+  }
+  std::shared_ptr<llvm::TargetMachine> target_machine(
+      target->createTargetMachine(target_triple,
+                                  llvm::sys::getHostCPUName(),
+                                  "",
+                                  llvm::TargetOptions(),
+                                  llvm::Reloc::PIC_,
+                                  llvm::CodeModel::Default));
+  if (!target_machine) {
+    std::cerr << "Could not allocate target machine." << std::endl;
+    return 1;
+  }
+
+  llvm::PassManager pass_man;
+  pass_man.add(new llvm::DataLayout(*target_machine->getDataLayout()));
+
+  llvm::raw_fd_ostream output_stream(
       output_filename.str().c_str(), error, llvm::sys::fs::F_None);
   if (error.length() > 0) {
     std::cerr << error << std::endl;
     return 1;
-  } else {
-    llvm::WriteBitcodeToFile(module, out_data);
   }
+
+  llvm::formatted_raw_ostream raw_output_stream(output_stream);
+
+  if (target_machine->addPassesToEmitFile(pass_man,
+                                          raw_output_stream,
+                                          llvm::TargetMachine::CGFT_ObjectFile,
+                                          false)) {
+    std::cerr << "Cannot create object file on this architecture." << std::endl;
+    return 1;
+  }
+  pass_man.run(*module);
 
   // Write the header file to stdout.
   std::cout << "#include <stdbool.h>" << std::endl;
@@ -106,6 +150,5 @@ int main(int argc, char *const *argv) {
   std::cout << "#ifdef __cplusplus" << std::endl;
   std::cout << "}" << std::endl;
   std::cout << "#endif" << std::endl;
-  delete module;
   return 0;
 }

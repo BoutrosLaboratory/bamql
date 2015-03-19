@@ -11,7 +11,7 @@ barf-compile \- Compile BARF queries to object code.
 .I name
 ] [
 .B \-o
-.I output.bc
+.I output.o
 ]
 .I query
 .SH DESCRIPTION
@@ -28,7 +28,7 @@ which also must be included. On standard output, a sample header file will be ge
 
 To make use of this function,
 .IP 1.
-Compile the query to LLVM bit-code with the desired function name.
+Compile the query to object code with the desired function name.
 .IP 2.
 Write a header file based on the output suitable to your needs. It is likely that a well-placed function signature is all that is needed.
 .IP 3.
@@ -38,9 +38,7 @@ to open a BAM/SAM file and the selected reads and the header to the function.
 .IP 4.
 Compile the C program as usual.
 .IP 5.
-Link, using
-.BR llvm-ld (1)
-the generated bit-code from the first step, all the object code from the C program, and appropriate flags for the
+Link, including the generated object code from the first step, all the object code from the C program, and appropriate flags for the
 .B HTSLib
 library.
 
@@ -54,8 +52,8 @@ The name of the generated function. If none is specified, it will be
 .I filter
 which maybe unhelpful if developing a library or multiple 
 .TP
-\-o output.bc
-The file containing the generated bitcode. It none is specified, it is the filter name, suffixed with \fB.bc\fR.
+\-o output.o
+The file containing the generated object code. It none is specified, it is the filter name, suffixed with \fB.o\fR.
 .TP
 .SH SEE ALSO
 .BR barf (1),
