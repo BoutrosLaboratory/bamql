@@ -10,7 +10,7 @@ ParseError::ParseError(size_t index, std::string what)
 size_t ParseError::where() { return index; }
 
 ParseState::ParseState(const std::string &input_)
-    : input(input_), index(0), line(0), column(0) {}
+    : input(input_), index(0), line(1), column(1) {}
 unsigned int ParseState::currentLine() const { return line; }
 unsigned int ParseState::currentColumn() const { return column; }
 
@@ -19,7 +19,7 @@ void ParseState::next() {
   index++;
   column++;
   if (index >= input.length() && input[index] == '\n') {
-    column = 0;
+    column = 1;
     line++;
   }
 }
