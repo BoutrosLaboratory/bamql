@@ -134,8 +134,7 @@ std::shared_ptr<AstNode> barf::AstNode::parseWithLogging(
   std::shared_ptr<AstNode> ast;
   try {
     ast = AstNode::parse(input, predicates);
-  }
-  catch (ParseError e) {
+  } catch (ParseError e) {
     std::cerr << "Error: " << e.what() << std::endl << input << std::endl;
     for (auto i = 0; i < e.where(); i++) {
       std::cerr << " ";

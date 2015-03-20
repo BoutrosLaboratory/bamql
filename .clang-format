@@ -5,3 +5,4 @@ BinPackParameters: false
 AllowAllParametersOfDeclarationOnNextLine: true
 PenaltyReturnTypeOnItsOwnLine: 1000
 Standard: Cpp11
+Cpp11BracedListStyle: false
