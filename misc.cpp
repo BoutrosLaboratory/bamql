@@ -76,11 +76,6 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
   auto struct_ty = module->getTypeByName(name);
   if (struct_ty == nullptr) {
     define_runtime(module);
-    for (auto func = module->begin(); func != module->end(); func++) {
-      if (!func->isDeclaration()) {
-        func->setLinkage(llvm::GlobalValue::ExternalWeakLinkage);
-      }
-    }
     struct_ty = module->getTypeByName(name);
   }
   return struct_ty;
