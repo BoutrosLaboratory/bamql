@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <system_error>
 #include <llvm/DIBuilder.h>
@@ -15,23 +16,42 @@
 #include <llvm/Target/TargetOptions.h>
 #include "barf.hpp"
 
+std::string createFileName(const char *input_filename,
+                           const char *output,
+                           const char *suffix) {
+  std::stringstream output_filename;
+  if (output == nullptr) {
+    const char *dot = strrchr(input_filename, '.');
+    if (dot != nullptr && strcmp(dot, ".barf") == 0) {
+      output_filename.write(input_filename,
+                            strlen(input_filename) - strlen(dot));
+    } else {
+      output_filename << input_filename;
+    }
+    output_filename << suffix;
+  } else {
+    output_filename << output;
+  }
+  return output_filename.str();
+}
+
 /**
  * Use LLVM to compile a query into object code.
  */
 int main(int argc, char *const *argv) {
-  const char *name = "filter";
   char *output = nullptr;
+  char *output_header = nullptr;
   bool help = false;
   bool dump = false;
   int c;
 
-  while ((c = getopt(argc, argv, "dhn:o:")) != -1) {
+  while ((c = getopt(argc, argv, "dhH:o:")) != -1) {
     switch (c) {
     case 'd':
       dump = true;
       break;
-    case 'n':
-      name = optarg;
+    case 'H':
+      output_header = optarg;
       break;
     case 'o':
       output = optarg;
@@ -44,22 +64,24 @@ int main(int argc, char *const *argv) {
     }
   }
   if (help) {
-    std::cout << argv[0] << "[-d] [-n name] [-o output.bc] query" << std::endl;
-    std::cout
-        << "Compile a query to LLVM bitcode. For details, see the man page."
-        << std::endl;
+    std::cout << argv[0] << "[-d] [-H output.h] [-o output.o] query.barf"
+              << std::endl;
+    std::cout << "Compile a collection of queries to object code. For details, "
+                 "see the man page." << std::endl;
     std::cout
         << "\t-d\tDump the human-readable LLVM bitcode to standard output."
         << std::endl;
-    std::cout << "\t-n\tThe name for function produced. If unspecified, it "
-                 "will be `filter'." << std::endl;
-    std::cout << "\t-o\tThe output file containing the reads. If unspecified, "
-                 "it will be the function name suffixed by `.bc'." << std::endl;
+    std::cout
+        << "\t-H\tThe C header file for functions produced. If unspecified, it "
+           "will be inferred from the input file name." << std::endl;
+    std::cout
+        << "\t-o\tThe output file containing the object code. If unspecified, "
+           "it will be the function name suffixed by `.o'." << std::endl;
     return 0;
   }
 
   if (argc - optind != 1) {
-    std::cout << "Need a query." << std::endl;
+    std::cout << "Need a query file." << std::endl;
     return 1;
   }
   // Initialise all the LLVM magic.
@@ -69,40 +91,97 @@ int main(int argc, char *const *argv) {
   llvm::InitializeNativeTarget();
   llvm::InitializeAllAsmPrinters();
 
-  // Parse the input query.
-  auto ast = barf::AstNode::parseWithLogging(std::string(argv[optind]),
-                                             barf::getDefaultPredicates());
-  if (!ast) {
+  // Parse the input file.
+  std::ifstream input_file(argv[optind]);
+  if (!input_file) {
+    std::cerr << argv[optind] << ": " << strerror(errno) << std::endl;
     return 1;
   }
+  std::string queries((std::istreambuf_iterator<char>(input_file)),
+                      std::istreambuf_iterator<char>());
 
   // Create a new LLVM module and our functions
-  auto module = std::make_shared<llvm::Module>(name, llvm::getGlobalContext());
+  auto module =
+      std::make_shared<llvm::Module>("barf", llvm::getGlobalContext());
   auto debug_builder = std::make_shared<llvm::DIBuilder>(*module);
   module->addModuleFlag(llvm::Module::Warning,
                         "Debug Info Version",
                         llvm::DEBUG_METADATA_VERSION);
   llvm::DIScope scope = debug_builder->createCompileUnit(
-      llvm::dwarf::DW_LANG_C, name, ".", "BARF Compiler", false, "", 0);
+      llvm::dwarf::DW_LANG_C, argv[optind], ".", "BARF Compiler", false, "", 0);
 
-  auto filter_func = ast->createFilterFunction(module.get(), name, &scope);
+  std::string header_filename(
+      createFileName(argv[optind], output_header, ".h"));
+  std::ofstream header_file(header_filename);
+  if (!header_file) {
+    std::cerr << header_filename << ": " << strerror(errno) << std::endl;
+    return 1;
+  }
+  header_file << "#include <stdbool.h>" << std::endl;
+  header_file << "#include <htslib/sam.h>" << std::endl;
+  header_file << "#ifdef __cplusplus" << std::endl;
+  header_file << "extern \"C\" {" << std::endl;
+  header_file << "#endif" << std::endl;
 
-  std::stringstream index_name;
-  index_name << name << "_index";
-  auto index_func =
-      ast->createIndexFunction(module.get(), index_name.str(), &scope);
+  std::set<std::string> defined_names;
+  barf::PredicateMap default_predicates = barf::getDefaultPredicates();
+
+  barf::ParseState state(queries);
+  try {
+    do {
+      state.parseSpace();
+      auto name = state.parseStr(
+          "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+      if (name[0] >= '0' && name[0] <= '9') {
+        std::cerr << argv[optind] << ":" << state.currentLine()
+                  << ": Identifier \"" << name
+                  << "\" must not start with digits." << std::endl;
+        return 1;
+      }
+      state.parseCharInSpace('=');
+      auto ast = barf::AstNode::parse(state, default_predicates);
+      state.parseCharInSpace(';');
+      if (name.length() >= 6 &&
+          name.compare(name.length() - 6, 6, "_index") == 0) {
+        std::cerr << argv[optind] << ":" << state.currentLine() << ": Name \""
+                  << name << "\" must not be end in \"_index\"." << std::endl;
+        return 1;
+      }
+      if (defined_names.find(name) == defined_names.end()) {
+        defined_names.insert(name);
+      } else {
+        std::cerr << argv[optind] << ":" << state.currentLine()
+                  << ": Duplicate name \"" << name << "\"." << std::endl;
+        return 1;
+      }
+
+      auto filter_func = ast->createFilterFunction(module.get(), name, &scope);
+
+      std::stringstream index_name;
+      index_name << name << "_index";
+      auto index_func =
+          ast->createIndexFunction(module.get(), index_name.str(), &scope);
+      header_file << "extern bool " << name << "(bam_hdr_t*, bam1_t*);"
+                  << std::endl;
+      header_file << "extern bool " << index_name.str()
+                  << "(bam_hdr_t*, uint32_t);" << std::endl;
+
+    } while (!state.empty());
+  }
+  catch (barf::ParseError e) {
+    std::cerr << argv[optind] << ":" << state.currentLine() << ": " << e.what()
+              << std::endl;
+    return 1;
+  }
+  header_file << "#ifdef __cplusplus" << std::endl;
+  header_file << "}" << std::endl;
+  header_file << "#endif" << std::endl;
 
   if (dump) {
     module->dump();
   }
 
-  // Create the output bitcode file.
-  std::stringstream output_filename;
-  if (output == nullptr) {
-    output_filename << name << ".o";
-  } else {
-    output_filename << output;
-  }
+  // Create the output object file.
 
   auto target_triple = llvm::sys::getDefaultTargetTriple();
   std::string error;
@@ -129,7 +208,9 @@ int main(int argc, char *const *argv) {
   pass_man.add(new llvm::DataLayout(*target_machine->getDataLayout()));
 
   llvm::raw_fd_ostream output_stream(
-      output_filename.str().c_str(), error, llvm::sys::fs::F_None);
+      createFileName(argv[optind], output, ".o").c_str(),
+      error,
+      llvm::sys::fs::F_None);
   if (error.length() > 0) {
     std::cerr << error << std::endl;
     return 1;
@@ -146,17 +227,5 @@ int main(int argc, char *const *argv) {
   }
   pass_man.run(*module);
 
-  // Write the header file to stdout.
-  std::cout << "#include <stdbool.h>" << std::endl;
-  std::cout << "#include <htslib/sam.h>" << std::endl;
-  std::cout << "#ifdef __cplusplus" << std::endl;
-  std::cout << "extern \"C\" {" << std::endl;
-  std::cout << "#endif" << std::endl;
-  std::cout << "extern bool " << name << "(bam_hdr_t*, bam1_t*);" << std::endl;
-  std::cout << "extern bool " << index_name.str() << "(bam_hdr_t*, uint32_t);"
-            << std::endl;
-  std::cout << "#ifdef __cplusplus" << std::endl;
-  std::cout << "}" << std::endl;
-  std::cout << "#endif" << std::endl;
   return 0;
 }

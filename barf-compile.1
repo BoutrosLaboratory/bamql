@@ -7,13 +7,13 @@ barf-compile \- Compile BARF queries to object code.
 [
 .B \-d
 ] [
-.B \-n 
-.I name
-] [
 .B \-o
 .I output.o
+] [
+.B \-H
+.I output.h
 ]
-.I query
+.I queryfile.barf
 .SH DESCRIPTION
 BARF filters SAM or BAM files using a simple query language that is more expressive than the
 .B view
@@ -28,17 +28,17 @@ which also must be included. On standard output, a sample header file will be ge
 
 To make use of this function,
 .IP 1.
-Compile the query to object code with the desired function name.
+Write a file containing queries that should be available to the C/C++ program.
 .IP 2.
-Write a header file based on the output suitable to your needs. It is likely that a well-placed function signature is all that is needed.
+Compile the query file.
 .IP 3.
 Write a C program that uses
 .B HTSLib 
-to open a BAM/SAM file and the selected reads and the header to the function.
+to open a BAM/SAM file and the selected reads and the header file generated.
 .IP 4.
 Compile the C program as usual.
 .IP 5.
-Link, including the generated object code from the first step, all the object code from the C program, and appropriate flags for the
+Link, including the generated object code from the second step, all the object code from the C program, and appropriate flags for the
 .B HTSLib
 library.
 
@@ -47,14 +47,21 @@ library.
 \-d
 Dump the LLVM bit-code to the console for inspection. This is only useful if the generated code is broken.
 .TP
-\-n name
-The name of the generated function. If none is specified, it will be
-.I filter
-which maybe unhelpful if developing a library or multiple 
+\-H output.h
+The file containing the generated C header. It none is specified, it is the input file name, suffixed with \fB.h\fR.
 .TP
 \-o output.o
-The file containing the generated object code. It none is specified, it is the filter name, suffixed with \fB.o\fR.
+The file containing the generated object code. It none is specified, it is the input file name, suffixed with \fB.o\fR.
 .TP
+.SH QUERY FILE FORMAT
+The query file is a list of queries, in the following format:
+
+.I name
+.B =
+.I query
+.B ;
+
+Whitespace is ignored, per usual conventions. The correspoding C function will be exported as \fIname\fR, so this must be a valid C function name.
 .SH SEE ALSO
 .BR barf (1),
 .BR barf_queries (7),
