@@ -7,6 +7,8 @@ barf-compile \- Compile BARF queries to object code.
 [
 .B \-d
 ] [
+.B \-g
+] [
 .B \-o
 .I output.o
 ] [
@@ -46,6 +48,9 @@ library.
 .TP
 \-d
 Dump the LLVM bit-code to the console for inspection. This is only useful if the generated code is broken.
+.TP
+\-g
+Write debugging symbols to the output. This will allow a debugger to produce sensible stack traces.
 .TP
 \-H output.h
 The file containing the generated C header. It none is specified, it is the input file name, suffixed with \fB.h\fR.

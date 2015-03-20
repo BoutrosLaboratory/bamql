@@ -43,12 +43,16 @@ int main(int argc, char *const *argv) {
   char *output_header = nullptr;
   bool help = false;
   bool dump = false;
+  bool debug = false;
   int c;
 
-  while ((c = getopt(argc, argv, "dhH:o:")) != -1) {
+  while ((c = getopt(argc, argv, "dghH:o:")) != -1) {
     switch (c) {
     case 'd':
       dump = true;
+      break;
+    case 'g':
+      debug = true;
       break;
     case 'H':
       output_header = optarg;
@@ -64,13 +68,14 @@ int main(int argc, char *const *argv) {
     }
   }
   if (help) {
-    std::cout << argv[0] << "[-d] [-H output.h] [-o output.o] query.barf"
+    std::cout << argv[0] << "[-d] [-g] [-H output.h] [-o output.o] query.barf"
               << std::endl;
     std::cout << "Compile a collection of queries to object code. For details, "
                  "see the man page." << std::endl;
     std::cout
         << "\t-d\tDump the human-readable LLVM bitcode to standard output."
         << std::endl;
+    std::cout << "\t-g\tGenerate debugging symbols." << std::endl;
     std::cout
         << "\t-H\tThe C header file for functions produced. If unspecified, it "
            "will be inferred from the input file name." << std::endl;
@@ -100,13 +105,19 @@ int main(int argc, char *const *argv) {
   // Create a new LLVM module and our functions
   auto module =
       std::make_shared<llvm::Module>("barf", llvm::getGlobalContext());
-  auto debug_builder = std::make_shared<llvm::DIBuilder>(*module);
-  module->addModuleFlag(llvm::Module::Warning,
-                        "Debug Info Version",
-                        llvm::DEBUG_METADATA_VERSION);
-  llvm::DIScope scope = debug_builder->createCompileUnit(
-      llvm::dwarf::DW_LANG_C, argv[optind], ".", "BARF Compiler", false, "", 0);
-
+  std::shared_ptr<llvm::DIBuilder> debug_builder;
+  std::shared_ptr<llvm::DIScope> scope;
+  if (debug) {
+    debug_builder = std::make_shared<llvm::DIBuilder>(*module);
+    llvm::DIScope scope =
+        debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C,
+                                         argv[optind],
+                                         ".",
+                                         "BARF Compiler",
+                                         false,
+                                         "",
+                                         0);
+  }
   std::string header_filename(
       createFileName(argv[optind], output_header, ".h"));
   std::ofstream header_file(header_filename);
@@ -114,6 +125,7 @@ int main(int argc, char *const *argv) {
     std::cerr << header_filename << ": " << strerror(errno) << std::endl;
     return 1;
   }
+  header_file << "#pragma once" << std::endl;
   header_file << "#include <stdbool.h>" << std::endl;
   header_file << "#include <htslib/sam.h>" << std::endl;
   header_file << "#ifdef __cplusplus" << std::endl;
@@ -152,20 +164,20 @@ int main(int argc, char *const *argv) {
         return 1;
       }
 
-      auto filter_func = ast->createFilterFunction(module.get(), name, &scope);
+      auto filter_func =
+          ast->createFilterFunction(module.get(), name, scope.get());
 
       std::stringstream index_name;
       index_name << name << "_index";
       auto index_func =
-          ast->createIndexFunction(module.get(), index_name.str(), &scope);
+          ast->createIndexFunction(module.get(), index_name.str(), scope.get());
       header_file << "extern bool " << name << "(bam_hdr_t*, bam1_t*);"
                   << std::endl;
       header_file << "extern bool " << index_name.str()
                   << "(bam_hdr_t*, uint32_t);" << std::endl;
 
     } while (!state.empty());
-  }
-  catch (barf::ParseError e) {
+  } catch (barf::ParseError e) {
     std::cerr << argv[optind] << ":" << state.currentLine() << ": " << e.what()
               << std::endl;
     return 1;
