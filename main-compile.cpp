@@ -85,11 +85,8 @@ int main(int argc, char *const *argv) {
     return 1;
   }
   // Initialise all the LLVM magic.
-  llvm::InitializeAllTargetInfos();
-  llvm::InitializeAllTargets();
-  llvm::InitializeAllTargetMCs();
   llvm::InitializeNativeTarget();
-  llvm::InitializeAllAsmPrinters();
+  llvm::InitializeNativeTargetAsmPrinter();
 
   // Parse the input file.
   std::ifstream input_file(argv[optind]);

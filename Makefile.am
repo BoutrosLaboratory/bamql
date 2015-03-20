@@ -95,14 +95,17 @@ barf_compile_SOURCES = \
 	$(NULL)
 barf_compile_CPPFLAGS = \
 	-std=c++11 \
+	$(Z_CPPFLAGS) \
 	$(LLVM_WRITE_CPPFLAGS) -fexceptions \
 	-g -O2 \
 	$(NULL)
 barf_compile_LDFLAGS =\
+	$(Z_LDFLAGS) \
 	$(LLVM_WRITE_LDFLAGS) \
 	$(NULL)
 barf_compile_LDADD = \
 	libbarf.la \
+	$(Z_LIBS) \
 	$(LLVM_WRITE_LIBS) \
 	$(NULL)
 

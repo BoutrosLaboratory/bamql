@@ -10,8 +10,9 @@ AC_CHECK_TOOL(CLANG, [clang])
 AC_CHECK_TOOL(LLC, [llc])
 
 AX_LLVM(LLVM_CORE, [core])
-AX_LLVM(LLVM_WRITE, [core bitwriter])
+AX_LLVM(LLVM_WRITE, [core nativecodegen])
 AX_LLVM(LLVM_RUN, [core executionengine jit native])
+PKG_CHECK_MODULES(Z, [ zlib ])
 PKG_CHECK_MODULES(HTS, [ htslib ], [], [
 	ORIGINAL_CFLAGS="$CPPFLAGS"
 	ORIGINAL_LIBS="$LIBS"
