@@ -3,7 +3,12 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <llvm/Config/config.h>
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
 #include <llvm/DIBuilder.h>
+#else
+#include <llvm/IR/DIBuilder.h>
+#endif
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 

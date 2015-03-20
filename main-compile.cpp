@@ -202,7 +202,11 @@ int main(int argc, char *const *argv) {
   }
 
   llvm::PassManager pass_man;
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
   pass_man.add(new llvm::DataLayout(*target_machine->getDataLayout()));
+#else
+  pass_man.add(new llvm::DataLayoutPass(*target_machine->getDataLayout()));
+#endif
 
   llvm::raw_fd_ostream output_stream(
       createFileName(argv[optind], output, ".o").c_str(),
