@@ -76,6 +76,12 @@ public:
       const std::string &input, PredicateMap predicates) throw(ParseError);
   static std::shared_ptr<AstNode> parseWithLogging(const std::string &input,
                                                    PredicateMap predicates);
+  /**
+   * Parse from a parser state. This is useful for embedding in a larger
+   * grammar.
+   */
+  static std::shared_ptr<AstNode> parse(
+      ParseState &state, PredicateMap predicates) throw(ParseError);
 
   /**
    * Render this syntax node to LLVM.

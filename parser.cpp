@@ -3,14 +3,11 @@
 
 namespace barf {
 
-static std::shared_ptr<AstNode> parseConditional(ParseState &state,
-                                                 PredicateMap predicates);
-
 /**
  * Handle terminal operators (final step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseTerminal(ParseState &state,
-                                              PredicateMap predicates) {
+static std::shared_ptr<AstNode> parseTerminal(
+    ParseState &state, PredicateMap predicates) throw(ParseError) {
 
   state.parseSpace();
   if (state.empty()) {
@@ -24,7 +21,7 @@ static std::shared_ptr<AstNode> parseTerminal(ParseState &state,
   if (*state == '(') {
     state.next();
     size_t brace_index = state.where();
-    auto node = parseConditional(state, predicates);
+    auto node = AstNode::parse(state, predicates);
     state.parseSpace();
     if (!state.empty() && *state == ')') {
       state.next();
@@ -56,8 +53,8 @@ static std::shared_ptr<AstNode> parseTerminal(ParseState &state,
 /**
  * Handle and operators (third step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseAnd(ParseState &state,
-                                         PredicateMap predicates) {
+static std::shared_ptr<AstNode> parseAnd(
+    ParseState &state, PredicateMap predicates) throw(ParseError) {
   std::vector<std::shared_ptr<AstNode>> items;
 
   std::shared_ptr<AstNode> node = parseTerminal(state, predicates);
@@ -78,8 +75,8 @@ static std::shared_ptr<AstNode> parseAnd(ParseState &state,
 /**
  * Handle or operators (second step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseOr(ParseState &state,
-                                        PredicateMap predicates) {
+static std::shared_ptr<AstNode> parseOr(
+    ParseState &state, PredicateMap predicates) throw(ParseError) {
   std::vector<std::shared_ptr<AstNode>> items;
 
   std::shared_ptr<AstNode> node = parseAnd(state, predicates);
@@ -100,8 +97,8 @@ static std::shared_ptr<AstNode> parseOr(ParseState &state,
 /**
  * Handle conditional operators (first step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseConditional(ParseState &state,
-                                                 PredicateMap predicates) {
+std::shared_ptr<AstNode> AstNode::parse(
+    ParseState &state, PredicateMap predicates) throw(ParseError) {
   auto cond_part = parseOr(state, predicates);
   state.parseSpace();
   if (!state.parseKeyword("then")) {
@@ -122,7 +119,7 @@ static std::shared_ptr<AstNode> parseConditional(ParseState &state,
 std::shared_ptr<AstNode> AstNode::parse(
     const std::string &input, PredicateMap predicates) throw(ParseError) {
   ParseState state(input);
-  std::shared_ptr<AstNode> node = parseConditional(state, predicates);
+  std::shared_ptr<AstNode> node = AstNode::parse(state, predicates);
 
   state.parseSpace();
   // check string is fully consumed
