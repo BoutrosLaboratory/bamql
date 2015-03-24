@@ -57,6 +57,7 @@ private:
 
 class AstNode;
 class ParseState;
+class GenerateState;
 
 /**
  * A predicate is a function that parses a named predicate, and, upon success,
@@ -64,6 +65,8 @@ class ParseState;
  */
 typedef std::function<
     std::shared_ptr<AstNode>(ParseState &state) throw(ParseError)> Predicate;
+
+typedef std::function<llvm::Value *(GenerateState &state)> RegularExpression;
 
 /**
  * A collection of predicates, where the name is the keyword in the query
@@ -329,6 +332,10 @@ public:
    * possibilities.
    */
   unsigned char parseNucleotide();
+  /**
+   * Match a PCRE regular expression without any group captures.
+   */
+  RegularExpression parseRegEx() throw(ParseError);
 
   /**
   * Return the substring starting from the position to provided to the current

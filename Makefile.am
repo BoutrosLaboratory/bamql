@@ -15,10 +15,13 @@ check_PROGRAMS = check_bamql
 libbamql_la_CPPFLAGS = \
 	-std=c++11 \
 	$(LLVM_CORE_CPPFLAGS) -fexceptions \
-	$(HTS_CFLAGS) -g -O2 \
+	$(HTS_CFLAGS) \
+	$(PCRE_CFLAGS) \
+	-g -O2 \
 	$(NULL)
 libbamql_la_LIBADD = \
 	$(LLVM_CORE_LIBS) \
+	$(PCRE_LIBS) \
 	$(NULL)
 libbamql_la_LDFLAGS = \
 	$(LLVM_CORE_LDFLAGS) \
@@ -29,6 +32,7 @@ libbamql_la_SOURCES = \
 	ast_node_logical.cpp \
 	misc.cpp \
 	parser_misc.cpp \
+	pcre.cpp \
 	predicates.cpp \
 	parser.cpp \
 	runtime.cpp \

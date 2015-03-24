@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <htslib/sam.h>
+#include <pcre.h>
 
 /*
  * This file contains the “runtime” library for BAMQL.
@@ -33,6 +34,12 @@
  * Functions here can have any signatures, but they should almost always return
  * bool. It is also important that they have no state and no side-effects.
  */
+
+bool bamql_re_match(const char *pattern, const char *input, size_t input_length)
+{
+	return pcre_exec((const pcre *)pattern, NULL, input, input_length, 0, 0,
+			 NULL, 0) >= 0;
+}
 
 bool globish_match(const char *pattern, const char *input)
 {
