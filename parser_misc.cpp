@@ -60,9 +60,7 @@ std::string ParseState::parseStr(const std::string &accept_chars,
 }
 bool ParseState::parseSpace() {
   size_t start = index;
-  while (index < input.length() &&
-         (input[index] == ' ' || input[index] == '\t' || input[index] == '\n' ||
-          input[index] == '\r')) {
+  while (index < input.length() && isspace(input[index])) {
     index++;
   }
   return start != index;
