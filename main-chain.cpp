@@ -52,8 +52,8 @@ public:
                  std::string name,
                  ChainPattern c,
                  std::string file_name_,
-                 std::shared_ptr<htsFile> o,
-                 std::shared_ptr<OutputWrangler> n)
+                 std::shared_ptr<htsFile> &o,
+                 std::shared_ptr<OutputWrangler> &n)
       : barf::CheckIterator::CheckIterator(engine, module, node, name),
         chain(c), file_name(file_name_), output_file(o), query(query_),
         next(n) {}
@@ -83,7 +83,9 @@ public:
 
     auto copy =
         barf::appendProgramToHeader(header.get(), name.str(), version, query);
-    sam_hdr_write(output_file.get(), chain == 3 ? header.get() : copy.get());
+    if (output_file) {
+      sam_hdr_write(output_file.get(), chain == 3 ? header.get() : copy.get());
+    }
     if (next)
       next->ingestHeader(copy);
   }
@@ -97,7 +99,9 @@ public:
                  std::shared_ptr<bam1_t> &read) {
     if (matches) {
       count++;
-      sam_write1(output_file.get(), header.get(), read.get());
+      if (output_file) {
+        sam_write1(output_file.get(), header.get(), read.get());
+      }
     }
     if (next && checkChain(chain, matches)) {
       next->processRead(header, read);
@@ -201,11 +205,14 @@ int main(int argc, char *const *argv) {
   std::shared_ptr<OutputWrangler> output;
   for (auto it = argc - 2; it >= optind; it -= 2) {
     // Prepare the output file.
-    auto output_file =
-        std::shared_ptr<htsFile>(hts_open(argv[it + 1], "wb"), hts_close);
-    if (!output_file) {
-      perror(optarg);
-      return 1;
+    std::shared_ptr<htsFile> output_file;
+    if (strcmp("-", argv[it + 1]) != 0) {
+      output_file =
+          std::shared_ptr<htsFile>(hts_open(argv[it + 1], "wb"), hts_close);
+      if (!output_file) {
+        perror(optarg);
+        return 1;
+      }
     }
     // Parse the input query.
     std::string query(argv[it]);
