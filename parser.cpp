@@ -19,6 +19,9 @@
 
 namespace barf {
 
+typedef std::shared_ptr<AstNode>(*ParseFunc)(ParseState &state,
+                                             PredicateMap predicates);
+
 /**
  * Handle terminal operators (final step in the recursive descent)
  */
@@ -67,47 +70,33 @@ static std::shared_ptr<AstNode> parseTerminal(
 }
 
 /**
- * Handle and operators (third step in the recursive descent)
+ * Handle binary operators operators (the intermediate steps in recursive
+ * descent)
  */
-static std::shared_ptr<AstNode> parseAnd(
+template <char S, class T, ParseFunc N>
+static std::shared_ptr<AstNode> parseBinary(
     ParseState &state, PredicateMap predicates) throw(ParseError) {
   std::vector<std::shared_ptr<AstNode>> items;
 
-  std::shared_ptr<AstNode> node = parseTerminal(state, predicates);
+  std::shared_ptr<AstNode> node = N(state, predicates);
   state.parseSpace();
-  while (!state.empty() && *state == '&') {
+  while (!state.empty() && *state == S) {
     state.next();
     items.push_back(node);
-    node = parseTerminal(state, predicates);
+    node = N(state, predicates);
     state.parseSpace();
   }
   while (items.size() > 0) {
-    node = std::make_shared<AndNode>(items.back(), node);
+    node = std::make_shared<T>(items.back(), node);
     items.pop_back();
   }
   return node;
 }
 
-/**
- * Handle or operators (second step in the recursive descent)
- */
-static std::shared_ptr<AstNode> parseOr(
+static std::shared_ptr<AstNode> parseIntermediate(
     ParseState &state, PredicateMap predicates) throw(ParseError) {
-  std::vector<std::shared_ptr<AstNode>> items;
-
-  std::shared_ptr<AstNode> node = parseAnd(state, predicates);
-  state.parseSpace();
-  while (!state.empty() && *state == '|') {
-    state.next();
-    items.push_back(node);
-    node = parseAnd(state, predicates);
-    state.parseSpace();
-  }
-  while (items.size() > 0) {
-    node = std::make_shared<OrNode>(items.back(), node);
-    items.pop_back();
-  }
-  return node;
+  return parseBinary<'|', OrNode, parseBinary<'&', AndNode, parseTerminal>>(
+      state, predicates);
 }
 
 /**
@@ -115,16 +104,16 @@ static std::shared_ptr<AstNode> parseOr(
  */
 std::shared_ptr<AstNode> AstNode::parse(
     ParseState &state, PredicateMap predicates) throw(ParseError) {
-  auto cond_part = parseOr(state, predicates);
+  auto cond_part = parseIntermediate(state, predicates);
   state.parseSpace();
   if (!state.parseKeyword("then")) {
     return cond_part;
   }
-  auto then_part = parseOr(state, predicates);
+  auto then_part = parseIntermediate(state, predicates);
   if (!state.parseKeyword("else")) {
     throw ParseError(state.where(), "Ternary operator has no else.");
   }
-  auto else_part = parseOr(state, predicates);
+  auto else_part = parseIntermediate(state, predicates);
   return std::make_shared<ConditionalNode>(cond_part, then_part, else_part);
 }
 
