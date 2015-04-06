@@ -218,6 +218,31 @@ public:
   virtual llvm::Value *branchValue();
 };
 /**
+ * A syntax node for exclusive disjunction (XOR).
+ */
+class XOrNode : public AstNode {
+public:
+  XOrNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
+  virtual llvm::Value *generate(llvm::Module *module,
+                                llvm::IRBuilder<> &builder,
+                                llvm::Value *read,
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope);
+  virtual llvm::Value *generateIndex(llvm::Module *module,
+                                     llvm::IRBuilder<> &builder,
+                                     llvm::Value *tid,
+                                     llvm::Value *header,
+                                     llvm::DIScope *debug_scope);
+
+  void writeDebug(llvm::Module *module,
+                  llvm::IRBuilder<> &builder,
+                  llvm::DIScope *debug_scope);
+
+private:
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
+};
+/**
  * A syntax node for logical complement (NOT).
  */
 class NotNode : public AstNode {

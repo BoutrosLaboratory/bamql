@@ -95,7 +95,10 @@ static std::shared_ptr<AstNode> parseBinary(
 
 static std::shared_ptr<AstNode> parseIntermediate(
     ParseState &state, PredicateMap predicates) throw(ParseError) {
-  return parseBinary<'|', OrNode, parseBinary<'&', AndNode, parseTerminal>>(
+  return parseBinary<
+      '|',
+      OrNode,
+      parseBinary<'^', XOrNode, parseBinary<'&', AndNode, parseTerminal>>>(
       state, predicates);
 }
 

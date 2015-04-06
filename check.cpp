@@ -45,7 +45,8 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "read_group(C3BUK.1) then chr(1) else chr(2)", { "A", "I" } },
   { "!chr(1)", { "F", "G", "H", "I", "J" } },
   { "chr(1*) | chr(*2)", { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" } },
-  { "chr(1*) & chr(*2)", { "F", "G", "H", "J" } }
+  { "chr(1*) & chr(*2)", { "F", "G", "H", "J" } },
+  { "chr(1*) ^ chr(*2)", { "A", "B", "C", "D", "E", "I" } }
 };
 
 class Checker : public barf::CheckIterator {

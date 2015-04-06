@@ -101,6 +101,35 @@ llvm::Value *barf::OrNode::branchValue() {
   return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 
+barf::XOrNode::XOrNode(std::shared_ptr<AstNode> left_,
+                       std::shared_ptr<AstNode> right_)
+    : left(left_), right(right_) {}
+llvm::Value *barf::XOrNode::generate(llvm::Module *module,
+                                     llvm::IRBuilder<> &builder,
+                                     llvm::Value *read,
+                                     llvm::Value *header,
+                                     llvm::DIScope *debug_scope) {
+  auto left_value = left->generate(module, builder, read, header, debug_scope);
+  auto right_value =
+      right->generate(module, builder, read, header, debug_scope);
+  return builder.CreateICmpNE(left_value, right_value);
+}
+llvm::Value *barf::XOrNode::generateIndex(llvm::Module *module,
+                                          llvm::IRBuilder<> &builder,
+                                          llvm::Value *tid,
+                                          llvm::Value *header,
+                                          llvm::DIScope *debug_scope) {
+  auto left_value =
+      left->generateIndex(module, builder, tid, header, debug_scope);
+  auto right_value =
+      right->generateIndex(module, builder, tid, header, debug_scope);
+  return builder.CreateICmpNE(left_value, right_value);
+}
+
+void barf::XOrNode::writeDebug(llvm::Module *module,
+                               llvm::IRBuilder<> &builder,
+                               llvm::DIScope *debug_scope) {}
+
 barf::NotNode::NotNode(std::shared_ptr<AstNode> expr) { this->expr = expr; }
 llvm::Value *barf::NotNode::generate(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
