@@ -151,6 +151,13 @@ bool check_aux_str(bam1_t *read, const char *pattern, char group1, char group2)
 	return globish_match(pattern, str);
 }
 
+bool check_split_pair(bam_hdr_t *header, bam1_t *read) {
+	if (read->core.tid < header->n_targets && read->core.mtid < header->n_targets) {
+		return read->core.tid != read->core.mtid;
+	}
+	return false;
+}
+
 bool randomly(double probability)
 {
 	return probability < drand48();

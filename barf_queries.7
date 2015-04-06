@@ -113,6 +113,10 @@ Matches the read if the probability of error is less than \fIprobability\fR. The
 
 This works identically to \fBchr\fR, but on the chromosome of the mate pair, if one exists. If the mate is unmapped, this returns false.
 
+\fBsplit_pair?\fR
+
+Checks if both the reads in a mate pair are mapped, but to different chromosomes.
+
 .SS OTHER READ INFORMATION
 \fBread_group(\fRglob\fB)\fR
 

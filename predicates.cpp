@@ -156,6 +156,23 @@ private:
   int32_t end;
 };
 
+class SplitPairNode : public DebuggableNode {
+public:
+  SplitPairNode(ParseState &state) : DebuggableNode(state) {}
+  virtual llvm::Value *generate(llvm::Module *module,
+                                llvm::IRBuilder<> &builder,
+                                llvm::Value *read,
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope) {
+    auto function = module->getFunction("check_split_pair");
+    return builder.CreateCall2(function, header, read);
+  }
+
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    return std::make_shared<SplitPairNode>(state);
+  }
+};
+
 /**
  * All the predicates known to the system.
  */
@@ -201,6 +218,7 @@ PredicateMap getDefaultPredicates() {
     { std::string("nt"), NucleotideNode<llvm::ConstantInt::getFalse>::parse },
     { std::string("nt_exact"),
       NucleotideNode<llvm::ConstantInt::getTrue>::parse },
+    { std::string("split_pair?"), SplitPairNode::parse },
     { std::string("random"), RandomlyNode::parse }
   };
 }

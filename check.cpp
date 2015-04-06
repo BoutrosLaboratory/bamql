@@ -34,6 +34,7 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "nt_exact(10360, R)", {} },
   { "paired?", { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" } },
   { "mate_unmapped?", {} },
+  { "split_pair?", { "C", "D", "G" } },
   { "read_group(C3BUK.1)", { "A", "J" } },
   { "read_group(C3BUK.1 )", { "A", "J" } },
   { "read_group( C3BUK.1 )", { "A", "J" } },
