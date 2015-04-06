@@ -179,7 +179,7 @@ public:
                                 llvm::DIScope *debug_scope);
   virtual llvm::Value *generateIndex(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
-                                     llvm::Value *read,
+                                     llvm::Value *tid,
                                      llvm::Value *header,
                                      llvm::DIScope *debug_scope);
   /**
@@ -206,7 +206,7 @@ private:
  */
 class AndNode : public ShortCircuitNode {
 public:
-  AndNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode>);
+  AndNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
   virtual llvm::Value *branchValue();
 };
 /**
@@ -214,7 +214,7 @@ public:
  */
 class OrNode : public ShortCircuitNode {
 public:
-  OrNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode>);
+  OrNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
   virtual llvm::Value *branchValue();
 };
 /**
@@ -230,7 +230,7 @@ public:
                                 llvm::DIScope *debug_scope);
   virtual llvm::Value *generateIndex(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
-                                     llvm::Value *read,
+                                     llvm::Value *tid,
                                      llvm::Value *header,
                                      llvm::DIScope *debug_scope);
 
@@ -256,7 +256,7 @@ public:
                                 llvm::DIScope *debug_scope);
   virtual llvm::Value *generateIndex(llvm::Module *module,
                                      llvm::IRBuilder<> &builder,
-                                     llvm::Value *read,
+                                     llvm::Value *tid,
                                      llvm::Value *header,
                                      llvm::DIScope *debug_scope);
 
