@@ -14,15 +14,15 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include "barf.hpp"
+#include "bamql.hpp"
 
-barf::ShortCircuitNode::ShortCircuitNode(std::shared_ptr<AstNode> left,
-                                         std::shared_ptr<AstNode> right) {
+bamql::ShortCircuitNode::ShortCircuitNode(std::shared_ptr<AstNode> left,
+                                          std::shared_ptr<AstNode> right) {
   this->left = left;
   this->right = right;
 }
 
-llvm::Value *barf::ShortCircuitNode::generateGeneric(
+llvm::Value *bamql::ShortCircuitNode::generateGeneric(
     GenerateMember member,
     llvm::Module *module,
     llvm::IRBuilder<> &builder,
@@ -66,59 +66,64 @@ llvm::Value *barf::ShortCircuitNode::generateGeneric(
   return phi;
 }
 
-llvm::Value *barf::ShortCircuitNode::generate(llvm::Module *module,
-                                              llvm::IRBuilder<> &builder,
-                                              llvm::Value *read,
-                                              llvm::Value *header,
-                                              llvm::DIScope *debug_scope) {
+llvm::Value *bamql::ShortCircuitNode::generate(llvm::Module *module,
+                                               llvm::IRBuilder<> &builder,
+                                               llvm::Value *read,
+                                               llvm::Value *header,
+                                               llvm::DIScope *debug_scope) {
   return generateGeneric(
-      &barf::AstNode::generate, module, builder, read, header, debug_scope);
+      &bamql::AstNode::generate, module, builder, read, header, debug_scope);
 }
 
-llvm::Value *barf::ShortCircuitNode::generateIndex(llvm::Module *module,
-                                                   llvm::IRBuilder<> &builder,
-                                                   llvm::Value *tid,
-                                                   llvm::Value *header,
-                                                   llvm::DIScope *debug_scope) {
-  return generateGeneric(
-      &barf::AstNode::generateIndex, module, builder, tid, header, debug_scope);
+llvm::Value *bamql::ShortCircuitNode::generateIndex(
+    llvm::Module *module,
+    llvm::IRBuilder<> &builder,
+    llvm::Value *tid,
+    llvm::Value *header,
+    llvm::DIScope *debug_scope) {
+  return generateGeneric(&bamql::AstNode::generateIndex,
+                         module,
+                         builder,
+                         tid,
+                         header,
+                         debug_scope);
 }
-void barf::ShortCircuitNode::writeDebug(llvm::Module *module,
-                                        llvm::IRBuilder<> &builder,
-                                        llvm::DIScope *debug_scope) {}
+void bamql::ShortCircuitNode::writeDebug(llvm::Module *module,
+                                         llvm::IRBuilder<> &builder,
+                                         llvm::DIScope *debug_scope) {}
 
-barf::AndNode::AndNode(std::shared_ptr<AstNode> left,
-                       std::shared_ptr<AstNode> right)
+bamql::AndNode::AndNode(std::shared_ptr<AstNode> left,
+                        std::shared_ptr<AstNode> right)
     : ShortCircuitNode(left, right) {}
-llvm::Value *barf::AndNode::branchValue() {
+llvm::Value *bamql::AndNode::branchValue() {
   return llvm::ConstantInt::getFalse(llvm::getGlobalContext());
 }
 
-barf::OrNode::OrNode(std::shared_ptr<AstNode> left,
-                     std::shared_ptr<AstNode> right)
+bamql::OrNode::OrNode(std::shared_ptr<AstNode> left,
+                      std::shared_ptr<AstNode> right)
     : ShortCircuitNode(left, right) {}
-llvm::Value *barf::OrNode::branchValue() {
+llvm::Value *bamql::OrNode::branchValue() {
   return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 
-barf::XOrNode::XOrNode(std::shared_ptr<AstNode> left_,
-                       std::shared_ptr<AstNode> right_)
+bamql::XOrNode::XOrNode(std::shared_ptr<AstNode> left_,
+                        std::shared_ptr<AstNode> right_)
     : left(left_), right(right_) {}
-llvm::Value *barf::XOrNode::generate(llvm::Module *module,
-                                     llvm::IRBuilder<> &builder,
-                                     llvm::Value *read,
-                                     llvm::Value *header,
-                                     llvm::DIScope *debug_scope) {
+llvm::Value *bamql::XOrNode::generate(llvm::Module *module,
+                                      llvm::IRBuilder<> &builder,
+                                      llvm::Value *read,
+                                      llvm::Value *header,
+                                      llvm::DIScope *debug_scope) {
   auto left_value = left->generate(module, builder, read, header, debug_scope);
   auto right_value =
       right->generate(module, builder, read, header, debug_scope);
   return builder.CreateICmpNE(left_value, right_value);
 }
-llvm::Value *barf::XOrNode::generateIndex(llvm::Module *module,
-                                          llvm::IRBuilder<> &builder,
-                                          llvm::Value *tid,
-                                          llvm::Value *header,
-                                          llvm::DIScope *debug_scope) {
+llvm::Value *bamql::XOrNode::generateIndex(llvm::Module *module,
+                                           llvm::IRBuilder<> &builder,
+                                           llvm::Value *tid,
+                                           llvm::Value *header,
+                                           llvm::DIScope *debug_scope) {
   auto left_value =
       left->generateIndex(module, builder, tid, header, debug_scope);
   auto right_value =
@@ -126,49 +131,49 @@ llvm::Value *barf::XOrNode::generateIndex(llvm::Module *module,
   return builder.CreateICmpNE(left_value, right_value);
 }
 
-void barf::XOrNode::writeDebug(llvm::Module *module,
-                               llvm::IRBuilder<> &builder,
-                               llvm::DIScope *debug_scope) {}
+void bamql::XOrNode::writeDebug(llvm::Module *module,
+                                llvm::IRBuilder<> &builder,
+                                llvm::DIScope *debug_scope) {}
 
-barf::NotNode::NotNode(std::shared_ptr<AstNode> expr) { this->expr = expr; }
-llvm::Value *barf::NotNode::generate(llvm::Module *module,
-                                     llvm::IRBuilder<> &builder,
-                                     llvm::Value *read,
-                                     llvm::Value *header,
-                                     llvm::DIScope *debug_scope) {
+bamql::NotNode::NotNode(std::shared_ptr<AstNode> expr) { this->expr = expr; }
+llvm::Value *bamql::NotNode::generate(llvm::Module *module,
+                                      llvm::IRBuilder<> &builder,
+                                      llvm::Value *read,
+                                      llvm::Value *header,
+                                      llvm::DIScope *debug_scope) {
   this->expr->writeDebug(module, builder, debug_scope);
   llvm::Value *result =
       this->expr->generate(module, builder, read, header, debug_scope);
   return builder.CreateNot(result);
 }
 
-llvm::Value *barf::NotNode::generateIndex(llvm::Module *module,
-                                          llvm::IRBuilder<> &builder,
-                                          llvm::Value *tid,
-                                          llvm::Value *header,
-                                          llvm::DIScope *debug_scope) {
+llvm::Value *bamql::NotNode::generateIndex(llvm::Module *module,
+                                           llvm::IRBuilder<> &builder,
+                                           llvm::Value *tid,
+                                           llvm::Value *header,
+                                           llvm::DIScope *debug_scope) {
   this->expr->writeDebug(module, builder, debug_scope);
   llvm::Value *result =
       this->expr->generateIndex(module, builder, tid, header, debug_scope);
   return builder.CreateNot(result);
 }
-void barf::NotNode::writeDebug(llvm::Module *module,
-                               llvm::IRBuilder<> &builder,
-                               llvm::DIScope *debug_scope) {}
+void bamql::NotNode::writeDebug(llvm::Module *module,
+                                llvm::IRBuilder<> &builder,
+                                llvm::DIScope *debug_scope) {}
 
-barf::ConditionalNode::ConditionalNode(std::shared_ptr<AstNode> condition,
-                                       std::shared_ptr<AstNode> then_part,
-                                       std::shared_ptr<AstNode> else_part) {
+bamql::ConditionalNode::ConditionalNode(std::shared_ptr<AstNode> condition,
+                                        std::shared_ptr<AstNode> then_part,
+                                        std::shared_ptr<AstNode> else_part) {
   this->condition = condition;
   this->then_part = then_part;
   this->else_part = else_part;
 }
 
-llvm::Value *barf::ConditionalNode::generate(llvm::Module *module,
-                                             llvm::IRBuilder<> &builder,
-                                             llvm::Value *read,
-                                             llvm::Value *header,
-                                             llvm::DIScope *debug_scope) {
+llvm::Value *bamql::ConditionalNode::generate(llvm::Module *module,
+                                              llvm::IRBuilder<> &builder,
+                                              llvm::Value *read,
+                                              llvm::Value *header,
+                                              llvm::DIScope *debug_scope) {
   /* Create three blocks: one for the “then”, one for the “else” and one for the
    * final. */
   auto function = builder.GetInsertBlock()->getParent();
@@ -212,11 +217,11 @@ llvm::Value *barf::ConditionalNode::generate(llvm::Module *module,
   return phi;
 }
 
-llvm::Value *barf::ConditionalNode::generateIndex(llvm::Module *module,
-                                                  llvm::IRBuilder<> &builder,
-                                                  llvm::Value *tid,
-                                                  llvm::Value *header,
-                                                  llvm::DIScope *debug_scope) {
+llvm::Value *bamql::ConditionalNode::generateIndex(llvm::Module *module,
+                                                   llvm::IRBuilder<> &builder,
+                                                   llvm::Value *tid,
+                                                   llvm::Value *header,
+                                                   llvm::DIScope *debug_scope) {
   /*
    * The logic in this function is twisty, so here is the explanation. Given we
    * have `C ? T : E`, consider the following cases during index building:
@@ -273,6 +278,6 @@ llvm::Value *barf::ConditionalNode::generateIndex(llvm::Module *module,
   phi->addIncoming(else_result, else_block);
   return phi;
 }
-void barf::ConditionalNode::writeDebug(llvm::Module *module,
-                                       llvm::IRBuilder<> &builder,
-                                       llvm::DIScope *debug_scope) {}
+void bamql::ConditionalNode::writeDebug(llvm::Module *module,
+                                        llvm::IRBuilder<> &builder,
+                                        llvm::DIScope *debug_scope) {}

@@ -15,9 +15,9 @@
  */
 
 #include <htslib/sam.h>
-#include "barf.hpp"
+#include "bamql.hpp"
 
-namespace barf {
+namespace bamql {
 
 typedef bool (*ValidChar)(char, bool not_first);
 

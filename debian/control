@@ -1,38 +1,38 @@
-Source: barf
+Source: bamql
 Section: science
 Maintainer: Andre Masella <andre@masella.name>
 Build-Depends: debhelper (>= 7.0.50~), autotools-dev, llvm-dev, libhts-dev, libtool
 Priority: extra
 Standards-Version: 3.9.5
-Homepage: http://github.com/BoutrosLabratory/barf
+Homepage: http://github.com/BoutrosLabratory/bamql
 
-Package: barf
+Package: bamql
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: BAM read filtering tool
  Filter BAM reads using simple queries
 
-Package: libbarf0
+Package: libbamql0
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: BAM read filtering library
  Filter BAM reads using simple queries
 
-Package: barf-dev
+Package: bamql-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libbarf0 (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, libbamql0 (= ${binary:Version})
 Description: BAM read filtering -- Development tools
  Filter BAM reads using simple queries
  .
  This package contains development tools for creating filters or headers to use
  the library.
 
-Package: barf-dbg
+Package: bamql-dbg
 Architecture: any
 Section: debug
 Priority: extra
 Depends:
-    barf (= ${binary:Version}),
+    bamql (= ${binary:Version}),
     ${misc:Depends}
 Description: BAM read filtering -end read assembler -- Debugging symbols
  Filter BAM reads using simple queries

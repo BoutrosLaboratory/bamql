@@ -17,37 +17,37 @@
 #include <unistd.h>
 #include <iostream>
 #include <sys/stat.h>
-#include "barf.hpp"
-#include "barf-jit.hpp"
+#include "bamql.hpp"
+#include "bamql-jit.hpp"
 
 /**
  * Handler for output collection. Shunts reads into appropriate files and tracks
  * stats.
  */
-class DataCollector : public barf::CheckIterator {
+class DataCollector : public bamql::CheckIterator {
 public:
   DataCollector(std::shared_ptr<llvm::ExecutionEngine> &engine,
                 llvm::Module *module,
                 std::string &query_,
-                std::shared_ptr<barf::AstNode> &node,
+                std::shared_ptr<bamql::AstNode> &node,
                 bool verbose_,
                 std::shared_ptr<htsFile> &a,
                 std::shared_ptr<htsFile> &r)
-      : barf::CheckIterator::CheckIterator(
+      : bamql::CheckIterator::CheckIterator(
             engine, module, node, std::string("filter")),
         query(query_), verbose(verbose_), accept(a), reject(r) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
-    auto version = barf::version();
+    auto version = bamql::version();
     if (accept) {
-      std::string name("barf-accept");
+      std::string name("bamql-accept");
       auto copy =
-          barf::appendProgramToHeader(header.get(), name, version, query);
+          bamql::appendProgramToHeader(header.get(), name, version, query);
       sam_hdr_write(accept.get(), copy.get());
     }
     if (reject) {
-      std::string name("barf-reject");
+      std::string name("bamql-reject");
       auto copy =
-          barf::appendProgramToHeader(header.get(), name, version, query);
+          bamql::appendProgramToHeader(header.get(), name, version, query);
       sam_hdr_write(reject.get(), copy.get());
     }
   }
@@ -157,17 +157,17 @@ int main(int argc, char *const *argv) {
   }
 
   // Parse the input query.
-  auto ast = barf::AstNode::parseWithLogging(std::string(argv[optind]),
-                                             barf::getDefaultPredicates());
+  auto ast = bamql::AstNode::parseWithLogging(std::string(argv[optind]),
+                                              bamql::getDefaultPredicates());
   if (!ast) {
     return 1;
   }
 
   // Create a new LLVM module and our function
   LLVMInitializeNativeTarget();
-  auto module = new llvm::Module("barf", llvm::getGlobalContext());
+  auto module = new llvm::Module("bamql", llvm::getGlobalContext());
 
-  auto engine = barf::createEngine(module);
+  auto engine = bamql::createEngine(module);
   if (!engine) {
     return 1;
   }

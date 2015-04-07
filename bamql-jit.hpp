@@ -15,13 +15,13 @@
  */
 
 #pragma once
-#include <barf.hpp>
+#include <bamql.hpp>
 #include <htslib/hts.h>
 #include <htslib/sam.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/JIT.h>
 
-namespace barf {
+namespace bamql {
 
 /**
  * The run-time type of a filter.
@@ -108,8 +108,8 @@ public:
                          std::shared_ptr<bam1_t> &read) = 0;
 
 private:
-  barf::FilterFunction filter;
-  barf::IndexFunction index;
+  bamql::FilterFunction filter;
+  bamql::IndexFunction index;
   std::shared_ptr<llvm::ExecutionEngine> engine;
 };
 

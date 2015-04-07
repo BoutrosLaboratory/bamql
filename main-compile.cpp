@@ -30,7 +30,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
-#include "barf.hpp"
+#include "bamql.hpp"
 
 std::string createFileName(const char *input_filename,
                            const char *output,
@@ -38,7 +38,7 @@ std::string createFileName(const char *input_filename,
   std::stringstream output_filename;
   if (output == nullptr) {
     const char *dot = strrchr(input_filename, '.');
-    if (dot != nullptr && strcmp(dot, ".barf") == 0) {
+    if (dot != nullptr && strcmp(dot, ".bamql") == 0) {
       output_filename.write(input_filename,
                             strlen(input_filename) - strlen(dot));
     } else {
@@ -84,7 +84,7 @@ int main(int argc, char *const *argv) {
     }
   }
   if (help) {
-    std::cout << argv[0] << "[-d] [-g] [-H output.h] [-o output.o] query.barf"
+    std::cout << argv[0] << "[-d] [-g] [-H output.h] [-o output.o] query.bamql"
               << std::endl;
     std::cout << "Compile a collection of queries to object code. For details, "
                  "see the man page." << std::endl;
@@ -120,7 +120,7 @@ int main(int argc, char *const *argv) {
 
   // Create a new LLVM module and our functions
   auto module =
-      std::make_shared<llvm::Module>("barf", llvm::getGlobalContext());
+      std::make_shared<llvm::Module>("bamql", llvm::getGlobalContext());
   std::shared_ptr<llvm::DIBuilder> debug_builder;
   std::shared_ptr<llvm::DIScope> scope;
   if (debug) {
@@ -129,7 +129,7 @@ int main(int argc, char *const *argv) {
         debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C,
                                          argv[optind],
                                          ".",
-                                         "BARF Compiler",
+                                         "BAMQL Compiler",
                                          false,
                                          "",
                                          0);
@@ -149,9 +149,9 @@ int main(int argc, char *const *argv) {
   header_file << "#endif" << std::endl;
 
   std::set<std::string> defined_names;
-  barf::PredicateMap default_predicates = barf::getDefaultPredicates();
+  bamql::PredicateMap default_predicates = bamql::getDefaultPredicates();
 
-  barf::ParseState state(queries);
+  bamql::ParseState state(queries);
   try {
     do {
       state.parseSpace();
@@ -164,7 +164,7 @@ int main(int argc, char *const *argv) {
         return 1;
       }
       state.parseCharInSpace('=');
-      auto ast = barf::AstNode::parse(state, default_predicates);
+      auto ast = bamql::AstNode::parse(state, default_predicates);
       state.parseCharInSpace(';');
       if (name.length() >= 6 &&
           name.compare(name.length() - 6, 6, "_index") == 0) {
@@ -193,7 +193,7 @@ int main(int argc, char *const *argv) {
                   << "(bam_hdr_t*, uint32_t);" << std::endl;
 
     } while (!state.empty());
-  } catch (barf::ParseError e) {
+  } catch (bamql::ParseError e) {
     std::cerr << argv[optind] << ":" << state.currentLine() << ": " << e.what()
               << std::endl;
     return 1;

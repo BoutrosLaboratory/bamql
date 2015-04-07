@@ -17,9 +17,9 @@
 #include <cstdio>
 #include <iostream>
 #include <sstream>
-#include "barf-jit.hpp"
+#include "bamql-jit.hpp"
 
-barf::ReadIterator::ReadIterator() {}
+bamql::ReadIterator::ReadIterator() {}
 
 static bool checkHtsError(int result) {
   if (result == -1) {
@@ -37,7 +37,7 @@ static bool checkHtsError(int result) {
   return false;
 }
 
-bool barf::ReadIterator::wantAll(std::shared_ptr<bam_hdr_t> &header) {
+bool bamql::ReadIterator::wantAll(std::shared_ptr<bam_hdr_t> &header) {
   for (auto tid = 0; tid < header->n_targets; tid++) {
     if (!wantChromosome(header, tid)) {
       return false;
@@ -45,9 +45,9 @@ bool barf::ReadIterator::wantAll(std::shared_ptr<bam_hdr_t> &header) {
   }
   return true;
 }
-bool barf::ReadIterator::processFile(const char *file_name,
-                                     bool binary,
-                                     bool ignore_index) {
+bool bamql::ReadIterator::processFile(const char *file_name,
+                                      bool binary,
+                                      bool ignore_index) {
   // Open the input file.
   std::shared_ptr<htsFile> input = std::shared_ptr<htsFile>(
       hts_open(file_name, binary ? "rb" : "r"), hts_close);
@@ -95,10 +95,10 @@ bool barf::ReadIterator::processFile(const char *file_name,
   return checkHtsError(result);
 }
 
-barf::CheckIterator::CheckIterator(std::shared_ptr<llvm::ExecutionEngine> &e,
-                                   llvm::Module *module,
-                                   std::shared_ptr<AstNode> &node,
-                                   std::string name)
+bamql::CheckIterator::CheckIterator(std::shared_ptr<llvm::ExecutionEngine> &e,
+                                    llvm::Module *module,
+                                    std::shared_ptr<AstNode> &node,
+                                    std::string name)
     : engine(e) {
   // Compile the query into native functions. We must hold a reference to the
   // execution engine as long as we intend for these pointers to be valid.
@@ -110,12 +110,12 @@ barf::CheckIterator::CheckIterator(std::shared_ptr<llvm::ExecutionEngine> &e,
       e, node->createIndexFunction(module, index_function_name.str(), nullptr));
 }
 
-bool barf::CheckIterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,
-                                         uint32_t tid) {
+bool bamql::CheckIterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,
+                                          uint32_t tid) {
   return index(header.get(), tid);
 }
 
-void barf::CheckIterator::processRead(std::shared_ptr<bam_hdr_t> &header,
-                                      std::shared_ptr<bam1_t> &read) {
+void bamql::CheckIterator::processRead(std::shared_ptr<bam_hdr_t> &header,
+                                       std::shared_ptr<bam1_t> &read) {
   readMatch(filter(header.get(), read.get()), header, read);
 }

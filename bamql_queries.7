@@ -1,6 +1,6 @@
 .\" Authors: Paul Boutros and Lab Members
-.TH barf_queries 7 "Dec 2014" "1.0" "MISCELLANEOUS"
-BARF filters SAM or BAM files using a simple query language that is more expressive than the
+.TH bamql_queries 7 "Dec 2014" "1.0" "MISCELLANEOUS"
+BAMQL filters SAM or BAM files using a simple query language that is more expressive than the
 .B view
 options available in
 .BR samtools (1).
@@ -173,6 +173,6 @@ Sub-sample mitochondrial reads and all the reads that have matched to chromosome
 .B "chr(M) & random(0.2) | chr(ug*)"
 
 .SH SEE ALSO
-.BR barf (1),
-.BR barf-compile (1),
+.BR bamql (1),
+.BR bamql-compile (1),
 .BR samtools (1).

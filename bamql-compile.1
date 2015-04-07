@@ -1,9 +1,9 @@
 .\" Authors: Paul Boutros and Lab Members
-.TH barf-compile 1 "Dec 2014" "1.0" "USER COMMANDS"
+.TH bamql-compile 1 "Dec 2014" "1.0" "USER COMMANDS"
 .SH NAME 
-barf-compile \- Compile BARF queries to object code.
+bamql-compile \- Compile BAMQL queries to object code.
 .SH SYNOPSIS
-.B barf-compile
+.B bamql-compile
 [
 .B \-d
 ] [
@@ -15,14 +15,14 @@ barf-compile \- Compile BARF queries to object code.
 .B \-H
 .I output.h
 ]
-.I queryfile.barf
+.I queryfile.bamql
 .SH DESCRIPTION
-BARF filters SAM or BAM files using a simple query language that is more expressive than the
+BAMQL filters SAM or BAM files using a simple query language that is more expressive than the
 .B view
 options available in
 .BR samtools (1).
 The query language is described in
-.BR barf_queries (7).
+.BR bamql_queries (7).
 
 This compiler allows generating object code usable from C or C++ to perform the same filtering as a query. The generated code follows C convections, to match
 .B HTSLib
@@ -68,6 +68,6 @@ The query file is a list of queries, in the following format:
 
 Whitespace is ignored, per usual conventions. The correspoding C function will be exported as \fIname\fR, so this must be a valid C function name.
 .SH SEE ALSO
-.BR barf (1),
-.BR barf_queries (7),
+.BR bamql (1),
+.BR bamql_queries (7),
 .BR samtools (1).

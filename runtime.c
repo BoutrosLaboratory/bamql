@@ -21,7 +21,7 @@
 #include <htslib/sam.h>
 
 /*
- * This file contains the “runtime” library for BARF.
+ * This file contains the “runtime” library for BAMQL.
  *
  * Every function here will be available in the generated code after calling
  * `define_module`.  This allows all these functions to be part of the output
@@ -151,8 +151,10 @@ bool check_aux_str(bam1_t *read, const char *pattern, char group1, char group2)
 	return globish_match(pattern, str);
 }
 
-bool check_split_pair(bam_hdr_t *header, bam1_t *read) {
-	if (read->core.tid < header->n_targets && read->core.mtid < header->n_targets) {
+bool check_split_pair(bam_hdr_t *header, bam1_t *read)
+{
+	if (read->core.tid < header->n_targets
+	    && read->core.mtid < header->n_targets) {
 		return read->core.tid != read->core.mtid;
 	}
 	return false;

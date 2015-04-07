@@ -1,0 +1,5 @@
+usr/bin/bamql-compile
+usr/include/*
+usr/lib/*.so
+usr/lib/pkgconfig
+usr/share/man/man1/bamql-compile.1

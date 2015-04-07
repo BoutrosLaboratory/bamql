@@ -1,4 +1,4 @@
-AC_INIT([barf], [1.0], [paul.boutros@oicr.on.ca])
+AC_INIT([bamql], [1.0], [paul.boutros@oicr.on.ca])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS(config.h)
@@ -30,5 +30,5 @@ PKG_CHECK_MODULES(HTS, [ htslib ], [], [
 	LIBS="$ORIGINAL_LIBS"
 ])
 
-AC_CONFIG_FILES([Makefile barf.pc barf-jit.pc])
+AC_CONFIG_FILES([Makefile bamql.pc bamql-jit.pc])
 AC_OUTPUT

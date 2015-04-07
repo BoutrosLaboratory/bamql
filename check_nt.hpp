@@ -17,7 +17,7 @@
 #pragma once
 #include "boolean_constant.hpp"
 
-namespace barf {
+namespace bamql {
 /**
  * A predicate that matches a particular nucleotide.
  */

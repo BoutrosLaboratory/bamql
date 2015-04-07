@@ -28,7 +28,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
-namespace barf {
+namespace bamql {
 
 /**
  * Get the LLVM type for a BAM read.
@@ -77,7 +77,7 @@ typedef std::map<std::string, Predicate> PredicateMap;
  */
 PredicateMap getDefaultPredicates();
 
-typedef llvm::Value *(barf::AstNode::*GenerateMember)(
+typedef llvm::Value *(bamql::AstNode::*GenerateMember)(
     llvm::Module *module,
     llvm::IRBuilder<> &builder,
     llvm::Value *read,
@@ -147,7 +147,7 @@ private:
                                  llvm::StringRef param_name,
                                  llvm::Type *param_type,
                                  llvm::DIScope *debug_scope,
-                                 barf::GenerateMember member);
+                                 bamql::GenerateMember member);
 };
 /**
  * This subclass is meant for making predicates, as it automatically fills out

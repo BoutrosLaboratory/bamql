@@ -15,9 +15,9 @@
  */
 
 #include <htslib/sam.h>
-#include "barf.hpp"
+#include "bamql.hpp"
 
-namespace barf {
+namespace bamql {
 
 /**
  * A predicate that checks of the chromosome name.

@@ -16,9 +16,9 @@
 
 #include <cctype>
 #include <sstream>
-#include "barf.hpp"
+#include "bamql.hpp"
 
-namespace barf {
+namespace bamql {
 ParseError::ParseError(size_t index, std::string what)
     : std::runtime_error(what) {
   this->index = index;

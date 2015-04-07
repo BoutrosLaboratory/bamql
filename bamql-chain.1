@@ -1,9 +1,9 @@
 .\" Authors: Paul Boutros and Lab Members
-.TH barf 1 "Feb 2015" "1.0" "USER COMMANDS"
+.TH bamql 1 "Feb 2015" "1.0" "USER COMMANDS"
 .SH NAME 
-barf \- Filter SAM/BAM files easily through a chain of filters
+bamql \- Filter SAM/BAM files easily through a chain of filters
 .SH SYNOPSIS
-.B barf-chain
+.B bamql-chain
 [
 .B \-b
 ] [
@@ -20,15 +20,15 @@ barf \- Filter SAM/BAM files easily through a chain of filters
 .I query2
 .I output2.bam
 .SH DESCRIPTION
-BARF filters SAM or BAM files using a simple query language that is more expressive than the
+BAMQL filters SAM or BAM files using a simple query language that is more expressive than the
 .B view
 options available in
 .BR samtools (1).
 The query language is described in
-.BR barf_queries (7).
+.BR bamql_queries (7).
 
 Unlike 
-.BR barf (1),
+.BR bamql (1),
 this sends each read down a collection of queries, either in parallel, the default, or in another configuration using the \fB-c\fR option.
 
 If the output of a particular query is uninteresting, it can be discarded by specifying \fB-\fR for the output file name.
@@ -63,18 +63,18 @@ A read is given to the first query. If it passes the query, it is saved and proc
 .SH EXAMPLE
 This extracts all the reads on chromosome 7 and all the paired reads:
 
-.B barf-chain -b -f genome.bam 'chr(7)' chromo7.bam 'paired?' paired.bam
+.B bamql-chain -b -f genome.bam 'chr(7)' chromo7.bam 'paired?' paired.bam
 
 This extracts all the reads on chromosome 7 and all the paired reads on chromosome 7:
 
-.B barf-chain -b -f genome.bam -c series 'chr(7)' chromo7.bam 'paired?' chromo7_paired.bam
+.B bamql-chain -b -f genome.bam -c series 'chr(7)' chromo7.bam 'paired?' chromo7_paired.bam
 
 This extracts all the reads on chromosome 7 and all the paired reads that are on other chromosomes:
 
-.B barf-chain -b -f genome.bam -c shuttle 'chr(7)' chromo7.bam 'paired?' paired_except_chr7.bam
+.B bamql-chain -b -f genome.bam -c shuttle 'chr(7)' chromo7.bam 'paired?' paired_except_chr7.bam
 
 .SH SEE ALSO
-.BR barf (1),
-.BR barf-compile (1),
-.BR barf_queries (7),
+.BR bamql (1),
+.BR bamql-compile (1),
+.BR bamql_queries (7),
 .BR samtools (1).

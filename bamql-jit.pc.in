@@ -6,9 +6,9 @@ includedir=@includedir@
 datarootdir=@datarootdir@
 datadir=@datadir@
 
-Name: BARF
+Name: BAMQL
 Description: Filter SAM/BAM reads using a query language - JIT
 Version: @VERSION@
 Requires: 
-Libs: -L${libdir} -lbarf-jit @LLVM_RUN_LDFLAGS@ @LLVM_RUN_LIBS@
+Libs: -L${libdir} -lbamql-jit @LLVM_RUN_LDFLAGS@ @LLVM_RUN_LIBS@
 Cflags: -I${includedir} @LLVM_RUN_CPPFLAGS@ -fexceptions

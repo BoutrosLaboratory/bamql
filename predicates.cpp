@@ -16,7 +16,7 @@
 
 #include <cstdint>
 #include <htslib/sam.h>
-#include "barf.hpp"
+#include "bamql.hpp"
 #include "boolean_constant.hpp"
 #include "check_aux.hpp"
 #include "check_chromosome.hpp"
@@ -24,7 +24,7 @@
 #include "check_nt.hpp"
 
 // Please keep the predicates in alphabetical order.
-namespace barf {
+namespace bamql {
 
 /* This insanity is brought to you by samtools's sam_tview.c */
 static bool readGroupChar(char input, bool not_first) {

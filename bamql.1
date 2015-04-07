@@ -1,9 +1,9 @@
 .\" Authors: Paul Boutros and Lab Members
-.TH barf 1 "Dec 2014" "1.0" "USER COMMANDS"
+.TH bamql 1 "Dec 2014" "1.0" "USER COMMANDS"
 .SH NAME 
-barf \- Filter SAM/BAM files easily
+bamql \- Filter SAM/BAM files easily
 .SH SYNOPSIS
-.B barf
+.B bamql
 [
 .B \-b
 ] [
@@ -19,12 +19,12 @@ barf \- Filter SAM/BAM files easily
 .I input.bam
 .I query
 .SH DESCRIPTION
-BARF filters SAM or BAM files using a simple query language that is more expressive than the
+BAMQL filters SAM or BAM files using a simple query language that is more expressive than the
 .B view
 options available in
 .BR samtools (1).
 The query language is described in
-.BR barf_queries (7).
+.BR bamql_queries (7).
 
 .SH OPTIONS
 .TP
@@ -46,10 +46,10 @@ Any reads which are rejected by the query, that is, for which the query is false
 .SH EXAMPLE
 This extracts all the reads on chromosome 7:
 
-.B barf -o chromo7.bam -b -f genome.bam 'chr(7)'
+.B bamql -o chromo7.bam -b -f genome.bam 'chr(7)'
 
 .SH SEE ALSO
-.BR barf-chain (1),
-.BR barf-compile (1),
-.BR barf_queries (7),
+.BR bamql-chain (1),
+.BR bamql-compile (1),
+.BR bamql_queries (7),
 .BR samtools (1).

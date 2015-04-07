@@ -1,4 +1,4 @@
-# BARF
+# BAMQL
 
 This software is a simple query language for filtering SAM/BAM sequences.
 
@@ -26,4 +26,4 @@ The following will take a sub-sample for mitochondrial sequences and all the seq
 
     chr(M) & random(0.2) | chr(ug*)
 
-The details can be found in the manual page, which can be viewed by typing `man barf_queries` at the command prompt.
+The details can be found in the manual page, which can be viewed by typing `man bamql_queries` at the command prompt.

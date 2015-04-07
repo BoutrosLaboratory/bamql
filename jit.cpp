@@ -17,9 +17,9 @@
 #include <cstdio>
 #include <iostream>
 #include <sstream>
-#include "barf-jit.hpp"
+#include "bamql-jit.hpp"
 
-std::shared_ptr<llvm::ExecutionEngine> barf::createEngine(
+std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
     llvm::Module *module) {
   std::string error;
   std::vector<std::string> attrs;
@@ -40,7 +40,7 @@ std::shared_ptr<llvm::ExecutionEngine> barf::createEngine(
   return engine;
 }
 
-std::shared_ptr<bam_hdr_t> barf::appendProgramToHeader(
+std::shared_ptr<bam_hdr_t> bamql::appendProgramToHeader(
     const bam_hdr_t *original,
     const std::string &id,
     const std::string &version,

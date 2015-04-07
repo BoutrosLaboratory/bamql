@@ -18,8 +18,8 @@
 #include <iostream>
 #include <sstream>
 #include <sys/stat.h>
-#include "barf.hpp"
-#include "barf-jit.hpp"
+#include "bamql.hpp"
+#include "bamql-jit.hpp"
 
 /**
  * A type for a chaining behaviour. This is a bitfield where the lowest bit is
@@ -43,18 +43,18 @@ bool checkChain(ChainPattern chain, bool matches) {
  * One link of a chain. It checks the filter, writes matching reads to a file,
  * and propagates the read to the next link in the chain.
  */
-class OutputWrangler : public barf::CheckIterator {
+class OutputWrangler : public bamql::CheckIterator {
 public:
   OutputWrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
                  llvm::Module *module,
                  std::string &query_,
-                 std::shared_ptr<barf::AstNode> &node,
+                 std::shared_ptr<bamql::AstNode> &node,
                  std::string name,
                  ChainPattern c,
                  std::string file_name_,
                  std::shared_ptr<htsFile> &o,
                  std::shared_ptr<OutputWrangler> &n)
-      : barf::CheckIterator::CheckIterator(engine, module, node, name),
+      : bamql::CheckIterator::CheckIterator(engine, module, node, name),
         chain(c), file_name(file_name_), output_file(o), query(query_),
         next(n) {}
 
@@ -70,9 +70,9 @@ public:
   }
 
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
-    auto version = barf::version();
+    auto version = bamql::version();
     std::stringstream name;
-    name << "barf-chain ";
+    name << "bamql-chain ";
     for (auto chains = known_chains.begin(); chains != known_chains.end();
          chains++) {
       if (chains->second == chain) {
@@ -82,7 +82,7 @@ public:
     }
 
     auto copy =
-        barf::appendProgramToHeader(header.get(), name.str(), version, query);
+        bamql::appendProgramToHeader(header.get(), name.str(), version, query);
     if (output_file) {
       sam_hdr_write(output_file.get(), chain == 3 ? header.get() : copy.get());
     }
@@ -118,8 +118,8 @@ public:
 private:
   ChainPattern chain;
   std::shared_ptr<htsFile> output_file;
-  barf::FilterFunction filter;
-  barf::IndexFunction index;
+  bamql::FilterFunction filter;
+  bamql::IndexFunction index;
   std::shared_ptr<OutputWrangler> next;
   std::string file_name;
   std::string query;
@@ -195,8 +195,8 @@ int main(int argc, char *const *argv) {
   }
   // Create a new LLVM module and JIT
   LLVMInitializeNativeTarget();
-  auto module = new llvm::Module("barf", llvm::getGlobalContext());
-  auto engine = barf::createEngine(module);
+  auto module = new llvm::Module("bamql", llvm::getGlobalContext());
+  auto engine = bamql::createEngine(module);
   if (!engine) {
     return 1;
   }
@@ -217,7 +217,7 @@ int main(int argc, char *const *argv) {
     // Parse the input query.
     std::string query(argv[it]);
     auto ast =
-        barf::AstNode::parseWithLogging(query, barf::getDefaultPredicates());
+        bamql::AstNode::parseWithLogging(query, bamql::getDefaultPredicates());
     if (!ast) {
       return 1;
     }

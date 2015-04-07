@@ -14,10 +14,10 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include "barf.hpp"
+#include "bamql.hpp"
 #include "config.h"
 
-namespace barf {
+namespace bamql {
 extern llvm::Module *define_runtime(llvm::Module *module);
 
 llvm::Value *AstNode::generateIndex(llvm::Module *module,
@@ -37,7 +37,7 @@ llvm::Function *AstNode::createFunction(llvm::Module *module,
   auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
       name,
       llvm::Type::getInt1Ty(llvm::getGlobalContext()),
-      llvm::PointerType::get(barf::getBamHeaderType(module), 0),
+      llvm::PointerType::get(bamql::getBamHeaderType(module), 0),
       param_type,
       nullptr));
 
@@ -62,9 +62,9 @@ llvm::Function *AstNode::createFilterFunction(llvm::Module *module,
   return createFunction(module,
                         name,
                         "read",
-                        llvm::PointerType::get(barf::getBamType(module), 0),
+                        llvm::PointerType::get(bamql::getBamType(module), 0),
                         debug_scope,
-                        &barf::AstNode::generate);
+                        &bamql::AstNode::generate);
 }
 
 llvm::Function *AstNode::createIndexFunction(llvm::Module *module,
@@ -75,7 +75,7 @@ llvm::Function *AstNode::createIndexFunction(llvm::Module *module,
                         "tid",
                         llvm::Type::getInt32Ty(llvm::getGlobalContext()),
                         debug_scope,
-                        &barf::AstNode::generateIndex);
+                        &bamql::AstNode::generateIndex);
 }
 
 DebuggableNode::DebuggableNode(ParseState &state)

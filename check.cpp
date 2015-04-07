@@ -19,8 +19,8 @@
 #include <sstream>
 #include <utility>
 #include <vector>
-#include "barf.hpp"
-#include "barf-jit.hpp"
+#include "bamql.hpp"
+#include "bamql-jit.hpp"
 
 /*
  * Each pair is a query and the names of the sequences from test.sam that
@@ -50,14 +50,14 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "chr(1*) ^ chr(*2)", { "A", "B", "C", "D", "E", "I" } }
 };
 
-class Checker : public barf::CheckIterator {
+class Checker : public bamql::CheckIterator {
 public:
   Checker(std::shared_ptr<llvm::ExecutionEngine> &engine,
           llvm::Module *module,
-          std::shared_ptr<barf::AstNode> &node,
+          std::shared_ptr<bamql::AstNode> &node,
           std::string name,
           int index_)
-      : barf::CheckIterator::CheckIterator(engine, module, node, name),
+      : bamql::CheckIterator::CheckIterator(engine, module, node, name),
         correct(true), index(index_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {}
   void readMatch(bool matches,
@@ -81,15 +81,15 @@ private:
 int main(int argc, char *const *argv) {
   bool success = true;
   LLVMInitializeNativeTarget();
-  auto module = new llvm::Module("barf", llvm::getGlobalContext());
-  auto engine = barf::createEngine(module);
+  auto module = new llvm::Module("bamql", llvm::getGlobalContext());
+  auto engine = bamql::createEngine(module);
   if (!engine) {
     std::cerr << "Failed to initialise LLVM." << std::endl;
     return 1;
   }
   for (int index = 0; index < queries.size(); index++) {
-    auto ast = barf::AstNode::parseWithLogging(queries[index].first,
-                                               barf::getDefaultPredicates());
+    auto ast = bamql::AstNode::parseWithLogging(queries[index].first,
+                                                bamql::getDefaultPredicates());
     if (!ast) {
       std::cerr << "Could not compile test: " << queries[index].first
                 << std::endl;

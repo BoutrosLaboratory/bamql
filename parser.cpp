@@ -15,9 +15,9 @@
  */
 
 #include <iostream>
-#include "barf.hpp"
+#include "bamql.hpp"
 
-namespace barf {
+namespace bamql {
 
 typedef std::shared_ptr<AstNode>(*ParseFunc)(ParseState &state,
                                              PredicateMap predicates);
@@ -137,7 +137,7 @@ std::shared_ptr<AstNode> AstNode::parse(
   return node;
 }
 
-std::shared_ptr<AstNode> barf::AstNode::parseWithLogging(
+std::shared_ptr<AstNode> bamql::AstNode::parseWithLogging(
     const std::string &input, PredicateMap predicates) {
   std::shared_ptr<AstNode> ast;
   try {

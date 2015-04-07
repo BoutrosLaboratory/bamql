@@ -7,4 +7,4 @@ export DH_OPTIONS
 
 .PHONY: override_dh_strip
 override_dh_strip:
-	dh_strip --dbg-package=barf-dbg
+	dh_strip --dbg-package=bamql-dbg
