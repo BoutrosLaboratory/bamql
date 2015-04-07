@@ -81,10 +81,13 @@ public:
           std::make_shared<CheckChromosomeNode<mate>>("y", state));
     }
     if (str.compare("25") == 0 || str.compare("M") == 0 ||
-        str.compare("m") == 0) {
+        str.compare("m") == 0 || str.compare("MT") == 0 ||
+        str.compare("mt") == 0) {
       return std::make_shared<OrNode>(
-          std::make_shared<CheckChromosomeNode<mate>>("25", state),
-          std::make_shared<CheckChromosomeNode<mate>>("m", state));
+          std::make_shared<OrNode>(
+              std::make_shared<CheckChromosomeNode<mate>>("25", state),
+              std::make_shared<CheckChromosomeNode<mate>>("m", state)),
+          std::make_shared<CheckChromosomeNode<mate>>("mt", state));
     }
     // otherwise, just match the provided chromosome.
     return std::make_shared<CheckChromosomeNode<mate>>(str, state);
