@@ -113,6 +113,12 @@ private:
   std::shared_ptr<llvm::ExecutionEngine> engine;
 };
 
+/**
+ * Craft a new BAM header appending information about the manipulations done.
+ * @param id: the name of the program doing the manipulation.
+ * @param version: the version of the program doing the manipulation.
+ * @param args: the command line arguments passed to this program.
+ */
 std::shared_ptr<bam_hdr_t> appendProgramToHeader(const bam_hdr_t *original,
                                                  const std::string &id,
                                                  const std::string &version,

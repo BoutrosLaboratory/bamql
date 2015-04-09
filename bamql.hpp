@@ -338,10 +338,20 @@ public:
    */
   unsigned char parseNucleotide();
 
+  /**
+  * Return the substring starting from the position to provided to the current
+  * position in the input string.
+  */
   std::string strFrom(size_t start) const;
 
+  /**
+  * Obtain the current position in the input string.
+  */
   size_t where() const;
 
+  /**
+   * Get the current character in the input string.
+   */
   char operator*() const;
 
 private:
