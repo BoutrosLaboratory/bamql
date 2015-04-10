@@ -114,6 +114,37 @@ private:
 /**
  * A predicate that check mapped positions.
  */
+class RawFlagNode : public DebuggableNode {
+public:
+  RawFlagNode(uint32_t raw_, ParseState &state)
+      : DebuggableNode(state), raw(raw_) {}
+  virtual llvm::Value *generate(llvm::Module *module,
+                                llvm::IRBuilder<> &builder,
+                                llvm::Value *read,
+                                llvm::Value *header,
+                                llvm::DIScope *debug_scope) {
+    auto function = module->getFunction("check_flag");
+    return builder.CreateCall2(
+        function,
+        read,
+        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+                               raw));
+  }
+
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
+    auto raw = state.parseInt();
+    state.parseCharInSpace(')');
+    return std::make_shared<RawFlagNode>(raw, state);
+  }
+
+private:
+  uint32_t raw;
+};
+
+/**
+ * A predicate that check mapped positions.
+ */
 class PositionNode : public DebuggableNode {
 public:
   PositionNode(int32_t start_, int32_t end_, ParseState &state)
@@ -203,6 +234,7 @@ PredicateMap getDefaultPredicates() {
     { std::string("paired?"), CheckFlag<BAM_FPAIRED>::parse },
     { std::string("proper_pair?"),
       CheckFlag<BAM_FPAIRED | BAM_FPROPER_PAIR>::parse },
+    { std::string("raw_flag"), RawFlagNode::parse },
     { std::string("read1?"), CheckFlag<BAM_FPAIRED | BAM_FREAD1>::parse },
     { std::string("read2?"), CheckFlag<BAM_FPAIRED | BAM_FREAD2>::parse },
     { std::string("secondary?"), CheckFlag<BAM_FSECONDARY>::parse },
