@@ -77,22 +77,26 @@ public:
     for (auto set = equivalence_sets.begin(); set != equivalence_sets.end();
          set++) {
       for (auto equiv = set->begin(); equiv != set->end(); equiv++) {
-        if (equiv->compare(str) == 0) {
-          std::shared_ptr<AstNode> node;
-          for (auto equiv_str = set->begin(); equiv_str != set->end();
-               equiv_str++) {
-            if (node) {
-              node = std::make_shared<OrNode>(
-                  std::make_shared<CheckChromosomeNode<mate>>(*equiv_str,
-                                                              state),
-                  node);
-            } else {
-              node = std::make_shared<CheckChromosomeNode<mate>>(*equiv_str,
-                                                                 state);
-            }
-          }
-          return node;
+        bool same = equiv->length() == str.length();
+        for (auto i = 0; i < equiv->length() && same; i++) {
+          same = tolower(str[i]) == (*equiv)[i];
         }
+        if (!same) {
+          continue;
+        }
+        std::shared_ptr<AstNode> node;
+        for (auto equiv_str = set->begin(); equiv_str != set->end();
+             equiv_str++) {
+          if (node) {
+            node = std::make_shared<OrNode>(
+                std::make_shared<CheckChromosomeNode<mate>>(*equiv_str, state),
+                node);
+          } else {
+            node =
+                std::make_shared<CheckChromosomeNode<mate>>(*equiv_str, state);
+          }
+        }
+        return node;
       }
     }
     // otherwise, just match the provided chromosome.

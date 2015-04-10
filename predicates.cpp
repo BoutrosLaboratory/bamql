@@ -31,8 +31,9 @@ static bool readGroupChar(char input, bool not_first) {
   return input >= '!' && input <= '~' && (not_first || input != '=');
 }
 
+// These must be lower case
 const std::set<std::set<std::string>> equivalence_sets = {
-  { "23", "X", "x" }, { "24", "Y", "y" }, { "25", "M", "m", "MT", "mt" }
+  { "23", "x" }, { "24", "y" }, { "25", "m", "mt" }
 };
 
 /**
