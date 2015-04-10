@@ -14,10 +14,17 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include <set>
 #include <htslib/sam.h>
 #include "bamql.hpp"
 
 namespace bamql {
+
+/**
+ * The sets of chromosome names that are considered synonymous because we can't
+ * agree on a standard set of names as a society.
+ */
+extern const std::set<std::set<std::string>> equivalence_sets;
 
 /**
  * A predicate that checks of the chromosome name.
@@ -67,27 +74,26 @@ public:
 
     // If we are dealing with a chromosome that goes by many names, match all of
     // them.
-    if (str.compare("23") == 0 || str.compare("X") == 0 ||
-        str.compare("x") == 0) {
-      return std::make_shared<OrNode>(
-          std::make_shared<CheckChromosomeNode<mate>>("23", state),
-          std::make_shared<CheckChromosomeNode<mate>>("x", state));
-    }
-
-    if (str.compare("24") == 0 || str.compare("Y") == 0 ||
-        str.compare("y") == 0) {
-      return std::make_shared<OrNode>(
-          std::make_shared<CheckChromosomeNode<mate>>("24", state),
-          std::make_shared<CheckChromosomeNode<mate>>("y", state));
-    }
-    if (str.compare("25") == 0 || str.compare("M") == 0 ||
-        str.compare("m") == 0 || str.compare("MT") == 0 ||
-        str.compare("mt") == 0) {
-      return std::make_shared<OrNode>(
-          std::make_shared<OrNode>(
-              std::make_shared<CheckChromosomeNode<mate>>("25", state),
-              std::make_shared<CheckChromosomeNode<mate>>("m", state)),
-          std::make_shared<CheckChromosomeNode<mate>>("mt", state));
+    for (auto set = equivalence_sets.begin(); set != equivalence_sets.end();
+         set++) {
+      for (auto equiv = set->begin(); equiv != set->end(); equiv++) {
+        if (equiv->compare(str) == 0) {
+          std::shared_ptr<AstNode> node;
+          for (auto equiv_str = set->begin(); equiv_str != set->end();
+               equiv_str++) {
+            if (node) {
+              node = std::make_shared<OrNode>(
+                  std::make_shared<CheckChromosomeNode<mate>>(*equiv_str,
+                                                              state),
+                  node);
+            } else {
+              node = std::make_shared<CheckChromosomeNode<mate>>(*equiv_str,
+                                                                 state);
+            }
+          }
+          return node;
+        }
+      }
     }
     // otherwise, just match the provided chromosome.
     return std::make_shared<CheckChromosomeNode<mate>>(str, state);

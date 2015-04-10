@@ -31,6 +31,10 @@ static bool readGroupChar(char input, bool not_first) {
   return input >= '!' && input <= '~' && (not_first || input != '=');
 }
 
+const std::set<std::set<std::string>> equivalence_sets = {
+  { "23", "X", "x" }, { "24", "Y", "y" }, { "25", "M", "m", "MT", "mt" }
+};
+
 /**
  * A predicate that is true if the mapping quality is sufficiently good.
  */
