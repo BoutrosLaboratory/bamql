@@ -43,13 +43,11 @@ class MappingQualityNode : public DebuggableNode {
 public:
   MappingQualityNode(double probability_, ParseState &state)
       : DebuggableNode(state), probability(probability_) {}
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope) {
-    auto function = module->getFunction("check_mapping_quality");
-    return builder.CreateCall2(
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_mapping_quality");
+    return state->CreateCall2(
         function,
         read,
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
@@ -81,13 +79,11 @@ class RandomlyNode : public DebuggableNode {
 public:
   RandomlyNode(double probability_, ParseState &state)
       : DebuggableNode(state), probability(probability_) {}
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope) {
-    auto function = module->getFunction("randomly");
-    return builder.CreateCall(
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("randomly");
+    return state->CreateCall(
         function,
         llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
                               probability));
@@ -118,13 +114,11 @@ class RawFlagNode : public DebuggableNode {
 public:
   RawFlagNode(uint32_t raw_, ParseState &state)
       : DebuggableNode(state), raw(raw_) {}
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope) {
-    auto function = module->getFunction("check_flag");
-    return builder.CreateCall2(
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_flag");
+    return state->CreateCall2(
         function,
         read,
         llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
@@ -149,13 +143,11 @@ class PositionNode : public DebuggableNode {
 public:
   PositionNode(int32_t start_, int32_t end_, ParseState &state)
       : DebuggableNode(state), start(start_), end(end_) {}
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope) {
-    auto function = module->getFunction("check_position");
-    return builder.CreateCall3(
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_position");
+    return state->CreateCall3(
         function,
         read,
         llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
@@ -195,13 +187,11 @@ private:
 class SplitPairNode : public DebuggableNode {
 public:
   SplitPairNode(ParseState &state) : DebuggableNode(state) {}
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope) {
-    auto function = module->getFunction("check_split_pair");
-    return builder.CreateCall2(function, header, read);
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_split_pair");
+    return state->CreateCall2(function, header, read);
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {

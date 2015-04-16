@@ -77,12 +77,31 @@ typedef std::map<std::string, Predicate> PredicateMap;
  */
 PredicateMap getDefaultPredicates();
 
-typedef llvm::Value *(bamql::AstNode::*GenerateMember)(
-    llvm::Module *module,
-    llvm::IRBuilder<> &builder,
-    llvm::Value *read,
-    llvm::Value *header,
-    llvm::DIScope *debug_scope);
+class GenerateState {
+public:
+  GenerateState(llvm::Module *module,
+                llvm::BasicBlock *entry,
+                llvm::DIScope *debug_scope);
+
+  llvm::IRBuilder<> *operator->();
+  llvm::Module *module() const;
+  llvm::DIScope *debugScope() const;
+  /**
+   * This helper function puts a string into a global constant and then
+   * returns a pointer to it.
+   *
+   * One would think this is trivial, but it isn't.
+   */
+  llvm::Value *createString(std::string str);
+
+private:
+  llvm::Module *mod;
+  llvm::IRBuilder<> builder;
+  llvm::DIScope *debug_scope;
+};
+typedef llvm::Value *(bamql::AstNode::*GenerateMember)(GenerateState &state,
+                                                       llvm::Value *param,
+                                                       llvm::Value *header);
 
 /**
  * An abstract syntax node representing a predicate or logical operation.
@@ -110,11 +129,9 @@ public:
    * @param header: A reference to the BAM header.
    * @returns: A boolean value indicating success or failure of this node.
    */
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope) = 0;
+                                llvm::Value *header) = 0;
   /**
    * Render this syntax node to LLVM for the purpose of deciding how to access
    * the index.
@@ -122,11 +139,9 @@ public:
    * @param header: A reference to the BAM header.
    * @returns: A boolean value indicating success or failure of this node.
    */
-  virtual llvm::Value *generateIndex(llvm::Module *module,
-                                     llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *chromosome,
-                                     llvm::Value *header,
-                                     llvm::DIScope *debug_scope);
+                                     llvm::Value *header);
   /**
    * Generate the LLVM function from the query.
    */
@@ -137,9 +152,7 @@ public:
                                       llvm::StringRef name,
                                       llvm::DIScope *debug_scope);
 
-  virtual void writeDebug(llvm::Module *module,
-                          llvm::IRBuilder<> &builder,
-                          llvm::DIScope *debug_scope) = 0;
+  virtual void writeDebug(GenerateState &state) = 0;
 
 private:
   llvm::Function *createFunction(llvm::Module *module,
@@ -156,9 +169,7 @@ private:
 class DebuggableNode : public AstNode {
 public:
   DebuggableNode(ParseState &state);
-  void writeDebug(llvm::Module *module,
-                  llvm::IRBuilder<> &builder,
-                  llvm::DIScope *debug_scope);
+  void writeDebug(GenerateState &state);
 
 private:
   unsigned int line;
@@ -172,32 +183,24 @@ private:
 class ShortCircuitNode : public AstNode {
 public:
   ShortCircuitNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode>);
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope);
-  virtual llvm::Value *generateIndex(llvm::Module *module,
-                                     llvm::IRBuilder<> &builder,
+                                llvm::Value *header);
+  virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::DIScope *debug_scope);
+                                     llvm::Value *header);
   /**
    * The value that causes short circuting.
    */
   virtual llvm::Value *branchValue() = 0;
 
-  void writeDebug(llvm::Module *module,
-                  llvm::IRBuilder<> &builder,
-                  llvm::DIScope *debug_scope);
+  void writeDebug(GenerateState &state);
 
 private:
   llvm::Value *generateGeneric(GenerateMember member,
-                               llvm::Module *module,
-                               llvm::IRBuilder<> &builder,
+                               GenerateState &state,
                                llvm::Value *param,
-                               llvm::Value *header,
-                               llvm::DIScope *debug_scope);
+                               llvm::Value *header);
   std::shared_ptr<AstNode> left;
   std::shared_ptr<AstNode> right;
 };
@@ -223,20 +226,14 @@ public:
 class XOrNode : public AstNode {
 public:
   XOrNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope);
-  virtual llvm::Value *generateIndex(llvm::Module *module,
-                                     llvm::IRBuilder<> &builder,
+                                llvm::Value *header);
+  virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::DIScope *debug_scope);
+                                     llvm::Value *header);
 
-  void writeDebug(llvm::Module *module,
-                  llvm::IRBuilder<> &builder,
-                  llvm::DIScope *debug_scope);
+  void writeDebug(GenerateState &state);
 
 private:
   std::shared_ptr<AstNode> left;
@@ -248,20 +245,14 @@ private:
 class NotNode : public AstNode {
 public:
   NotNode(std::shared_ptr<AstNode> expr);
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope);
-  virtual llvm::Value *generateIndex(llvm::Module *module,
-                                     llvm::IRBuilder<> &builder,
+                                llvm::Value *header);
+  virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::DIScope *debug_scope);
+                                     llvm::Value *header);
 
-  void writeDebug(llvm::Module *module,
-                  llvm::IRBuilder<> &builder,
-                  llvm::DIScope *debug_scope);
+  void writeDebug(GenerateState &state);
 
 private:
   std::shared_ptr<AstNode> expr;
@@ -274,20 +265,14 @@ public:
   ConditionalNode(std::shared_ptr<AstNode> condition,
                   std::shared_ptr<AstNode> then_part,
                   std::shared_ptr<AstNode> else_part);
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope);
-  virtual llvm::Value *generateIndex(llvm::Module *module,
-                                     llvm::IRBuilder<> &builder,
+                                llvm::Value *header);
+  virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::DIScope *debug_scope);
+                                     llvm::Value *header);
 
-  void writeDebug(llvm::Module *module,
-                  llvm::IRBuilder<> &builder,
-                  llvm::DIScope *debug_scope);
+  void writeDebug(GenerateState &state);
 
 private:
   std::shared_ptr<AstNode> condition;
@@ -360,13 +345,6 @@ private:
   unsigned int line;
   unsigned int column;
 };
-/**
- * This helper function puts a string into a global constant and then
- * returns a pointer to it.
- *
- * One would think this is trivial, but it isn't.
- */
-llvm::Value *createString(llvm::Module *module, std::string str);
 
 /**
  * The current version of the library.

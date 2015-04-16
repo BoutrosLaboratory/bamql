@@ -25,13 +25,11 @@ template <BoolConstant EXACT> class NucleotideNode : public DebuggableNode {
 public:
   NucleotideNode(int32_t position_, unsigned char nt_, ParseState &state)
       : DebuggableNode(state), position(position_), nt(nt_) {}
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope) {
-    auto function = module->getFunction("check_nt");
-    return builder.CreateCall4(
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_nt");
+    return state->CreateCall4(
         function,
         read,
         llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),

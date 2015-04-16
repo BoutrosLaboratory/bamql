@@ -29,16 +29,14 @@ class CheckAuxStringNode : public DebuggableNode {
 public:
   CheckAuxStringNode(std::string name_, ParseState &state)
       : DebuggableNode(state), name(name_) {}
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope) {
-    auto function = module->getFunction("check_aux_str");
-    return builder.CreateCall4(
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_aux_str");
+    return state->CreateCall4(
         function,
         read,
-        createString(module, name),
+        state.createString(name),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
                                G1),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),

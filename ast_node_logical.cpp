@@ -22,75 +22,57 @@ bamql::ShortCircuitNode::ShortCircuitNode(std::shared_ptr<AstNode> left,
   this->right = right;
 }
 
-llvm::Value *bamql::ShortCircuitNode::generateGeneric(
-    GenerateMember member,
-    llvm::Module *module,
-    llvm::IRBuilder<> &builder,
-    llvm::Value *param,
-    llvm::Value *header,
-    llvm::DIScope *debug_scope) {
+llvm::Value *bamql::ShortCircuitNode::generateGeneric(GenerateMember member,
+                                                      GenerateState &state,
+                                                      llvm::Value *param,
+                                                      llvm::Value *header) {
   /* Create two basic blocks for the possibly executed right-hand expression and
    * the final block. */
-  auto function = builder.GetInsertBlock()->getParent();
+  auto function = state->GetInsertBlock()->getParent();
   auto next_block =
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "next", function);
   auto merge_block =
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
   /* Generate the left expression in the current block. */
-  this->left->writeDebug(module, builder, debug_scope);
-  auto left_value =
-      ((*this->left).*member)(module, builder, param, header, debug_scope);
+  this->left->writeDebug(state);
+  auto left_value = ((*this->left).*member)(state, param, header);
   auto short_circuit_value =
-      builder.CreateICmpEQ(left_value, this->branchValue());
+      state->CreateICmpEQ(left_value, this->branchValue());
   /* If short circuiting, jump to the final block, otherwise, do the right-hand
    * expression. */
-  builder.CreateCondBr(short_circuit_value, merge_block, next_block);
-  auto original_block = builder.GetInsertBlock();
+  state->CreateCondBr(short_circuit_value, merge_block, next_block);
+  auto original_block = state->GetInsertBlock();
 
   /* Generate the right-hand expression, then jump to the final block.*/
-  builder.SetInsertPoint(next_block);
-  this->right->writeDebug(module, builder, debug_scope);
-  auto right_value =
-      ((*this->right).*member)(module, builder, param, header, debug_scope);
-  builder.CreateBr(merge_block);
-  next_block = builder.GetInsertBlock();
+  state->SetInsertPoint(next_block);
+  this->right->writeDebug(state);
+  auto right_value = ((*this->right).*member)(state, param, header);
+  state->CreateBr(merge_block);
+  next_block = state->GetInsertBlock();
 
   /* Merge from the above paths, selecting the correct value through a PHI node.
    */
-  builder.SetInsertPoint(merge_block);
+  state->SetInsertPoint(merge_block);
   auto phi =
-      builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
+      state->CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
   phi->addIncoming(left_value, original_block);
   phi->addIncoming(right_value, next_block);
   return phi;
 }
 
-llvm::Value *bamql::ShortCircuitNode::generate(llvm::Module *module,
-                                               llvm::IRBuilder<> &builder,
+llvm::Value *bamql::ShortCircuitNode::generate(GenerateState &state,
                                                llvm::Value *read,
-                                               llvm::Value *header,
-                                               llvm::DIScope *debug_scope) {
-  return generateGeneric(
-      &bamql::AstNode::generate, module, builder, read, header, debug_scope);
+                                               llvm::Value *header) {
+  return generateGeneric(&bamql::AstNode::generate, state, read, header);
 }
 
-llvm::Value *bamql::ShortCircuitNode::generateIndex(
-    llvm::Module *module,
-    llvm::IRBuilder<> &builder,
-    llvm::Value *tid,
-    llvm::Value *header,
-    llvm::DIScope *debug_scope) {
-  return generateGeneric(&bamql::AstNode::generateIndex,
-                         module,
-                         builder,
-                         tid,
-                         header,
-                         debug_scope);
+llvm::Value *bamql::ShortCircuitNode::generateIndex(GenerateState &state,
+                                                    llvm::Value *tid,
+                                                    llvm::Value *header) {
+  return generateGeneric(&bamql::AstNode::generateIndex, state, tid, header);
 }
-void bamql::ShortCircuitNode::writeDebug(llvm::Module *module,
-                                         llvm::IRBuilder<> &builder,
-                                         llvm::DIScope *debug_scope) {}
+void bamql::ShortCircuitNode::writeDebug(GenerateState &state) {}
 
 bamql::AndNode::AndNode(std::shared_ptr<AstNode> left,
                         std::shared_ptr<AstNode> right)
@@ -109,57 +91,40 @@ llvm::Value *bamql::OrNode::branchValue() {
 bamql::XOrNode::XOrNode(std::shared_ptr<AstNode> left_,
                         std::shared_ptr<AstNode> right_)
     : left(left_), right(right_) {}
-llvm::Value *bamql::XOrNode::generate(llvm::Module *module,
-                                      llvm::IRBuilder<> &builder,
+llvm::Value *bamql::XOrNode::generate(GenerateState &state,
                                       llvm::Value *read,
-                                      llvm::Value *header,
-                                      llvm::DIScope *debug_scope) {
-  auto left_value = left->generate(module, builder, read, header, debug_scope);
-  auto right_value =
-      right->generate(module, builder, read, header, debug_scope);
-  return builder.CreateICmpNE(left_value, right_value);
+                                      llvm::Value *header) {
+  auto left_value = left->generate(state, read, header);
+  auto right_value = right->generate(state, read, header);
+  return state->CreateICmpNE(left_value, right_value);
 }
-llvm::Value *bamql::XOrNode::generateIndex(llvm::Module *module,
-                                           llvm::IRBuilder<> &builder,
+llvm::Value *bamql::XOrNode::generateIndex(GenerateState &state,
                                            llvm::Value *tid,
-                                           llvm::Value *header,
-                                           llvm::DIScope *debug_scope) {
-  auto left_value =
-      left->generateIndex(module, builder, tid, header, debug_scope);
-  auto right_value =
-      right->generateIndex(module, builder, tid, header, debug_scope);
-  return builder.CreateICmpNE(left_value, right_value);
+                                           llvm::Value *header) {
+  auto left_value = left->generateIndex(state, tid, header);
+  auto right_value = right->generateIndex(state, tid, header);
+  return state->CreateICmpNE(left_value, right_value);
 }
 
-void bamql::XOrNode::writeDebug(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
-                                llvm::DIScope *debug_scope) {}
+void bamql::XOrNode::writeDebug(GenerateState &state) {}
 
-bamql::NotNode::NotNode(std::shared_ptr<AstNode> expr) { this->expr = expr; }
-llvm::Value *bamql::NotNode::generate(llvm::Module *module,
-                                      llvm::IRBuilder<> &builder,
+bamql::NotNode::NotNode(std::shared_ptr<AstNode> expr_) : expr(expr_) {}
+llvm::Value *bamql::NotNode::generate(GenerateState &state,
                                       llvm::Value *read,
-                                      llvm::Value *header,
-                                      llvm::DIScope *debug_scope) {
-  this->expr->writeDebug(module, builder, debug_scope);
-  llvm::Value *result =
-      this->expr->generate(module, builder, read, header, debug_scope);
-  return builder.CreateNot(result);
+                                      llvm::Value *header) {
+  this->expr->writeDebug(state);
+  llvm::Value *result = this->expr->generate(state, read, header);
+  return state->CreateNot(result);
 }
 
-llvm::Value *bamql::NotNode::generateIndex(llvm::Module *module,
-                                           llvm::IRBuilder<> &builder,
+llvm::Value *bamql::NotNode::generateIndex(GenerateState &state,
                                            llvm::Value *tid,
-                                           llvm::Value *header,
-                                           llvm::DIScope *debug_scope) {
-  this->expr->writeDebug(module, builder, debug_scope);
-  llvm::Value *result =
-      this->expr->generateIndex(module, builder, tid, header, debug_scope);
-  return builder.CreateNot(result);
+                                           llvm::Value *header) {
+  this->expr->writeDebug(state);
+  llvm::Value *result = this->expr->generateIndex(state, tid, header);
+  return state->CreateNot(result);
 }
-void bamql::NotNode::writeDebug(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
-                                llvm::DIScope *debug_scope) {}
+void bamql::NotNode::writeDebug(GenerateState &state) {}
 
 bamql::ConditionalNode::ConditionalNode(std::shared_ptr<AstNode> condition,
                                         std::shared_ptr<AstNode> then_part,
@@ -169,14 +134,12 @@ bamql::ConditionalNode::ConditionalNode(std::shared_ptr<AstNode> condition,
   this->else_part = else_part;
 }
 
-llvm::Value *bamql::ConditionalNode::generate(llvm::Module *module,
-                                              llvm::IRBuilder<> &builder,
+llvm::Value *bamql::ConditionalNode::generate(GenerateState &state,
                                               llvm::Value *read,
-                                              llvm::Value *header,
-                                              llvm::DIScope *debug_scope) {
+                                              llvm::Value *header) {
   /* Create three blocks: one for the “then”, one for the “else” and one for the
    * final. */
-  auto function = builder.GetInsertBlock()->getParent();
+  auto function = state->GetInsertBlock()->getParent();
   auto then_block =
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
   auto else_block =
@@ -185,43 +148,38 @@ llvm::Value *bamql::ConditionalNode::generate(llvm::Module *module,
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
   /* Compute the conditional argument and then decide to which block to jump. */
-  this->condition->writeDebug(module, builder, debug_scope);
-  auto conditional_result =
-      condition->generate(module, builder, read, header, debug_scope);
-  builder.CreateCondBr(conditional_result, then_block, else_block);
+  this->condition->writeDebug(state);
+  auto conditional_result = condition->generate(state, read, header);
+  state->CreateCondBr(conditional_result, then_block, else_block);
 
   /* Generate the “then” block. */
-  builder.SetInsertPoint(then_block);
-  this->then_part->writeDebug(module, builder, debug_scope);
-  auto then_result =
-      then_part->generate(module, builder, read, header, debug_scope);
+  state->SetInsertPoint(then_block);
+  this->then_part->writeDebug(state);
+  auto then_result = then_part->generate(state, read, header);
   /* Jump to the final block. */
-  builder.CreateBr(merge_block);
-  then_block = builder.GetInsertBlock();
+  state->CreateBr(merge_block);
+  then_block = state->GetInsertBlock();
 
   /* Generate the “else” block. */
-  builder.SetInsertPoint(else_block);
-  this->else_part->writeDebug(module, builder, debug_scope);
-  auto else_result =
-      else_part->generate(module, builder, read, header, debug_scope);
+  state->SetInsertPoint(else_block);
+  this->else_part->writeDebug(state);
+  auto else_result = else_part->generate(state, read, header);
   /* Jump to the final block. */
-  builder.CreateBr(merge_block);
-  else_block = builder.GetInsertBlock();
+  state->CreateBr(merge_block);
+  else_block = state->GetInsertBlock();
 
   /* Get the two results and select the correct one using a PHI node. */
-  builder.SetInsertPoint(merge_block);
+  state->SetInsertPoint(merge_block);
   auto phi =
-      builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
+      state->CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
   phi->addIncoming(then_result, then_block);
   phi->addIncoming(else_result, else_block);
   return phi;
 }
 
-llvm::Value *bamql::ConditionalNode::generateIndex(llvm::Module *module,
-                                                   llvm::IRBuilder<> &builder,
+llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
                                                    llvm::Value *tid,
-                                                   llvm::Value *header,
-                                                   llvm::DIScope *debug_scope) {
+                                                   llvm::Value *header) {
   /*
    * The logic in this function is twisty, so here is the explanation. Given we
    * have `C ? T : E`, consider the following cases during index building:
@@ -236,7 +194,7 @@ llvm::Value *bamql::ConditionalNode::generateIndex(llvm::Module *module,
 
   /* Create three blocks: one for the “then”, one for the “else” and one for the
    * final. */
-  auto function = builder.GetInsertBlock()->getParent();
+  auto function = state->GetInsertBlock()->getParent();
   auto then_block =
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
   auto else_block =
@@ -247,37 +205,32 @@ llvm::Value *bamql::ConditionalNode::generateIndex(llvm::Module *module,
   /* Compute the conditional argument and then decide to which block to jump.
    * If true, try to make a decision based on the “then” block, otherwise, only
    * make a decision based on the “else” block. */
-  this->condition->writeDebug(module, builder, debug_scope);
-  auto conditional_result =
-      condition->generateIndex(module, builder, tid, header, debug_scope);
-  builder.CreateCondBr(conditional_result, then_block, else_block);
+  this->condition->writeDebug(state);
+  auto conditional_result = condition->generateIndex(state, tid, header);
+  state->CreateCondBr(conditional_result, then_block, else_block);
 
   /* Generate the “then” block. */
-  builder.SetInsertPoint(then_block);
-  this->then_part->writeDebug(module, builder, debug_scope);
-  auto then_result =
-      then_part->generateIndex(module, builder, tid, header, debug_scope);
+  state->SetInsertPoint(then_block);
+  this->then_part->writeDebug(state);
+  auto then_result = then_part->generateIndex(state, tid, header);
   /* If we fail, the “else” block might still be interested. */
-  builder.CreateCondBr(then_result, merge_block, else_block);
-  then_block = builder.GetInsertBlock();
+  state->CreateCondBr(then_result, merge_block, else_block);
+  then_block = state->GetInsertBlock();
 
   /* Generate the “else” block. */
-  builder.SetInsertPoint(else_block);
-  this->else_part->writeDebug(module, builder, debug_scope);
-  auto else_result =
-      else_part->generateIndex(module, builder, tid, header, debug_scope);
+  state->SetInsertPoint(else_block);
+  this->else_part->writeDebug(state);
+  auto else_result = else_part->generateIndex(state, tid, header);
   /* Jump to the final block. */
-  builder.CreateBr(merge_block);
-  else_block = builder.GetInsertBlock();
+  state->CreateBr(merge_block);
+  else_block = state->GetInsertBlock();
 
   /* Get the two results and select the correct one using a PHI node. */
-  builder.SetInsertPoint(merge_block);
+  state->SetInsertPoint(merge_block);
   auto phi =
-      builder.CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
+      state->CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
   phi->addIncoming(then_result, then_block);
   phi->addIncoming(else_result, else_block);
   return phi;
 }
-void bamql::ConditionalNode::writeDebug(llvm::Module *module,
-                                        llvm::IRBuilder<> &builder,
-                                        llvm::DIScope *debug_scope) {}
+void bamql::ConditionalNode::writeDebug(GenerateState &) {}

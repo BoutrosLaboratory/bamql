@@ -33,31 +33,27 @@ template <bool mate> class CheckChromosomeNode : public DebuggableNode {
 public:
   CheckChromosomeNode(std::string name_, ParseState &state)
       : DebuggableNode(state), name(name_) {}
-  virtual llvm::Value *generate(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::DIScope *debug_scope) {
-    auto function = module->getFunction("check_chromosome");
-    return builder.CreateCall4(
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_chromosome");
+    return state->CreateCall4(
         function,
         read,
         header,
-        createString(module, name),
+        state.createString(name),
         mate ? llvm::ConstantInt::getTrue(llvm::getGlobalContext())
              : llvm::ConstantInt::getFalse(llvm::getGlobalContext()));
   }
-  virtual llvm::Value *generateIndex(llvm::Module *module,
-                                     llvm::IRBuilder<> &builder,
+  virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *chromosome,
-                                     llvm::Value *header,
-                                     llvm::DIScope *debug_scope) {
+                                     llvm::Value *header) {
     if (mate) {
       return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
     }
-    auto function = module->getFunction("check_chromosome_id");
-    return builder.CreateCall3(
-        function, chromosome, header, createString(module, name));
+    auto function = state.module()->getFunction("check_chromosome_id");
+    return state->CreateCall3(
+        function, chromosome, header, state.createString(name));
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {

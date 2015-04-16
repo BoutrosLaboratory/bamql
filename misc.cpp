@@ -20,11 +20,9 @@
 namespace bamql {
 extern llvm::Module *define_runtime(llvm::Module *module);
 
-llvm::Value *AstNode::generateIndex(llvm::Module *module,
-                                    llvm::IRBuilder<> &builder,
+llvm::Value *AstNode::generateIndex(GenerateState &state,
                                     llvm::Value *read,
-                                    llvm::Value *header,
-                                    llvm::DIScope *debug_scope) {
+                                    llvm::Value *header) {
   return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 
@@ -43,15 +41,14 @@ llvm::Function *AstNode::createFunction(llvm::Module *module,
 
   auto entry =
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", func);
-  llvm::IRBuilder<> builder(entry);
+  GenerateState state(module, entry, debug_scope);
   auto args = func->arg_begin();
   auto header_value = args++;
   header_value->setName("header");
   auto param_value = args++;
   param_value->setName(param_name);
-  this->writeDebug(module, builder, debug_scope);
-  builder.CreateRet(
-      (this->*member)(module, builder, param_value, header_value, debug_scope));
+  this->writeDebug(state);
+  state->CreateRet((this->*member)(state, param_value, header_value));
 
   return func;
 }
@@ -80,12 +77,10 @@ llvm::Function *AstNode::createIndexFunction(llvm::Module *module,
 
 DebuggableNode::DebuggableNode(ParseState &state)
     : line(state.currentLine()), column(state.currentColumn()) {}
-void DebuggableNode::writeDebug(llvm::Module *module,
-                                llvm::IRBuilder<> &builder,
-                                llvm::DIScope *debug_scope) {
-  if (debug_scope != nullptr)
-    builder.SetCurrentDebugLocation(
-        llvm::DebugLoc::get(line, column, *debug_scope));
+void DebuggableNode::writeDebug(GenerateState &state) {
+  if (state.debugScope() != nullptr)
+    state->SetCurrentDebugLocation(
+        llvm::DebugLoc::get(line, column, *state.debugScope()));
 }
 
 llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
@@ -105,11 +100,20 @@ llvm::Type *getBamHeaderType(llvm::Module *module) {
   return getRuntimeType(module, "struct.bam_hdr_t");
 }
 
-llvm::Value *createString(llvm::Module *module, std::string str) {
+GenerateState::GenerateState(llvm::Module *module,
+                             llvm::BasicBlock *entry,
+                             llvm::DIScope *debug_scope_)
+    : mod(module), builder(entry), debug_scope(debug_scope_) {}
+
+llvm::IRBuilder<> *GenerateState::operator->() { return &builder; }
+llvm::Module *GenerateState::module() const { return mod; }
+llvm::DIScope *GenerateState::debugScope() const { return debug_scope; }
+
+llvm::Value *GenerateState::createString(std::string str) {
   auto array =
       llvm::ConstantDataArray::getString(llvm::getGlobalContext(), str);
   auto global_variable = new llvm::GlobalVariable(
-      *module,
+      *mod,
       llvm::ArrayType::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
                            str.length() + 1),
       true,
