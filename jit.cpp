@@ -35,7 +35,7 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
           .setMAttrs(attrs)
           .create());
   if (!engine) {
-    std::cout << error << std::endl;
+    std::cerr << error << std::endl;
   }
   return engine;
 }

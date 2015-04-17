@@ -46,7 +46,7 @@ bool checkChain(ChainPattern chain, bool matches) {
 class OutputWrangler : public bamql::CheckIterator {
 public:
   OutputWrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                 llvm::Module *module,
+                 std::shared_ptr<bamql::Generator> &generator,
                  std::string &query_,
                  std::shared_ptr<bamql::AstNode> &node,
                  std::string name,
@@ -54,7 +54,7 @@ public:
                  std::string file_name_,
                  std::shared_ptr<htsFile> &o,
                  std::shared_ptr<OutputWrangler> &n)
-      : bamql::CheckIterator::CheckIterator(engine, module, node, name),
+      : bamql::CheckIterator::CheckIterator(engine, generator, node, name),
         chain(c), file_name(file_name_), output_file(o), query(query_),
         next(n) {}
 
@@ -200,6 +200,7 @@ int main(int argc, char *const *argv) {
   if (!engine) {
     return 1;
   }
+  auto generator = std::make_shared<bamql::Generator>(module, nullptr);
 
   // Prepare a chain of wranglers.
   std::shared_ptr<OutputWrangler> output;
@@ -226,7 +227,7 @@ int main(int argc, char *const *argv) {
     std::stringstream function_name;
     function_name << "filter" << it;
     output = std::make_shared<OutputWrangler>(engine,
-                                              module,
+                                              generator,
                                               query,
                                               ast,
                                               function_name.str(),

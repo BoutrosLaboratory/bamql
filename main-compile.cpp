@@ -134,6 +134,8 @@ int main(int argc, char *const *argv) {
                                          "",
                                          0);
   }
+  auto generator =
+      std::make_shared<bamql::Generator>(module.get(), scope.get());
   std::string header_filename(
       createFileName(argv[optind], output_header, ".h"));
   std::ofstream header_file(header_filename);
@@ -180,13 +182,11 @@ int main(int argc, char *const *argv) {
         return 1;
       }
 
-      auto filter_func =
-          ast->createFilterFunction(module.get(), name, scope.get());
+      auto filter_func = ast->createFilterFunction(generator, name);
 
       std::stringstream index_name;
       index_name << name << "_index";
-      auto index_func =
-          ast->createIndexFunction(module.get(), index_name.str(), scope.get());
+      auto index_func = ast->createIndexFunction(generator, index_name.str());
       header_file << "extern bool " << name << "(bam_hdr_t*, bam1_t*);"
                   << std::endl;
       header_file << "extern bool " << index_name.str()

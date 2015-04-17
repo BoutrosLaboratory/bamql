@@ -77,11 +77,22 @@ typedef std::map<std::string, Predicate> PredicateMap;
  */
 PredicateMap getDefaultPredicates();
 
+class Generator {
+public:
+  Generator(llvm::Module *module, llvm::DIScope *debug_scope);
+
+  llvm::Module *module() const;
+  llvm::DIScope *debugScope() const;
+  llvm::Value *createString(std::string &str);
+
+private:
+  llvm::Module *mod;
+  llvm::DIScope *debug_scope;
+  std::map<std::string, llvm::Value *> constant_pool;
+};
 class GenerateState {
 public:
-  GenerateState(llvm::Module *module,
-                llvm::BasicBlock *entry,
-                llvm::DIScope *debug_scope);
+  GenerateState(std::shared_ptr<Generator> &generator, llvm::BasicBlock *entry);
 
   llvm::IRBuilder<> *operator->();
   llvm::Module *module() const;
@@ -92,12 +103,11 @@ public:
    *
    * One would think this is trivial, but it isn't.
    */
-  llvm::Value *createString(std::string str);
+  llvm::Value *createString(std::string &str);
 
 private:
-  llvm::Module *mod;
+  std::shared_ptr<Generator> generator;
   llvm::IRBuilder<> builder;
-  llvm::DIScope *debug_scope;
 };
 typedef llvm::Value *(bamql::AstNode::*GenerateMember)(GenerateState &state,
                                                        llvm::Value *param,
@@ -145,21 +155,18 @@ public:
   /**
    * Generate the LLVM function from the query.
    */
-  llvm::Function *createFilterFunction(llvm::Module *module,
-                                       llvm::StringRef name,
-                                       llvm::DIScope *debug_scope);
-  llvm::Function *createIndexFunction(llvm::Module *module,
-                                      llvm::StringRef name,
-                                      llvm::DIScope *debug_scope);
+  llvm::Function *createFilterFunction(std::shared_ptr<Generator> &generator,
+                                       llvm::StringRef name);
+  llvm::Function *createIndexFunction(std::shared_ptr<Generator> &generator,
+                                      llvm::StringRef name);
 
   virtual void writeDebug(GenerateState &state) = 0;
 
 private:
-  llvm::Function *createFunction(llvm::Module *module,
+  llvm::Function *createFunction(std::shared_ptr<Generator> &generator,
                                  llvm::StringRef name,
                                  llvm::StringRef param_name,
                                  llvm::Type *param_type,
-                                 llvm::DIScope *debug_scope,
                                  bamql::GenerateMember member);
 };
 /**

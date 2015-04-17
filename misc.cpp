@@ -26,22 +26,23 @@ llvm::Value *AstNode::generateIndex(GenerateState &state,
   return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 
-llvm::Function *AstNode::createFunction(llvm::Module *module,
+llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
                                         llvm::StringRef name,
                                         llvm::StringRef param_name,
                                         llvm::Type *param_type,
-                                        llvm::DIScope *debug_scope,
                                         GenerateMember member) {
-  auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
-      name,
-      llvm::Type::getInt1Ty(llvm::getGlobalContext()),
-      llvm::PointerType::get(bamql::getBamHeaderType(module), 0),
-      param_type,
-      nullptr));
+  auto func =
+      llvm::cast<llvm::Function>(generator->module()->getOrInsertFunction(
+          name,
+          llvm::Type::getInt1Ty(llvm::getGlobalContext()),
+          llvm::PointerType::get(bamql::getBamHeaderType(generator->module()),
+                                 0),
+          param_type,
+          nullptr));
 
   auto entry =
       llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", func);
-  GenerateState state(module, entry, debug_scope);
+  GenerateState state(generator, entry);
   auto args = func->arg_begin();
   auto header_value = args++;
   header_value->setName("header");
@@ -53,25 +54,22 @@ llvm::Function *AstNode::createFunction(llvm::Module *module,
   return func;
 }
 
-llvm::Function *AstNode::createFilterFunction(llvm::Module *module,
-                                              llvm::StringRef name,
-                                              llvm::DIScope *debug_scope) {
-  return createFunction(module,
-                        name,
-                        "read",
-                        llvm::PointerType::get(bamql::getBamType(module), 0),
-                        debug_scope,
-                        &bamql::AstNode::generate);
+llvm::Function *AstNode::createFilterFunction(
+    std::shared_ptr<Generator> &generator, llvm::StringRef name) {
+  return createFunction(
+      generator,
+      name,
+      "read",
+      llvm::PointerType::get(bamql::getBamType(generator->module()), 0),
+      &bamql::AstNode::generate);
 }
 
-llvm::Function *AstNode::createIndexFunction(llvm::Module *module,
-                                             llvm::StringRef name,
-                                             llvm::DIScope *debug_scope) {
-  return createFunction(module,
+llvm::Function *AstNode::createIndexFunction(
+    std::shared_ptr<Generator> &generator, llvm::StringRef name) {
+  return createFunction(generator,
                         name,
                         "tid",
                         llvm::Type::getInt32Ty(llvm::getGlobalContext()),
-                        debug_scope,
                         &bamql::AstNode::generateIndex);
 }
 
@@ -100,16 +98,18 @@ llvm::Type *getBamHeaderType(llvm::Module *module) {
   return getRuntimeType(module, "struct.bam_hdr_t");
 }
 
-GenerateState::GenerateState(llvm::Module *module,
-                             llvm::BasicBlock *entry,
-                             llvm::DIScope *debug_scope_)
-    : mod(module), builder(entry), debug_scope(debug_scope_) {}
+Generator::Generator(llvm::Module *module, llvm::DIScope *debug_scope_)
+    : mod(module), debug_scope(debug_scope_) {}
 
-llvm::IRBuilder<> *GenerateState::operator->() { return &builder; }
-llvm::Module *GenerateState::module() const { return mod; }
-llvm::DIScope *GenerateState::debugScope() const { return debug_scope; }
+llvm::Module *Generator::module() const { return mod; }
+llvm::DIScope *Generator::debugScope() const { return debug_scope; }
 
-llvm::Value *GenerateState::createString(std::string str) {
+llvm::Value *Generator::createString(std::string &str) {
+  auto iterator = constant_pool.find(str);
+  if (iterator != constant_pool.end()) {
+    return iterator->second;
+  }
+
   auto array =
       llvm::ConstantDataArray::getString(llvm::getGlobalContext(), str);
   auto global_variable = new llvm::GlobalVariable(
@@ -127,7 +127,22 @@ llvm::Value *GenerateState::createString(std::string str) {
   std::vector<llvm::Value *> indicies;
   indicies.push_back(zero);
   indicies.push_back(zero);
-  return llvm::ConstantExpr::getGetElementPtr(global_variable, indicies);
+  auto result = llvm::ConstantExpr::getGetElementPtr(global_variable, indicies);
+  constant_pool[str] = result;
+  return result;
+}
+
+GenerateState::GenerateState(std::shared_ptr<Generator> &generator_,
+                             llvm::BasicBlock *entry)
+    : generator(generator_), builder(entry) {}
+
+llvm::IRBuilder<> *GenerateState::operator->() { return &builder; }
+llvm::Module *GenerateState::module() const { return generator->module(); }
+llvm::DIScope *GenerateState::debugScope() const {
+  return generator->debugScope();
+}
+llvm::Value *GenerateState::createString(std::string &str) {
+  return generator->createString(str);
 }
 
 std::string version() { return std::string(VERSION); }

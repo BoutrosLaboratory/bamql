@@ -89,7 +89,7 @@ private:
 class CheckIterator : public ReadIterator {
 public:
   CheckIterator(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                llvm::Module *module,
+                std::shared_ptr<Generator> &generator,
                 std::shared_ptr<AstNode> &node,
                 std::string name);
   virtual bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid);

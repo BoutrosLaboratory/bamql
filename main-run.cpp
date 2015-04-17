@@ -27,14 +27,14 @@
 class DataCollector : public bamql::CheckIterator {
 public:
   DataCollector(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                llvm::Module *module,
+                std::shared_ptr<bamql::Generator> &generator,
                 std::string &query_,
                 std::shared_ptr<bamql::AstNode> &node,
                 bool verbose_,
                 std::shared_ptr<htsFile> &a,
                 std::shared_ptr<htsFile> &r)
       : bamql::CheckIterator::CheckIterator(
-            engine, module, node, std::string("filter")),
+            engine, generator, node, std::string("filter")),
         query(query_), verbose(verbose_), accept(a), reject(r) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
     auto version = bamql::version();
@@ -174,7 +174,8 @@ int main(int argc, char *const *argv) {
 
   // Process the input file.
   std::string query(argv[optind]);
-  DataCollector stats(engine, module, query, ast, verbose, accept, reject);
+  auto generator = std::make_shared<bamql::Generator>(module, nullptr);
+  DataCollector stats(engine, generator, query, ast, verbose, accept, reject);
   if (stats.processFile(bam_filename, binary, ignore_index)) {
     stats.writeSummary();
     return 0;
