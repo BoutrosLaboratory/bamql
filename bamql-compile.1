@@ -57,7 +57,7 @@ The file containing the generated C header. It none is specified, it is the inpu
 .TP
 \-o output.o
 The file containing the generated object code. It none is specified, it is the input file name, suffixed with \fB.o\fR.
-.TP
+
 .SH QUERY FILE FORMAT
 The query file is a list of queries, in the following format:
 
@@ -67,6 +67,13 @@ The query file is a list of queries, in the following format:
 .B ;
 
 Whitespace is ignored, per usual conventions. The correspoding C function will be exported as \fIname\fR, so this must be a valid C function name.
+
+Queries can make use of previously defined queries. For example:
+
+.B a = paired? & chr(1);
+.br
+.B b = a & nt(50, A);
+
 .SH SEE ALSO
 .BR bamql (1),
 .BR bamql_queries (7),

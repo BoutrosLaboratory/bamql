@@ -151,7 +151,7 @@ int main(int argc, char *const *argv) {
   header_file << "#endif" << std::endl;
 
   std::set<std::string> defined_names;
-  bamql::PredicateMap default_predicates = bamql::getDefaultPredicates();
+  bamql::PredicateMap predicates = bamql::getDefaultPredicates();
 
   bamql::ParseState state(queries);
   try {
@@ -166,7 +166,7 @@ int main(int argc, char *const *argv) {
         return 1;
       }
       state.parseCharInSpace('=');
-      auto ast = bamql::AstNode::parse(state, default_predicates);
+      auto ast = bamql::AstNode::parse(state, predicates);
       state.parseCharInSpace(';');
       if (name.length() >= 6 &&
           name.compare(name.length() - 6, 6, "_index") == 0) {
@@ -179,6 +179,15 @@ int main(int argc, char *const *argv) {
       } else {
         std::cerr << argv[optind] << ":" << state.currentLine()
                   << ": Duplicate name \"" << name << "\"." << std::endl;
+        return 1;
+      }
+
+      if (predicates.find(name) == predicates.end()) {
+        predicates[name] = [ast](bamql::ParseState &state) { return ast; };
+      } else {
+        std::cerr << argv[optind] << ":" << state.currentLine()
+                  << ": Redefinition of built-in \"" << name << "\"."
+                  << std::endl;
         return 1;
       }
 
