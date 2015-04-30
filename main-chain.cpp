@@ -84,10 +84,10 @@ public:
     auto copy =
         bamql::appendProgramToHeader(header.get(), name.str(), version, query);
     if (output_file) {
-      sam_hdr_write(output_file.get(), chain == 3 ? header.get() : copy.get());
+      sam_hdr_write(output_file.get(), copy.get());
     }
     if (next)
-      next->ingestHeader(copy);
+      next->ingestHeader(chain == 3 ? header : copy);
   }
 
   /**
