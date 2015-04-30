@@ -53,11 +53,11 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
 class Checker : public bamql::CheckIterator {
 public:
   Checker(std::shared_ptr<llvm::ExecutionEngine> &engine,
-          llvm::Module *module,
+          std::shared_ptr<bamql::Generator> &generator,
           std::shared_ptr<bamql::AstNode> &node,
           std::string name,
           int index_)
-      : bamql::CheckIterator::CheckIterator(engine, module, node, name),
+      : bamql::CheckIterator::CheckIterator(engine, generator, node, name),
         correct(true), index(index_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {}
   void readMatch(bool matches,
@@ -87,6 +87,8 @@ int main(int argc, char *const *argv) {
     std::cerr << "Failed to initialise LLVM." << std::endl;
     return 1;
   }
+  auto generator = std::make_shared<bamql::Generator>(module, nullptr);
+
   for (int index = 0; index < queries.size(); index++) {
     auto ast = bamql::AstNode::parseWithLogging(queries[index].first,
                                                 bamql::getDefaultPredicates());
@@ -97,7 +99,7 @@ int main(int argc, char *const *argv) {
     }
     std::stringstream name;
     name << "test" << index;
-    Checker checker(engine, module, ast, name.str(), index);
+    Checker checker(engine, generator, ast, name.str(), index);
     bool test_success =
         checker.processFile("test.sam", false, false) && checker.isCorrect();
     std::cerr << index << " " << (test_success ? "----" : "FAIL") << " "
