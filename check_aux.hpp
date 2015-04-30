@@ -63,4 +63,220 @@ public:
 private:
   std::string name;
 };
+
+class CheckAuxUserStringNode : public DebuggableNode {
+public:
+  CheckAuxUserStringNode(char first_,
+                         char second_,
+                         std::string name_,
+                         ParseState &state)
+      : DebuggableNode(state), first(first_), second(second_), name(name_) {}
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_aux_str");
+    return state->CreateCall4(
+        function,
+        read,
+        state.createString(name),
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               first),
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               second));
+  }
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
+
+    auto first = *state;
+    state.next();
+    if (!isalnum(first)) {
+      throw ParseError(state.where(),
+                       "Expected alpha numeric identifier string.");
+    }
+    auto second = *state;
+    state.next();
+    if (!isalnum(second)) {
+      throw ParseError(state.where(),
+                       "Expected alpha numeric identifier string.");
+    }
+
+    state.parseCharInSpace(',');
+
+    auto name_start = state.where();
+    while (!state.empty() && *state != ')' && !isspace(*state)) {
+      state.next();
+    }
+    if (name_start == state.where()) {
+      throw ParseError(state.where(), "Expected valid string.");
+    }
+    auto match = state.strFrom(name_start);
+
+    state.parseCharInSpace(')');
+
+    return std::make_shared<CheckAuxUserStringNode>(
+        first, second, match, state);
+  }
+
+private:
+  char first;
+  char second;
+  std::string name;
+};
+
+class CheckAuxUserCharNode : public DebuggableNode {
+public:
+  CheckAuxUserCharNode(char first_,
+                       char second_,
+                       char value_,
+                       ParseState &state)
+      : DebuggableNode(state), first(first_), second(second_), value(value_) {}
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_aux_char");
+    return state->CreateCall4(
+        function,
+        read,
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               value),
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               first),
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               second));
+  }
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
+
+    auto first = *state;
+    state.next();
+    if (!isalnum(first)) {
+      throw ParseError(state.where(),
+                       "Expected alpha numeric identifier string.");
+    }
+    auto second = *state;
+    state.next();
+    if (!isalnum(second)) {
+      throw ParseError(state.where(),
+                       "Expected alpha numeric identifier string.");
+    }
+
+    state.parseCharInSpace(',');
+
+    auto value = *state;
+    state.next();
+
+    state.parseCharInSpace(')');
+
+    return std::make_shared<CheckAuxUserCharNode>(first, second, value, state);
+  }
+
+private:
+  char first;
+  char second;
+  char value;
+};
+
+class CheckAuxUserIntNode : public DebuggableNode {
+public:
+  CheckAuxUserIntNode(char first_, char second_, int value_, ParseState &state)
+      : DebuggableNode(state), first(first_), second(second_), value(value_) {}
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_aux_int");
+    return state->CreateCall4(
+        function,
+        read,
+        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+                               value),
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               first),
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               second));
+  }
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
+
+    auto first = *state;
+    state.next();
+    if (!isalnum(first)) {
+      throw ParseError(state.where(),
+                       "Expected alpha numeric identifier string.");
+    }
+    auto second = *state;
+    state.next();
+    if (!isalnum(second)) {
+      throw ParseError(state.where(),
+                       "Expected alpha numeric identifier string.");
+    }
+
+    state.parseCharInSpace(',');
+
+    bool is_negative = *state == '-';
+    if (is_negative)
+      state.next();
+    auto value = state.parseInt();
+
+    state.parseCharInSpace(')');
+
+    return std::make_shared<CheckAuxUserIntNode>(
+        first, second, is_negative ? -value : value, state);
+  }
+
+private:
+  char first;
+  char second;
+  int value;
+};
+class CheckAuxUserFloatNode : public DebuggableNode {
+public:
+  CheckAuxUserFloatNode(char first_,
+                        char second_,
+                        double value_,
+                        ParseState &state)
+      : DebuggableNode(state), first(first_), second(second_), value(value_) {}
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("check_aux_double");
+    return state->CreateCall4(
+        function,
+        read,
+        llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
+                              value),
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               first),
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               second));
+  }
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('(');
+
+    auto first = *state;
+    state.next();
+    if (!isalnum(first)) {
+      throw ParseError(state.where(),
+                       "Expected alpha numeric identifier string.");
+    }
+    auto second = *state;
+    state.next();
+    if (!isalnum(second)) {
+      throw ParseError(state.where(),
+                       "Expected alpha numeric identifier string.");
+    }
+
+    state.parseCharInSpace(',');
+
+    auto value = state.parseDouble();
+
+    state.parseCharInSpace(')');
+
+    return std::make_shared<CheckAuxUserFloatNode>(first, second, value, state);
+  }
+
+private:
+  char first;
+  char second;
+  double value;
+};
 }

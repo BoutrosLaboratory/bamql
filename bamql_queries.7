@@ -128,6 +128,18 @@ Matches the read group, if specified in the input. The read group may be specifi
 .BR glob (7)
 to match multiple read groups. 
 
+\fBaux_char(\fRcode\fB, \fRvalue\fB)\fR
+.br
+\fBaux_dbl(\fRcode\fB, \fRvalue\fB)\fR
+.br
+\fBaux_int(\fRcode\fB, \fRvalue\fB)\fR
+.br
+\fBaux_str(\fRcode\fB, \fRvalue\fB)\fR
+
+Matches a piece of auxiliary data, if specified in the input. The \fIcode\fR is the two symbol identifier for the auxilary format. The \fIvalue\fR must be a single character, float point number, integral numer, or
+.BR glob (7)
+for \fBaux_char\fR, \fBaux_dbl\fR, \fBaux_int\fR, and \fBaux_str\fR, respectively. 
+
 .SS POSITION
 \fBafter(\fRposition\fB)\fR
 

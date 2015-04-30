@@ -151,6 +151,27 @@ bool check_aux_str(bam1_t *read, const char *pattern, char group1, char group2)
 	return globish_match(pattern, str);
 }
 
+bool check_aux_char(bam1_t *read, char pattern, char group1, char group2)
+{
+	char const id[] = { group1, group2 };
+	uint8_t const *value = bam_aux_get(read, id);
+	return value != NULL && bam_aux2A(value) == pattern;
+}
+
+bool check_aux_int(bam1_t *read, int32_t pattern, char group1, char group2)
+{
+	char const id[] = { group1, group2 };
+	uint8_t const *value = bam_aux_get(read, id);
+	return value != NULL && bam_aux2i(value) == pattern;
+}
+
+bool check_aux_double(bam1_t *read, double pattern, char group1, char group2)
+{
+	char const id[] = { group1, group2 };
+	uint8_t const *value = bam_aux_get(read, id);
+	return value != NULL && bam_aux2f(value) == (float)pattern;
+}
+
 bool check_split_pair(bam_hdr_t *header, bam1_t *read)
 {
 	if (read->core.tid < header->n_targets

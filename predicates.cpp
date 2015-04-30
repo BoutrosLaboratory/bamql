@@ -208,6 +208,10 @@ PredicateMap getDefaultPredicates() {
     // Auxiliary data
     { std::string("read_group"),
       CheckAuxStringNode<'R', 'G', readGroupChar>::parse },
+    { std::string("aux_str"), CheckAuxUserStringNode::parse },
+    { std::string("aux_char"), CheckAuxUserCharNode::parse },
+    { std::string("aux_int"), CheckAuxUserIntNode::parse },
+    { std::string("aux_dbl"), CheckAuxUserFloatNode::parse },
 
     // Chromosome information
     { std::string("chr"), CheckChromosomeNode<false>::parse },
