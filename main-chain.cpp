@@ -18,6 +18,7 @@
 #include <iostream>
 #include <sstream>
 #include <sys/stat.h>
+#include <uuid/uuid.h>
 #include "bamql.hpp"
 #include "bamql-jit.hpp"
 
@@ -81,8 +82,13 @@ public:
       }
     }
 
-    auto copy =
-        bamql::appendProgramToHeader(header.get(), name.str(), version, query);
+    uuid_t uuid;
+    uuid_generate(uuid);
+    char id_str[sizeof(uuid_t) * 2 + 1];
+    uuid_unparse(uuid, id_str);
+
+    auto copy = bamql::appendProgramToHeader(
+        header.get(), name.str(), std::string(id_str), version, query);
     if (output_file) {
       sam_hdr_write(output_file.get(), copy.get());
     }

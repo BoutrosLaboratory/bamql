@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <sys/stat.h>
+#include <uuid/uuid.h>
 #include "bamql.hpp"
 #include "bamql-jit.hpp"
 
@@ -38,16 +39,22 @@ public:
         query(query_), verbose(verbose_), accept(a), reject(r) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
     auto version = bamql::version();
+    uuid_t uuid;
+    uuid_generate(uuid);
+    char id_buf[sizeof(uuid_t) * 2 + 1];
+    uuid_unparse(uuid, id_buf);
+    std::string id_str(id_buf);
+
     if (accept) {
       std::string name("bamql-accept");
-      auto copy =
-          bamql::appendProgramToHeader(header.get(), name, version, query);
+      auto copy = bamql::appendProgramToHeader(
+          header.get(), name, id_str, version, query);
       sam_hdr_write(accept.get(), copy.get());
     }
     if (reject) {
       std::string name("bamql-reject");
-      auto copy =
-          bamql::appendProgramToHeader(header.get(), name, version, query);
+      auto copy = bamql::appendProgramToHeader(
+          header.get(), name, id_str, version, query);
       sam_hdr_write(reject.get(), copy.get());
     }
   }

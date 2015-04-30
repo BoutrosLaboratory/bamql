@@ -61,6 +61,7 @@ bamql_CPPFLAGS = \
 	-std=c++11 \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) -fexceptions \
+	$(UUID_CFLAGS) \
 	$(NULL)
 bamql_LDFLAGS =\
 	$(LLVM_RUN_LDFLAGS) \
@@ -70,6 +71,7 @@ bamql_LDADD = \
 	libbamql-jit.la \
 	$(HTS_LIBS) \
 	$(LLVM_RUN_LIBS) \
+	$(UUID_LIBS) \
 	$(NULL)
 
 bamql_chain_SOURCES = \
@@ -79,6 +81,7 @@ bamql_chain_CPPFLAGS = \
 	-std=c++11 \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) -fexceptions \
+	$(UUID_CFLAGS) \
 	$(NULL)
 bamql_chain_LDFLAGS =\
 	$(LLVM_RUN_LDFLAGS) \
@@ -88,6 +91,7 @@ bamql_chain_LDADD = \
 	libbamql-jit.la \
 	$(HTS_LIBS) \
 	$(LLVM_RUN_LIBS) \
+	$(UUID_LIBS) \
 	$(NULL)
 
 bamql_compile_SOURCES = \

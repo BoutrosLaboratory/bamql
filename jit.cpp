@@ -42,6 +42,7 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
 
 std::shared_ptr<bam_hdr_t> bamql::appendProgramToHeader(
     const bam_hdr_t *original,
+    const std::string &name,
     const std::string &id,
     const std::string &version,
     const std::string &args) {
@@ -51,8 +52,8 @@ std::shared_ptr<bam_hdr_t> bamql::appendProgramToHeader(
   }
   std::stringstream text;
 
-  text << original->text << "@PG\tID:" << id << "\tVN:" << version << "\tCL:\""
-       << args << "\"\n";
+  text << original->text << "@PG\tPN:" << name << "\tID:" << id
+       << "\tVN:" << version << "\tCL:\"" << args << "\"\n";
   auto text_str = text.str();
   copy->n_targets = original->n_targets;
   copy->ignore_sam_err = original->ignore_sam_err;

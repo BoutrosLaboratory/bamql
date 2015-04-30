@@ -4,11 +4,11 @@ This software is a simple query language for filtering SAM/BAM sequences.
 
 ## Installation
 
-In order to compile, [LLVM](http://llvm.org/), [CLANG](http://clang.llvm.org/), and [HTSlib](https://github.com/samtools/htslib/) are required.
+In order to compile, [LLVM](http://llvm.org/), [CLANG](http://clang.llvm.org/), [HTSlib](https://github.com/samtools/htslib/), and libuuid are required.
 
 On Debian/Ubuntu, these can be installed by:
 
-    sudo apt-get install llvm-dev libhts-dev build-essential clang
+    sudo apt-get install llvm-dev libhts-dev uuid-dev build-essential clang
 
 In the source directory,
 
