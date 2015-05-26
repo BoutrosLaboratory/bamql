@@ -191,11 +191,11 @@ int main(int argc, char *const *argv) {
         return 1;
       }
 
-      (void) ast->createFilterFunction(generator, name);
+      (void)ast->createFilterFunction(generator, name);
 
       std::stringstream index_name;
       index_name << name << "_index";
-      (void) ast->createIndexFunction(generator, index_name.str());
+      (void)ast->createIndexFunction(generator, index_name.str());
       header_file << "extern bool " << name << "(bam_hdr_t*, bam1_t*);"
                   << std::endl;
       header_file << "extern bool " << index_name.str()
