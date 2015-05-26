@@ -76,9 +76,20 @@ std::string ParseState::parseStr(const std::string &accept_chars,
 }
 bool ParseState::parseSpace() {
   size_t start = index;
-  while (index < input.length() && isspace(input[index])) {
-    index++;
-  }
+  bool again;
+  do {
+    again = false;
+    while (index < input.length() && isspace(input[index])) {
+      index++;
+    }
+    if (index < input.length() && input[index] == '#') {
+      while (index < input.length() &&
+             (input[index] != '\n' && input[index] != '\r')) {
+        index++;
+      }
+      again = true;
+    }
+  } while (again);
   return start != index;
 }
 void ParseState::parseCharInSpace(char c) throw(ParseError) {
