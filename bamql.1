@@ -17,7 +17,12 @@ bamql \- Filter SAM/BAM files easily
 ]
 .B -f
 .I input.bam
+{
+.B -q
+.I query.bamql
+|
 .I query
+}
 .SH DESCRIPTION
 BAMQL filters SAM or BAM files using a simple query language that is more expressive than the
 .B view
@@ -42,6 +47,9 @@ Any reads which are accepted by the query, that is, for which the query is true,
 .TP
 \-O rejected_output.bam
 Any reads which are rejected by the query, that is, for which the query is false, will be placed in this file. If omitted, the number of queries will be tallied, but discarded
+.TP
+\-q query.bamql
+Read the query from a file. This allows the query to be put in a file with a first line of \fB#!/usr/bin/bamql -q\fR such that it can be invoked from the shell.
 
 .SH EXAMPLE
 This extracts all the reads on chromosome 7:

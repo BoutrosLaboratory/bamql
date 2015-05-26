@@ -15,6 +15,7 @@
  */
 
 #include <unistd.h>
+#include <fstream>
 #include <iostream>
 #include <sys/stat.h>
 #include <uuid/uuid.h>
@@ -93,13 +94,14 @@ int main(int argc, char *const *argv) {
   std::shared_ptr<htsFile> reject; // The file where reads not matching the
                                    // query will be placed.
   char *bam_filename = nullptr;
+  char *query_filename = nullptr;
   bool binary = false;
   bool help = false;
   bool verbose = false;
   bool ignore_index = false;
   int c;
 
-  while ((c = getopt(argc, argv, "bhf:Io:O:v")) != -1) {
+  while ((c = getopt(argc, argv, "bhf:Io:O:q:v")) != -1) {
     switch (c) {
     case 'b':
       binary = true;
@@ -126,6 +128,9 @@ int main(int argc, char *const *argv) {
         perror(optarg);
       }
       break;
+    case 'q':
+      query_filename = optarg;
+      break;
     case 'v':
       verbose = true;
       break;
@@ -137,9 +142,11 @@ int main(int argc, char *const *argv) {
     }
   }
   if (help) {
-    std::cout << argv[0] << " [-b] [-I] [-o accepted_reads.bam] [-O "
-                            "rejected_reads.bam] [-v] -f input.bam query"
-              << std::endl;
+    std::cout
+        << argv[0]
+        << " [-b] [-I] [-o accepted_reads.bam] [-O "
+           "rejected_reads.bam] [-v] -f input.bam {query | -q query.bamql}"
+        << std::endl;
     std::cout << "Filter a BAM/SAM file based on the provided query. For "
                  "details, see the man page." << std::endl;
     std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)."
@@ -150,21 +157,43 @@ int main(int argc, char *const *argv) {
               << std::endl;
     std::cout << "\t-O\tThe output file for reads that fail the query."
               << std::endl;
+    std::cout << "\t-q\tA file containing the query, instead of providing it "
+                 "on the command line." << std::endl;
     std::cout << "\t-v\tPrint some information along the way." << std::endl;
     return 0;
   }
 
-  if (argc - optind != 1) {
-    std::cout << "Need a query." << std::endl;
-    return 1;
+  if (query_filename == nullptr) {
+    if (argc - optind != 1) {
+      std::cout << "Need a query." << std::endl;
+      return 1;
+    }
+  } else {
+    if (argc - optind != 0) {
+      std::cout << "No query can be provided if a query file is given."
+                << std::endl;
+      return 1;
+    }
   }
   if (bam_filename == nullptr) {
     std::cout << "Need an input file." << std::endl;
     return 1;
   }
 
+  std::string query_content;
+  if (query_filename == nullptr) {
+    query_content = std::string(argv[optind]);
+  } else {
+    std::ifstream input_file(query_filename);
+    if (!input_file) {
+      std::cerr << query_filename << ": " << strerror(errno) << std::endl;
+      return 1;
+    }
+    query_content = std::string((std::istreambuf_iterator<char>(input_file)),
+                                std::istreambuf_iterator<char>());
+  }
   // Parse the input query.
-  auto ast = bamql::AstNode::parseWithLogging(std::string(argv[optind]),
+  auto ast = bamql::AstNode::parseWithLogging(query_content,
                                               bamql::getDefaultPredicates());
   if (!ast) {
     return 1;
@@ -180,9 +209,9 @@ int main(int argc, char *const *argv) {
   }
 
   // Process the input file.
-  std::string query(argv[optind]);
   auto generator = std::make_shared<bamql::Generator>(module, nullptr);
-  DataCollector stats(engine, generator, query, ast, verbose, accept, reject);
+  DataCollector stats(
+      engine, generator, query_content, ast, verbose, accept, reject);
   if (stats.processFile(bam_filename, binary, ignore_index)) {
     stats.writeSummary();
     return 0;
