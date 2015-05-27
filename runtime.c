@@ -133,10 +133,20 @@ bool check_nt(bam1_t *read, int32_t position, unsigned char nt, bool exact)
 
 bool check_position(bam1_t *read, int32_t start, int32_t end)
 {
+	uint32_t mapped_end;
 	if (read->core.flag & BAM_FUNMAP) {
 		return false;
 	}
-	return read->core.pos <= end && bam_endpos(read) >= start;
+	/* HTSlib provides a function to calculate the end position based on the
+	 * CIGAR string. If none is available, it just gives the start position +
+	 * 1. This is derpy since one would expect the end position to be at least
+	 * the start position plus the read length. */
+	if (read->core.n_cigar == 0) {
+		mapped_end = read->core.pos + read->core.l_qseq;
+	} else {
+		mapped_end = bam_endpos(read);
+	}
+	return read->core.pos <= end && mapped_end >= start;
 }
 
 bool check_aux_str(bam1_t *read, const char *pattern, char group1, char group2)
