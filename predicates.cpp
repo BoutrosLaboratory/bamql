@@ -161,6 +161,9 @@ public:
     auto start = state.parseInt();
     state.parseCharInSpace(',');
     auto end = state.parseInt();
+    if (end < start) {
+      throw ParseError(state.where(), "End position proceedes start position.");
+    }
     state.parseCharInSpace(')');
     return std::make_shared<PositionNode>(start, end, state);
   }
