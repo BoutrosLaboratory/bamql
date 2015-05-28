@@ -147,8 +147,9 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("check_position");
-    return state->CreateCall3(
+    return state->CreateCall4(
         function,
+        header,
         read,
         llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
                                start),
