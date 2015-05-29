@@ -141,6 +141,8 @@ Matches a piece of auxiliary data, if specified in the input. The \fIcode\fR is 
 for \fBaux_char\fR, \fBaux_dbl\fR, \fBaux_int\fR, and \fBaux_str\fR, respectively. 
 
 .SS POSITION
+All of the position operations are inclusive: that means they take any reads with nucleotides in the desired range. This means that the start or end of a read can extend beyond the desired positions. BAM files allow reads to have position information while still being marked as unmapped. This operations ignore the official mapping status, and work solely on the position information. If this is undesirable, combine with \fB& !unmapped?\fR. Occasionally, the aligner produces reads which have a position, but no detailed mapping information (\fIi.e.\fR, no CIGAR string). In this case, the end position of the read is assumed to be mapped with no insertions or deletions.
+
 \fBafter(\fRposition\fB)\fR
 
 Matches all sequences that cover the specified position or any higher position (more \fIq\fR-ward on the chromosome).
