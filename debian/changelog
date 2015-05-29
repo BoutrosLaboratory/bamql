@@ -1,3 +1,9 @@
+bamql (1.0~ppa1) trusty; urgency=medium
+
+  * Add missing pkg-config dependency
+
+ -- Andre Masella <andre@masella.name>  Fri, 29 May 2015 10:44:25 -0400
+
 bamql (1.0~ppa0) trusty; urgency=medium
 
   * Initial Release
