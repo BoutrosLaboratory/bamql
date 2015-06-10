@@ -15,7 +15,6 @@
  */
 
 #include "bamql.hpp"
-#include "config.h"
 
 namespace bamql {
 extern llvm::Module *define_runtime(llvm::Module *module);
@@ -144,6 +143,4 @@ llvm::DIScope *GenerateState::debugScope() const {
 llvm::Value *GenerateState::createString(std::string &str) {
   return generator->createString(str);
 }
-
-std::string version() { return std::string(VERSION); }
 }

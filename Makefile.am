@@ -32,6 +32,7 @@ libbamql_la_SOURCES = \
 	predicates.cpp \
 	parser.cpp \
 	runtime.cpp \
+	version.cpp \
 	$(NULL)
 
 libbamql_jit_la_CPPFLAGS = \
