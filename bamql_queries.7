@@ -166,6 +166,11 @@ Matches a read has nucleotide \fIn\fR at the provided position, relative to the 
 
 .SS MISCELLANEOUS
 
+\fBheader ~ /\fIregex\fB/\fR
+
+Matches a PERL-compatible regular expression agains the read's header. For details, see
+.BR pcrepattern (3).
+
 .B true
 
 Always satisfied.
@@ -193,4 +198,7 @@ Sub-sample mitochondrial reads and all the reads that have matched to chromosome
 .SH SEE ALSO
 .BR bamql (1),
 .BR bamql-compile (1),
-.BR samtools (1).
+.BR samtools (1),
+.BR pcrepattern (3),
+.BR glob (7),
+.BR sam (5).

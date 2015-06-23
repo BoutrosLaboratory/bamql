@@ -16,6 +16,7 @@
 
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <htslib/sam.h>
@@ -39,6 +40,12 @@ bool bamql_re_match(const char *pattern, const char *input, size_t input_length)
 {
 	return pcre_exec((const pcre *)pattern, NULL, input, input_length, 0, 0,
 			 NULL, 0) >= 0;
+}
+
+bool header_regex(const char *pattern, bam1_t *read)
+{
+	return bamql_re_match(pattern, bam_get_qname(read),
+			      read->core.l_qname - 1);
 }
 
 bool globish_match(const char *pattern, const char *input)

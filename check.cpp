@@ -46,6 +46,7 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "chr(*2)", { "F", "G", "H", "I", "J" } },
   { "chr(1*)", { "A", "B", "C", "D", "E", "F", "G", "H", "J" } },
   { "mate_chr(1)", { "A", "B", "E", "G" } },
+  { "header ~ /A/", { "A" } },
   { "read_group(C3BUK.1) then chr(2) else chr(12)", { "F", "G", "H" } },
   { "read_group(C3BUK.1) then chr(1) else chr(2)", { "A", "I" } },
   { "!chr(1)", { "F", "G", "H", "I", "J" } },

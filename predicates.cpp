@@ -203,6 +203,27 @@ public:
   }
 };
 
+class HeaderRegExNode : public DebuggableNode {
+public:
+  HeaderRegExNode(ParseState &state, RegularExpression &regex_)
+      : DebuggableNode(state), regex(regex_) {}
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header) {
+    auto function = state.module()->getFunction("header_regex");
+    return state->CreateCall2(function, regex(state), read);
+  }
+
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
+    state.parseCharInSpace('~');
+    auto regex = state.parseRegEx();
+    return std::make_shared<HeaderRegExNode>(state, regex);
+  }
+
+private:
+  RegularExpression regex;
+};
+
 /**
  * All the predicates known to the system.
  */
@@ -250,6 +271,7 @@ PredicateMap getDefaultPredicates() {
 
     // Miscellaneous
     { std::string("mapping_quality"), MappingQualityNode::parse },
+    { std::string("header"), HeaderRegExNode::parse },
     { std::string("nt"), NucleotideNode<llvm::ConstantInt::getFalse>::parse },
     { std::string("nt_exact"),
       NucleotideNode<llvm::ConstantInt::getTrue>::parse },
