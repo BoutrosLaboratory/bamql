@@ -49,8 +49,7 @@ bool bamql::ReadIterator::processFile(const char *file_name,
                                       bool binary,
                                       bool ignore_index) {
   // Open the input file.
-  std::shared_ptr<htsFile> input = std::shared_ptr<htsFile>(
-      hts_open(file_name, binary ? "rb" : "r"), hts_close);
+  auto input = bamql::open(file_name, binary ? "rb" : "r");
   if (!input) {
     perror(file_name);
     return false;

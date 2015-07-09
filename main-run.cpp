@@ -116,14 +116,14 @@ int main(int argc, char *const *argv) {
       ignore_index = true;
       break;
     case 'o':
-      accept = std::shared_ptr<htsFile>(hts_open(optarg, "wb"), hts_close);
+      accept = bamql::open(optarg, "wb");
       if (!accept) {
         perror(optarg);
         return 1;
       }
       break;
     case 'O':
-      reject = std::shared_ptr<htsFile>(hts_open(optarg, "wb"), hts_close);
+      reject = bamql::open(optarg, "wb");
       if (!reject) {
         perror(optarg);
       }

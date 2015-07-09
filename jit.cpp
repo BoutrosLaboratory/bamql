@@ -69,3 +69,12 @@ std::shared_ptr<bam_hdr_t> bamql::appendProgramToHeader(
   }
   return copy;
 }
+
+static void hts_close0(htsFile *handle) {
+  if (handle != nullptr)
+    hts_close(handle);
+}
+
+std::shared_ptr<htsFile> bamql::open(const char *filename, const char *mode) {
+  return std::shared_ptr<htsFile>(hts_open(filename, mode), hts_close0);
+}
