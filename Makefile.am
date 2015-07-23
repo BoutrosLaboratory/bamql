@@ -14,7 +14,7 @@ check_PROGRAMS = check_bamql
 
 libbamql_la_CPPFLAGS = \
 	-std=c++11 \
-	$(LLVM_CORE_CPPFLAGS) -fexceptions \
+	$(LLVM_CORE_CPPFLAGS) \
 	$(HTS_CFLAGS) \
 	$(PCRE_CFLAGS) \
 	-g -O2 \
@@ -41,7 +41,7 @@ libbamql_la_SOURCES = \
 
 libbamql_jit_la_CPPFLAGS = \
 	-std=c++11 \
-	$(LLVM_RUN_CPPFLAGS) -fexceptions \
+	$(LLVM_RUN_CPPFLAGS) \
 	$(HTS_CFLAGS) -g -O2 \
 	$(NULL)
 libbamql_jit_la_LIBADD = \
@@ -65,7 +65,7 @@ bamql_SOURCES = \
 bamql_CPPFLAGS = \
 	-std=c++11 \
 	$(HTS_CFLAGS) -g -O2 \
-	$(LLVM_RUN_CPPFLAGS) -fexceptions \
+	$(LLVM_RUN_CPPFLAGS) \
 	$(UUID_CFLAGS) \
 	$(NULL)
 bamql_LDFLAGS =\
@@ -85,7 +85,7 @@ bamql_chain_SOURCES = \
 bamql_chain_CPPFLAGS = \
 	-std=c++11 \
 	$(HTS_CFLAGS) -g -O2 \
-	$(LLVM_RUN_CPPFLAGS) -fexceptions \
+	$(LLVM_RUN_CPPFLAGS) \
 	$(UUID_CFLAGS) \
 	$(NULL)
 bamql_chain_LDFLAGS =\
@@ -105,7 +105,7 @@ bamql_compile_SOURCES = \
 bamql_compile_CPPFLAGS = \
 	-std=c++11 \
 	$(Z_CPPFLAGS) \
-	$(LLVM_WRITE_CPPFLAGS) -fexceptions \
+	$(LLVM_WRITE_CPPFLAGS) \
 	-g -O2 \
 	$(NULL)
 bamql_compile_LDFLAGS =\
@@ -124,7 +124,7 @@ check_bamql_SOURCES = \
 check_bamql_CPPFLAGS = \
 	-std=c++11 \
 	$(HTS_CFLAGS) -g -O2 \
-	$(LLVM_RUN_CPPFLAGS) -fexceptions \
+	$(LLVM_RUN_CPPFLAGS) \
 	$(NULL)
 check_bamql_LDFLAGS =\
 	$(LLVM_RUN_LDFLAGS) \

@@ -51,7 +51,7 @@ AC_ARG_WITH([llvm],
 
 	if test "x$want_llvm" = "xyes"; then
 		if test -e "$ac_llvm_config_path"; then
-			[$1]_CPPFLAGS="$($ac_llvm_config_path --cxxflags)"
+			[$1]_CPPFLAGS="$($ac_llvm_config_path --cxxflags | sed -e 's/-fno-exceptions//g')"
 			[$1]_LDFLAGS="$($ac_llvm_config_path --ldflags)"
 			if test "x$enable_static_llvm" != "xyes" ; then
 				[$1]_LIBS="$($ac_llvm_config_path --libs $2) $($ac_llvm_config_path --ldflags)"
