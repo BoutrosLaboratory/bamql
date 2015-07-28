@@ -32,6 +32,28 @@
 #include <llvm/Target/TargetOptions.h>
 #include "bamql.hpp"
 
+class ExistingFunction : public bamql::AstNode {
+public:
+  ExistingFunction(llvm::Function *main_, llvm::Function *index_)
+      : main(main_), index(index_) {}
+  llvm::Value *generate(bamql::GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header) {
+    return state->CreateCall2(main, header, read);
+  }
+
+  llvm::Value *generateIndex(bamql::GenerateState &state,
+                             llvm::Value *chromosome,
+                             llvm::Value *header) {
+    return state->CreateCall2(index, header, chromosome);
+  }
+  void writeDebug(bamql::GenerateState &state) {}
+
+private:
+  llvm::Function *main;
+  llvm::Function *index;
+};
+
 std::string createFileName(const char *input_filename,
                            const char *output,
                            const char *suffix) {
@@ -182,25 +204,24 @@ int main(int argc, char *const *argv) {
         return 1;
       }
 
-      if (predicates.find(name) == predicates.end()) {
-        predicates[name] = [ast](bamql::ParseState &state) { return ast; };
-      } else {
+      if (predicates.find(name) != predicates.end()) {
         std::cerr << argv[optind] << ":" << state.currentLine()
                   << ": Redefinition of built-in \"" << name << "\"."
                   << std::endl;
         return 1;
       }
 
-      (void)ast->createFilterFunction(generator, name);
-
       std::stringstream index_name;
       index_name << name << "_index";
-      (void)ast->createIndexFunction(generator, index_name.str());
       header_file << "extern bool " << name << "(bam_hdr_t*, bam1_t*);"
                   << std::endl;
       header_file << "extern bool " << index_name.str()
                   << "(bam_hdr_t*, uint32_t);" << std::endl;
 
+      auto node = std::make_shared<ExistingFunction>(
+          ast->createFilterFunction(generator, name),
+          ast->createIndexFunction(generator, index_name.str()));
+      predicates[name] = [=](bamql::ParseState &state) { return node; };
     } while (!state.empty());
   } catch (bamql::ParseError e) {
     std::cerr << argv[optind] << ":" << state.currentLine() << ": " << e.what()
