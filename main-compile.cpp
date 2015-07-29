@@ -20,6 +20,7 @@
 #include <set>
 #include <sstream>
 #include <system_error>
+#include <vector>
 #include <llvm/IR/Module.h>
 #include <llvm/PassManager.h>
 #include <llvm/Support/FileSystem.h>
@@ -71,6 +72,29 @@ std::string createFileName(const char *input_filename,
     output_filename << output;
   }
   return output_filename.str();
+}
+
+llvm::Function *createExternFunction(
+    std::shared_ptr<bamql::Generator> &generator,
+    std::string &name,
+    llvm::Type *param_type) {
+  auto func = generator->module()->getFunction(name);
+  if (func == nullptr) {
+    std::vector<llvm::Type *> args = {
+      llvm::PointerType::get(bamql::getBamHeaderType(generator->module()), 0),
+      param_type
+    };
+    auto func_type = llvm::FunctionType::get(
+        llvm::IntegerType::get(generator->module()->getContext(), 1),
+        args,
+        false);
+    func = llvm::Function::Create(func_type,
+                                  llvm::GlobalValue::ExternalLinkage,
+                                  name,
+                                  generator->module());
+    func->setCallingConv(llvm::CallingConv::C);
+  }
+  return func;
 }
 
 /**
@@ -177,6 +201,35 @@ int main(int argc, char *const *argv) {
 
   bamql::ParseState state(queries);
   try {
+    state.parseSpace();
+    while (state.parseKeyword("extern")) {
+      state.parseSpace();
+      auto name = state.parseStr(
+          "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+      if (name[0] >= '0' && name[0] <= '9') {
+        std::cerr << argv[optind] << ":" << state.currentLine()
+                  << ": Identifier \"" << name
+                  << "\" must not start with digits." << std::endl;
+        return 1;
+      }
+      state.parseCharInSpace(';');
+      if (predicates.find(name) != predicates.end()) {
+        std::cerr << argv[optind] << ":" << state.currentLine()
+                  << ": Redefinition of \"" << name << "\"." << std::endl;
+        return 1;
+      }
+      auto index_name = name + "_index";
+      auto node = std::make_shared<ExistingFunction>(
+          createExternFunction(generator,
+                               name,
+                               llvm::PointerType::get(
+                                   bamql::getBamType(generator->module()), 0)),
+          createExternFunction(
+              generator,
+              index_name,
+              llvm::Type::getInt32Ty(llvm::getGlobalContext())));
+      predicates[name] = [=](bamql::ParseState &state) { return node; };
+    }
     do {
       state.parseSpace();
       auto name = state.parseStr(

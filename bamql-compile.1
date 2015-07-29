@@ -59,7 +59,13 @@ The file containing the generated C header. It none is specified, it is the inpu
 The file containing the generated object code. It none is specified, it is the input file name, suffixed with \fB.o\fR.
 
 .SH QUERY FILE FORMAT
-The query file is a list of queries, in the following format:
+The query file is an optional list of external definitions:
+
+.B extern
+.I name
+.B ;
+
+followed by a list of queries, in the following format:
 
 .I name
 .B =
