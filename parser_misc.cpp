@@ -108,8 +108,12 @@ bool ParseState::parseKeyword(const std::string &keyword) {
       return false;
     }
   }
-  index += keyword.length();
-  return true;
+  if (index + keyword.length() == input.length() ||
+      !isalnum(input[index + keyword.length()])) {
+    index += keyword.length();
+    return true;
+  }
+  return false;
 }
 
 unsigned int degen_nt[32] = {
