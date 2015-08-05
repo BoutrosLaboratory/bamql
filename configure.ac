@@ -6,12 +6,20 @@ m4_pattern_allow([AM_PROG_AR])
 AM_PROG_AR
 AC_PROG_CXX_C_O
 AC_PROG_LIBTOOL
-AC_CHECK_TOOL(CLANG, [clang])
-AC_CHECK_TOOL(LLC, [llc])
 
 AX_LLVM(LLVM_CORE, [core])
 AX_LLVM(LLVM_WRITE, [core nativecodegen])
 AX_LLVM(LLVM_RUN, [core executionengine jit native])
+AC_CHECK_PROGS(CLANG, [clang clang-${LLVM_VERSION} clang-${LLVM_VERSION%.*}])
+if test "x$CLANG" = x
+then
+	AC_MSG_ERROR([*** clang is required, install clang compiler])
+fi
+AC_CHECK_PROGS(LLC, [llc llc-${LLVM_VERSION} llc-${LLVM_VERSION%.*}])
+if test "x$LLC" = x
+then
+	AC_MSG_ERROR([*** llc is required, install LLVM utiltities])
+fi
 PKG_CHECK_MODULES(Z, [ zlib ])
 PKG_CHECK_MODULES(UUID, [ uuid ])
 PKG_CHECK_MODULES(PCRE, [ libpcre ])
