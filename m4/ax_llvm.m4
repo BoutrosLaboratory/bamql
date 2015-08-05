@@ -59,6 +59,8 @@ AC_ARG_WITH([llvm],
 				[$1]_LIBS="-lLLVM-$($ac_llvm_config_path --version)"
 			fi
 
+			LLVM_VERSION="$($ac_llvm_config_path --version)"
+
 			AC_REQUIRE([AC_PROG_CXX])
 			CPPFLAGS_SAVED="$CPPFLAGS"
 			CPPFLAGS="$CPPFLAGS $[$1]_CPPFLAGS"
@@ -97,6 +99,7 @@ AC_ARG_WITH([llvm],
 			AC_SUBST([$1][_CPPFLAGS])
 			AC_SUBST([$1][_LDFLAGS])
 			AC_SUBST([$1][_LIBS])
+			AC_SUBST(LLVM_VERSION)
 			AC_DEFINE(HAVE_LLVM,,[define if the llvm library is available])
 		fi
 ])
