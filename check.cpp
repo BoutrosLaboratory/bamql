@@ -86,13 +86,13 @@ private:
 int main(int argc, char *const *argv) {
   bool success = true;
   LLVMInitializeNativeTarget();
-  auto module = new llvm::Module("bamql", llvm::getGlobalContext());
-  auto engine = bamql::createEngine(module);
+  std::unique_ptr<llvm::Module> module(new llvm::Module("bamql", llvm::getGlobalContext()));
+  auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
+  auto engine = bamql::createEngine(std::move(module));
   if (!engine) {
     std::cerr << "Failed to initialise LLVM." << std::endl;
     return 1;
   }
-  auto generator = std::make_shared<bamql::Generator>(module, nullptr);
 
   for (int index = 0; index < queries.size(); index++) {
     auto ast = bamql::AstNode::parseWithLogging(queries[index].first,

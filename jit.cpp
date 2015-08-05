@@ -20,7 +20,7 @@
 #include "bamql-jit.hpp"
 
 std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
-    llvm::Module *module) {
+    std::unique_ptr<llvm::Module> module) {
   std::string error;
   std::vector<std::string> attrs;
   attrs.push_back("-avx"); // The AVX support (auto-vectoring) should be
@@ -29,7 +29,14 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
                            // routine. In particular, it makes Valgrind not
                            // work.
   std::shared_ptr<llvm::ExecutionEngine> engine(
-      llvm::EngineBuilder(module)
+      llvm::EngineBuilder(
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
+          module.release()
+#else
+          std::move(module)
+#endif
+
+          )
           .setEngineKind(llvm::EngineKind::JIT)
           .setErrorStr(&error)
           .setMAttrs(attrs)

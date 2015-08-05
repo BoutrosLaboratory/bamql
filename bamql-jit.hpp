@@ -19,7 +19,6 @@
 #include <htslib/hts.h>
 #include <htslib/sam.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/ExecutionEngine/JIT.h>
 
 namespace bamql {
 
@@ -50,7 +49,8 @@ T getNativeFunction(std::shared_ptr<llvm::ExecutionEngine> &engine,
 /**
  * Create a JIT.
  */
-std::shared_ptr<llvm::ExecutionEngine> createEngine(llvm::Module *module);
+std::shared_ptr<llvm::ExecutionEngine> createEngine(
+    std::unique_ptr<llvm::Module> module);
 
 /**
  * Iterator over all the reads in a BAM file, using an index if possible.

@@ -201,12 +201,13 @@ int main(int argc, char *const *argv) {
   }
   // Create a new LLVM module and JIT
   LLVMInitializeNativeTarget();
-  auto module = new llvm::Module("bamql", llvm::getGlobalContext());
-  auto engine = bamql::createEngine(module);
+  std::unique_ptr<llvm::Module> module(
+      new llvm::Module("bamql", llvm::getGlobalContext()));
+  auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
+  auto engine = bamql::createEngine(std::move(module));
   if (!engine) {
     return 1;
   }
-  auto generator = std::make_shared<bamql::Generator>(module, nullptr);
 
   // Prepare a chain of wranglers.
   std::shared_ptr<OutputWrangler> output;

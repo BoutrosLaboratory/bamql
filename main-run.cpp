@@ -201,15 +201,17 @@ int main(int argc, char *const *argv) {
 
   // Create a new LLVM module and our function
   LLVMInitializeNativeTarget();
-  auto module = new llvm::Module("bamql", llvm::getGlobalContext());
+  std::unique_ptr<llvm::Module> module(
+      new llvm::Module("bamql", llvm::getGlobalContext()));
 
-  auto engine = bamql::createEngine(module);
+  auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
+
+  auto engine = bamql::createEngine(std::move(module));
   if (!engine) {
     return 1;
   }
 
   // Process the input file.
-  auto generator = std::make_shared<bamql::Generator>(module, nullptr);
   DataCollector stats(
       engine, generator, query_content, ast, verbose, accept, reject);
   if (stats.processFile(bam_filename, binary, ignore_index)) {
