@@ -86,7 +86,8 @@ private:
 int main(int argc, char *const *argv) {
   bool success = true;
   LLVMInitializeNativeTarget();
-  std::unique_ptr<llvm::Module> module(new llvm::Module("bamql", llvm::getGlobalContext()));
+  std::unique_ptr<llvm::Module> module(
+      new llvm::Module("bamql", llvm::getGlobalContext()));
   auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
   auto engine = bamql::createEngine(std::move(module));
   if (!engine) {
