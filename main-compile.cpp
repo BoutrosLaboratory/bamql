@@ -31,6 +31,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+#include <llvm/Target/TargetSubtargetInfo.h>
 #include "bamql.hpp"
 
 class ExistingFunction : public bamql::AstNode {
@@ -315,13 +316,22 @@ int main(int argc, char *const *argv) {
   llvm::PassManager pass_man;
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
   pass_man.add(new llvm::DataLayout(*target_machine->getDataLayout()));
-#else
+#elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
   pass_man.add(new llvm::DataLayoutPass(*target_machine->getDataLayout()));
+#elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+  auto dlp = new llvm::DataLayoutPass();
+  dlp->doInitialization(*module);
+  pass_man.add(dlp);
 #endif
 
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
+  std::string error_c;
+#else
+  std::error_code error_c;
+#endif
   llvm::raw_fd_ostream output_stream(
       createFileName(argv[optind], output, ".o").c_str(),
-      error,
+      error_c,
       llvm::sys::fs::F_None);
   if (error.length() > 0) {
     std::cerr << error << std::endl;
