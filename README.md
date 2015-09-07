@@ -8,7 +8,7 @@ In order to compile, [LLVM](http://llvm.org/), [CLANG](http://clang.llvm.org/), 
 
 On Debian/Ubuntu, these can be installed by:
 
-    sudo apt-get install llvm-dev libhts-dev uuid-dev build-essential clang
+    sudo apt-get install autotools-dev build-essential clang libhts-dev libtool libpcre++-dev llvm-dev pkg-config uuid-dev zlib1g-dev
 
 In the source directory,
 
