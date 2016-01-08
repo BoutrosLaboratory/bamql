@@ -112,7 +112,7 @@ private:
  */
 class RawFlagNode : public DebuggableNode {
 public:
-  RawFlagNode(uint32_t raw_, ParseState &state)
+  RawFlagNode(uint16_t raw_, ParseState &state)
       : DebuggableNode(state), raw(raw_) {}
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
@@ -121,7 +121,7 @@ public:
     return state->CreateCall2(
         function,
         read,
-        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+        llvm::ConstantInt::get(llvm::Type::getInt16Ty(llvm::getGlobalContext()),
                                raw));
   }
 
@@ -133,7 +133,7 @@ public:
   }
 
 private:
-  uint32_t raw;
+  uint16_t raw;
 };
 
 /**
