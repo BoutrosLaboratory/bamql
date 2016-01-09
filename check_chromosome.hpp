@@ -56,6 +56,8 @@ public:
         function, chromosome, header, state.createString(name));
   }
 
+  bool usesIndex() { return !mate; }
+
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('(');
 

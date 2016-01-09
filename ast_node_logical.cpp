@@ -70,7 +70,14 @@ llvm::Value *bamql::ShortCircuitNode::generate(GenerateState &state,
 llvm::Value *bamql::ShortCircuitNode::generateIndex(GenerateState &state,
                                                     llvm::Value *tid,
                                                     llvm::Value *header) {
-  return generateGeneric(&bamql::AstNode::generateIndex, state, tid, header);
+  if (usesIndex()) {
+    return generateGeneric(&bamql::AstNode::generateIndex, state, tid, header);
+  } else {
+    return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+  }
+}
+bool bamql::ShortCircuitNode::usesIndex() {
+  return left->usesIndex() || right->usesIndex();
 }
 void bamql::ShortCircuitNode::writeDebug(GenerateState &state) {}
 
@@ -101,9 +108,16 @@ llvm::Value *bamql::XOrNode::generate(GenerateState &state,
 llvm::Value *bamql::XOrNode::generateIndex(GenerateState &state,
                                            llvm::Value *tid,
                                            llvm::Value *header) {
-  auto left_value = left->generateIndex(state, tid, header);
-  auto right_value = right->generateIndex(state, tid, header);
-  return state->CreateICmpNE(left_value, right_value);
+  if (usesIndex()) {
+    auto left_value = left->generateIndex(state, tid, header);
+    auto right_value = right->generateIndex(state, tid, header);
+    return state->CreateICmpNE(left_value, right_value);
+  } else {
+    return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+  }
+}
+bool bamql::XOrNode::usesIndex() {
+  return left->usesIndex() || right->usesIndex();
 }
 
 void bamql::XOrNode::writeDebug(GenerateState &state) {}
@@ -124,6 +138,7 @@ llvm::Value *bamql::NotNode::generateIndex(GenerateState &state,
   llvm::Value *result = this->expr->generateIndex(state, tid, header);
   return state->CreateNot(result);
 }
+bool bamql::NotNode::usesIndex() { return expr->usesIndex(); }
 void bamql::NotNode::writeDebug(GenerateState &state) {}
 
 bamql::ConditionalNode::ConditionalNode(std::shared_ptr<AstNode> condition,
@@ -177,60 +192,90 @@ llvm::Value *bamql::ConditionalNode::generate(GenerateState &state,
   return phi;
 }
 
+bool bamql::ConditionalNode::usesIndex() {
+  return then_part->usesIndex() && else_part->usesIndex() ||
+         condition->usesIndex() &&
+             (then_part->usesIndex() || else_part->usesIndex());
+}
+
 llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
                                                    llvm::Value *tid,
                                                    llvm::Value *header) {
-  /*
-   * The logic in this function is twisty, so here is the explanation. Given we
-   * have `C ? T : E`, consider the following cases during index building:
-   *
-   * 1. C is true. If C is true, we don't know if it will necessarily always
-   * return true to this chromosome in the query, so we might execute T or E.
-   * Therefore, whether this is true is `T | E`.
-   *
-   * 2. C is false. If C is false, T will never be executed. E might be
-   * executed, so we should return E.
-   */
+  if (condition->usesIndex()) {
+    /*
+     * The logic in this function is twisty, so here is the explanation. Given
+     * we have `C ? T : E`, consider the following cases during index building:
+     *
+     * 1. C is true. If C is true, we don't know if it will necessarily always
+     * return true to this chromosome in the query, so we might execute T or E.
+     * Therefore, whether this is true is `T | E`.
+     *
+     * 2. C is false. If C is false, T will never be executed. E might be
+     * executed, so we should return E.
+     */
 
-  /* Create three blocks: one for the “then”, one for the “else” and one for the
-   * final. */
-  auto function = state->GetInsertBlock()->getParent();
-  auto then_block =
-      llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
-  auto else_block =
-      llvm::BasicBlock::Create(llvm::getGlobalContext(), "else", function);
-  auto merge_block =
-      llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
+    /* Create three blocks: one for the “then”, one for the “else” and one for
+     * the final. */
+    auto function = state->GetInsertBlock()->getParent();
+    auto then_block =
+        llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
+    auto else_block =
+        llvm::BasicBlock::Create(llvm::getGlobalContext(), "else", function);
+    auto merge_block =
+        llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
 
-  /* Compute the conditional argument and then decide to which block to jump.
-   * If true, try to make a decision based on the “then” block, otherwise, only
-   * make a decision based on the “else” block. */
-  this->condition->writeDebug(state);
-  auto conditional_result = condition->generateIndex(state, tid, header);
-  state->CreateCondBr(conditional_result, then_block, else_block);
+    /* Compute the conditional argument and then decide to which block to jump.
+     * If true, try to make a decision based on the “then” block, otherwise,
+     * only make a decision based on the “else” block. */
+    this->condition->writeDebug(state);
+    auto conditional_result = condition->generateIndex(state, tid, header);
+    state->CreateCondBr(conditional_result, then_block, else_block);
 
-  /* Generate the “then” block. */
-  state->SetInsertPoint(then_block);
-  this->then_part->writeDebug(state);
-  auto then_result = then_part->generateIndex(state, tid, header);
-  /* If we fail, the “else” block might still be interested. */
-  state->CreateCondBr(then_result, merge_block, else_block);
-  then_block = state->GetInsertBlock();
+    /* Generate the “then” block. */
+    state->SetInsertPoint(then_block);
+    this->then_part->writeDebug(state);
+    auto then_result = then_part->generateIndex(state, tid, header);
+    /* If we fail, the “else” block might still be interested. */
+    state->CreateCondBr(then_result, merge_block, else_block);
+    then_block = state->GetInsertBlock();
 
-  /* Generate the “else” block. */
-  state->SetInsertPoint(else_block);
-  this->else_part->writeDebug(state);
-  auto else_result = else_part->generateIndex(state, tid, header);
-  /* Jump to the final block. */
-  state->CreateBr(merge_block);
-  else_block = state->GetInsertBlock();
+    /* Generate the “else” block. */
+    state->SetInsertPoint(else_block);
+    this->else_part->writeDebug(state);
+    auto else_result = else_part->generateIndex(state, tid, header);
+    /* Jump to the final block. */
+    state->CreateBr(merge_block);
+    else_block = state->GetInsertBlock();
 
-  /* Get the two results and select the correct one using a PHI node. */
-  state->SetInsertPoint(merge_block);
-  auto phi =
-      state->CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
-  phi->addIncoming(then_result, then_block);
-  phi->addIncoming(else_result, else_block);
-  return phi;
+    /* Get the two results and select the correct one using a PHI node. */
+    state->SetInsertPoint(merge_block);
+    auto phi =
+        state->CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
+    phi->addIncoming(then_result, then_block);
+    phi->addIncoming(else_result, else_block);
+    return phi;
+  }
+  if (then_part->usesIndex() && else_part->usesIndex()) {
+    auto function = state->GetInsertBlock()->getParent();
+    auto else_block =
+        llvm::BasicBlock::Create(llvm::getGlobalContext(), "else", function);
+    auto merge_block =
+        llvm::BasicBlock::Create(llvm::getGlobalContext(), "merge", function);
+    auto then_result = then_part->generateIndex(state, tid, header);
+    state->CreateCondBr(then_result, merge_block, else_block);
+    auto original_block = state->GetInsertBlock();
+    state->SetInsertPoint(else_block);
+    this->else_part->writeDebug(state);
+    auto else_result = else_part->generateIndex(state, tid, header);
+    state->CreateBr(merge_block);
+    else_block = state->GetInsertBlock();
+    state->SetInsertPoint(merge_block);
+    auto phi =
+        state->CreatePHI(llvm::Type::getInt1Ty(llvm::getGlobalContext()), 2);
+    phi->addIncoming(then_result, original_block);
+    phi->addIncoming(else_result, else_block);
+    return phi;
+  }
+  return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 void bamql::ConditionalNode::writeDebug(GenerateState &) {}

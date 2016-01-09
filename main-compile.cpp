@@ -49,6 +49,7 @@ public:
                              llvm::Value *header) {
     return state->CreateCall2(index, header, chromosome);
   }
+  bool usesIndex() { return true; }
   void writeDebug(bamql::GenerateState &state) {}
 
 private:

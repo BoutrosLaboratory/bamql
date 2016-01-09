@@ -25,6 +25,8 @@ llvm::Value *AstNode::generateIndex(GenerateState &state,
   return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
 }
 
+bool AstNode::usesIndex() { return false; }
+
 llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
                                         llvm::StringRef name,
                                         llvm::StringRef param_name,
@@ -48,7 +50,9 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
   auto param_value = args++;
   param_value->setName(param_name);
   this->writeDebug(state);
-  state->CreateRet((this->*member)(state, param_value, header_value));
+  state->CreateRet(member == nullptr
+                       ? llvm::ConstantInt::getTrue(llvm::getGlobalContext())
+                       : (this->*member)(state, param_value, header_value));
 
   return func;
 }
@@ -69,7 +73,8 @@ llvm::Function *AstNode::createIndexFunction(
                         name,
                         "tid",
                         llvm::Type::getInt32Ty(llvm::getGlobalContext()),
-                        &bamql::AstNode::generateIndex);
+                        this->usesIndex() ? &bamql::AstNode::generateIndex
+                                          : nullptr);
 }
 
 DebuggableNode::DebuggableNode(ParseState &state)

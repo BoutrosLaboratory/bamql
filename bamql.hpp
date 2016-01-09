@@ -156,6 +156,11 @@ public:
                                      llvm::Value *chromosome,
                                      llvm::Value *header);
   /**
+   * Determine if this node uses the BAM index (i.e., will the result of
+   * `generateIndex` be non-constant).
+   */
+  virtual bool usesIndex();
+  /**
    * Generate the LLVM function from the query.
    */
   llvm::Function *createFilterFunction(std::shared_ptr<Generator> &generator,
@@ -199,6 +204,7 @@ public:
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
                                      llvm::Value *header);
+  bool usesIndex();
   /**
    * The value that causes short circuting.
    */
@@ -242,6 +248,7 @@ public:
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
                                      llvm::Value *header);
+  bool usesIndex();
 
   void writeDebug(GenerateState &state);
 
@@ -261,6 +268,7 @@ public:
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
                                      llvm::Value *header);
+  bool usesIndex();
 
   void writeDebug(GenerateState &state);
 
@@ -281,7 +289,7 @@ public:
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
                                      llvm::Value *header);
-
+  bool usesIndex();
   void writeDebug(GenerateState &state);
 
 private:
