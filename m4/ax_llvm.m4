@@ -28,7 +28,7 @@
 
 AC_DEFUN([AX_LLVM],
 [
-AC_ARG_ENABLE([static-llvm], [compiled against the static LLVM libraries, instead of the shared library.], [enable_static_llvm=yes])
+AC_ARG_ENABLE([static-llvm], AS_HELP_STRING([--enable-static-llvm], [compiled against the static LLVM libraries, instead of the shared library.]), [enable_static_llvm=yes])
 AC_ARG_WITH([llvm],
 	AS_HELP_STRING([--with-llvm@<:@=DIR@:>@], [use llvm (default is yes) - it is possible to specify the root directory for llvm (optional)]),
 	[
