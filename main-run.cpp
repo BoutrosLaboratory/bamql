@@ -18,7 +18,7 @@
 #include <fstream>
 #include <iostream>
 #include <sys/stat.h>
-#include <uuid/uuid.h>
+#include <uuid.h>
 #include "bamql.hpp"
 #include "bamql-jit.hpp"
 
