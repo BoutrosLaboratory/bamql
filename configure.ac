@@ -9,7 +9,7 @@ AC_PROG_LIBTOOL
 
 AX_LLVM(LLVM_CORE, [core])
 AX_LLVM(LLVM_WRITE, [core nativecodegen])
-AX_LLVM(LLVM_RUN, [core executionengine jit native])
+AX_LLVM(LLVM_RUN, [core executionengine jit native mcjit])
 AC_CHECK_PROGS(CLANG, [clang clang-${LLVM_VERSION} clang-${LLVM_VERSION%.*}])
 if test "x$CLANG" = x
 then

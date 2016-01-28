@@ -19,6 +19,7 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <uuid.h>
+#include <llvm/ExecutionEngine/MCJIT.h>
 #include "bamql.hpp"
 #include "bamql-jit.hpp"
 
