@@ -19,6 +19,8 @@
 #include <sstream>
 #include <utility>
 #include <vector>
+#include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/Support/TargetSelect.h>
 #include "bamql.hpp"
 #include "bamql-jit.hpp"
 
@@ -86,6 +88,8 @@ private:
 int main(int argc, char *const *argv) {
   bool success = true;
   LLVMInitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetAsmPrinter();
   std::unique_ptr<llvm::Module> module(
       new llvm::Module("bamql", llvm::getGlobalContext()));
   auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
@@ -95,9 +99,11 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
+  std::vector<Checker> checkers;
   for (int index = 0; index < queries.size(); index++) {
     auto ast = bamql::AstNode::parseWithLogging(queries[index].first,
                                                 bamql::getDefaultPredicates());
+
     if (!ast) {
       std::cerr << "Could not compile test: " << queries[index].first
                 << std::endl;
@@ -105,9 +111,15 @@ int main(int argc, char *const *argv) {
     }
     std::stringstream name;
     name << "test" << index;
-    Checker checker(engine, generator, ast, name.str(), index);
-    bool test_success =
-        checker.processFile("test.sam", false, false) && checker.isCorrect();
+    checkers.push_back(
+        std::move(Checker(engine, generator, ast, name.str(), index)));
+  }
+  engine->finalizeObject();
+
+  for (int index = 0; index < queries.size(); index++) {
+    checkers[index].prepareExecution();
+    bool test_success = checkers[index].processFile("test.sam", false, false) &&
+                        checkers[index].isCorrect();
     std::cerr << index << " " << (test_success ? "----" : "FAIL") << " "
               << queries[index].first << std::endl;
     success &= test_success;

@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <uuid.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/Support/TargetSelect.h>
 #include "bamql.hpp"
 #include "bamql-jit.hpp"
 
@@ -59,6 +60,12 @@ public:
       : bamql::CheckIterator::CheckIterator(engine, generator, node, name),
         chain(c), file_name(file_name_), output_file(o), query(query_),
         next(n) {}
+  virtual void prepareExecution() {
+    CheckIterator::prepareExecution();
+    if (next) {
+      next->prepareExecution();
+    }
+  }
 
   /**
    * We want this chromosome if our query is interested or the next link can
@@ -202,6 +209,8 @@ int main(int argc, char *const *argv) {
   }
   // Create a new LLVM module and JIT
   LLVMInitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetAsmPrinter();
   std::unique_ptr<llvm::Module> module(
       new llvm::Module("bamql", llvm::getGlobalContext()));
   auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
@@ -244,6 +253,8 @@ int main(int argc, char *const *argv) {
                                               output_file,
                                               output);
   }
+  engine->finalizeObject();
+  output->prepareExecution();
 
   // Run the chain.
   if (output->processFile(input_filename, binary, ignore_index)) {

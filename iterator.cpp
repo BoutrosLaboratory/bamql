@@ -98,15 +98,17 @@ bamql::CheckIterator::CheckIterator(std::shared_ptr<llvm::ExecutionEngine> &e,
                                     std::shared_ptr<Generator> &generator,
                                     std::shared_ptr<AstNode> &node,
                                     std::string name)
-    : engine(e) {
+    : engine(e), filter_func(node->createFilterFunction(generator, name)) {
   // Compile the query into native functions. We must hold a reference to the
   // execution engine as long as we intend for these pointers to be valid.
-  filter = getNativeFunction<FilterFunction>(
-      e, node->createFilterFunction(generator, name));
   std::stringstream index_function_name;
   index_function_name << name << "_index";
-  index = getNativeFunction<IndexFunction>(
-      e, node->createIndexFunction(generator, index_function_name.str()));
+  index_func = node->createIndexFunction(generator, index_function_name.str());
+}
+
+void bamql::CheckIterator::prepareExecution() {
+  filter = getNativeFunction<FilterFunction>(engine, filter_func);
+  index = getNativeFunction<IndexFunction>(engine, index_func);
 }
 
 bool bamql::CheckIterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,

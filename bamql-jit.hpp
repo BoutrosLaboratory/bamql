@@ -92,6 +92,7 @@ public:
                 std::shared_ptr<Generator> &generator,
                 std::shared_ptr<AstNode> &node,
                 std::string name);
+  virtual void prepareExecution();
   virtual bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid);
   virtual void processRead(std::shared_ptr<bam_hdr_t> &header,
                            std::shared_ptr<bam1_t> &read);
@@ -110,6 +111,8 @@ public:
 private:
   bamql::FilterFunction filter;
   bamql::IndexFunction index;
+  llvm::Function *filter_func;
+  llvm::Function *index_func;
   std::shared_ptr<llvm::ExecutionEngine> engine;
 };
 

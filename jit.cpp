@@ -40,6 +40,7 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
           .setEngineKind(llvm::EngineKind::JIT)
           .setErrorStr(&error)
           .setMAttrs(attrs)
+          .setUseMCJIT(true)
           .create());
   if (!engine) {
     std::cerr << error << std::endl;

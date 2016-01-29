@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <uuid.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/Support/TargetSelect.h>
 #include "bamql.hpp"
 #include "bamql-jit.hpp"
 
@@ -202,6 +203,8 @@ int main(int argc, char *const *argv) {
 
   // Create a new LLVM module and our function
   LLVMInitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
+  llvm::InitializeNativeTargetAsmPrinter();
   std::unique_ptr<llvm::Module> module(
       new llvm::Module("bamql", llvm::getGlobalContext()));
 
@@ -209,12 +212,16 @@ int main(int argc, char *const *argv) {
 
   auto engine = bamql::createEngine(std::move(module));
   if (!engine) {
+    std::cerr << "Failed to initialise LLVM." << std::endl;
     return 1;
   }
 
   // Process the input file.
   DataCollector stats(
       engine, generator, query_content, ast, verbose, accept, reject);
+  engine->finalizeObject();
+  stats.prepareExecution();
+
   if (stats.processFile(bam_filename, binary, ignore_index)) {
     stats.writeSummary();
     return 0;
