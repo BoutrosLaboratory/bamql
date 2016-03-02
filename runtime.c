@@ -131,17 +131,60 @@ bool check_mapping_quality(bam1_t *read, uint8_t quality)
 	return read->core.qual != 255 && read->core.qual >= quality;
 }
 
+uint32_t compute_mapped_end(bam1_t *read)
+{
+	/* HTSlib provides a function to calculate the end position based on the
+	 * CIGAR string. If none is available, it just gives the start position +
+	 * 1. This is derpy since one would expect the end position to be at least
+	 * the start position plus the read length.
+	 * As an added bonus, if the read is “officially” unmapped, even if it has
+	 * CIGAR data, bam_endpos will ignore the CIGAR string. */
+	if ((read->core.flag & BAM_FUNMAP) || read->core.n_cigar == 0) {
+		return read->core.pos + read->core.l_qseq;
+	} else {
+		return bam_endpos(read);
+	}
+}
+
 bool check_nt(bam1_t *read, int32_t position, unsigned char nt, bool exact)
 {
 	unsigned char read_nt;
+	int32_t mapped_position;
 	if (read->core.flag & BAM_FUNMAP) {
 		return false;
 	}
-	if (read->core.pos > position ||
-	    read->core.pos + read->core.l_qseq < position) {
+	if (read->core.pos > position || compute_mapped_end(read) < position) {
 		return false;
 	}
-	read_nt = bam_seqi(bam_get_seq(read), position - read->core.pos);
+	if ((read->core.flag & BAM_FUNMAP) || read->core.n_cigar == 0) {
+		mapped_position =
+		    (read->core.flag & BAM_FREVERSE) ? (read->core.l_qseq -
+							position +
+							read->core.pos -
+							1) : (position -
+							      read->core.pos);
+	} else {
+		int32_t required_offset =
+		    (read->core.flag & BAM_FREVERSE) ? (read->core.l_qseq -
+							position +
+							read->core.pos -
+							1) : (position -
+							      read->core.pos);
+		mapped_position = 0;
+
+		for (int index = 0;
+		     index < read->core.n_cigar && required_offset > 0;
+		     index++) {
+			uint8_t consume =
+			    bam_cigar_type(bam_cigar_op
+					   (bam_get_cigar(read)[index]));
+			if (consume & 2)
+				required_offset--;
+			if (consume & 1)
+				mapped_position++;
+		}
+	}
+	read_nt = bam_seqi(bam_get_seq(read), mapped_position);
 	return exact ? (read_nt == nt) : (read_nt != 0);
 }
 
@@ -153,17 +196,7 @@ bool check_position(bam_hdr_t *header, bam1_t *read, uint32_t start,
 	if (read->core.tid >= header->n_targets) {
 		return false;
 	}
-	/* HTSlib provides a function to calculate the end position based on the
-	 * CIGAR string. If none is available, it just gives the start position +
-	 * 1. This is derpy since one would expect the end position to be at least
-	 * the start position plus the read length.
-	 * As an added bonus, if the read is “officially” unmapped, even if it has
-	 * CIGAR data, bam_endpos will ignore the CIGAR string. */
-	if ((read->core.flag & BAM_FUNMAP) || read->core.n_cigar == 0) {
-		mapped_end = read->core.pos + read->core.l_qseq;
-	} else {
-		mapped_end = bam_endpos(read);
-	}
+	mapped_end = compute_mapped_end(read);
 	return (mapped_start <= start && mapped_end >= start)
 	    || (mapped_start <= end && mapped_end >= end)
 	    || (mapped_start >= start && mapped_end <= end);
