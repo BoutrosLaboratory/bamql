@@ -53,13 +53,19 @@ AC_ARG_WITH([llvm],
 		if test -e "$ac_llvm_config_path"; then
 			[$1]_CPPFLAGS="$($ac_llvm_config_path --cxxflags | sed -e 's/-fno-exceptions//g')"
 			[$1]_LDFLAGS="$($ac_llvm_config_path --ldflags)"
-			if test "x$enable_static_llvm" != "xyes" ; then
-				[$1]_LIBS="$($ac_llvm_config_path --libs --system-libs $2 | tr '\n' ' ')"
-			else
-				[$1]_LIBS="-lLLVM-$($ac_llvm_config_path --version)"
-			fi
-
 			LLVM_VERSION="$($ac_llvm_config_path --version)"
+
+			if test "x$enable_static_llvm" != "xyes" ; then
+				if test "x${LLVM_VERSION}" = "x3.4"; then
+					AX_LLVM_SYSLIBS=""
+				else
+					AX_LLVM_SYSLIBS="--system-libs"
+				fi
+			echo $ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $2
+				[$1]_LIBS="$($ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $2 | tr '\n' ' ')"
+			else
+				[$1]_LIBS="-lLLVM-${LLVM_VERSION}"
+			fi
 
 			AC_REQUIRE([AC_PROG_CXX])
 			CPPFLAGS_SAVED="$CPPFLAGS"
@@ -69,7 +75,7 @@ AC_ARG_WITH([llvm],
 			LDFLAGS="$LDFLAGS $[$1]_LDFLAGS"
 
 			LIBS_SAVED="$LIBS"
-			LIBS="$LIBS $[$1]_LIBS"
+			LIBS="$[$1]_LIBS $LIBS"
 
 			AC_CACHE_CHECK(can compile with and link with llvm([$2]),
 						   ax_cv_llvm,
