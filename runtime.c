@@ -150,42 +150,54 @@ bool check_nt(bam1_t *read, int32_t position, unsigned char nt, bool exact)
 {
 	unsigned char read_nt;
 	int32_t mapped_position;
+	bool match;
 	if (read->core.flag & BAM_FUNMAP) {
 		return false;
 	}
-	if (read->core.pos > position || compute_mapped_end(read) < position) {
+	if (read->core.pos + 1 > position
+	    || compute_mapped_end(read) < position) {
 		return false;
 	}
-	if ((read->core.flag & BAM_FUNMAP) || read->core.n_cigar == 0) {
+
+	if (read->core.n_cigar == 0) {
 		mapped_position =
-		    (read->core.flag & BAM_FREVERSE) ? (read->core.l_qseq -
-							position +
-							read->core.pos -
-							1) : (position -
-							      read->core.pos);
+		    bam_is_rev(read) ? (compute_mapped_end(read) -
+					position) : (position - read->core.pos -
+						     1);
 	} else {
 		int32_t required_offset =
-		    (read->core.flag & BAM_FREVERSE) ? (read->core.l_qseq -
-							position +
-							read->core.pos -
-							1) : (position -
-							      read->core.pos);
+		    bam_is_rev(read) ? (compute_mapped_end(read) -
+					position) : (position - read->core.pos -
+						     1);
 		mapped_position = 0;
 
-		for (int index = 0;
-		     index < read->core.n_cigar && required_offset > 0;
-		     index++) {
+		for (int cigar_index = 0; cigar_index < read->core.n_cigar;
+		     cigar_index++) {
 			uint8_t consume =
 			    bam_cigar_type(bam_cigar_op
-					   (bam_get_cigar(read)[index]));
-			if (consume & 2)
-				required_offset--;
-			if (consume & 1)
-				mapped_position++;
+					   (bam_get_cigar(read)[cigar_index]));
+			uint32_t op_length =
+			    bam_cigar_oplen(bam_get_cigar(read)[cigar_index]);
+
+			/* Iterate through the length of the cigar operation */
+			for (int op_index = 0;
+			     op_index < op_length && required_offset >= 0;
+			     op_index++) {
+				/* Consume query */
+				if (consume & 1)
+					mapped_position++;
+
+				/* Consume reference */
+				if (consume & 2)
+					required_offset--;
+
+				/* keep track of matched bases */
+				match = (consume == 3);
+			}
 		}
 	}
-	read_nt = bam_seqi(bam_get_seq(read), mapped_position);
-	return exact ? (read_nt == nt) : (read_nt != 0);
+	read_nt = bam_seqi(bam_get_seq(read), mapped_position - 1);
+	return exact ? (read_nt == nt && match) : (read_nt != 0);
 }
 
 bool check_position(bam_hdr_t *header, bam1_t *read, uint32_t start,
