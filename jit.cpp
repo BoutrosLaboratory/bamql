@@ -40,7 +40,10 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
           .setEngineKind(llvm::EngineKind::JIT)
           .setErrorStr(&error)
           .setMAttrs(attrs)
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
           .setUseMCJIT(true)
+#endif
+
           .create());
   if (!engine) {
     std::cerr << error << std::endl;
