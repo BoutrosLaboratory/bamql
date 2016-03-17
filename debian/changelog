@@ -1,3 +1,17 @@
+bamql (1.1~ppa0) trusty; urgency=medium
+
+  * Correctly used CIGAR strings in nt_exact position calculation
+  * Require keywords be followed by non-alnum characters
+  * Add a predicate for checking header contents
+  * Fix bug in index checking
+  * Fix bug in raw_flag predicate
+  * Use LLVM's MCJIT
+  * Update compiler interface to LLVM 3.6
+  * Call existing predicates, rather than regenerating them
+  * Avoid closing a null pointer in HTSLib
+
+ -- Andre Masella <andre@masella.name>  Thu, 17 Mar 2016 15:32:32 -0400
+
 bamql (1.0~ppa2) trusty; urgency=medium
 
   *  Add more missing dependencies
