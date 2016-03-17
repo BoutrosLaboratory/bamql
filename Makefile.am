@@ -9,8 +9,11 @@ pkgconfig_DATA = bamql.pc bamql-jit.pc
 man1_MANS = bamql.1 bamql-chain.1 bamql-compile.1
 man7_MANS = bamql_queries.7
 
-TESTS = check_bamql
+TESTS = check_bamql nt_exact_test.bamql
 check_PROGRAMS = check_bamql
+
+TEST_EXTENSIONS = .bamql
+BAMQL_LOG_COMPILER = ./bamql_pass_all
 
 libbamql_la_CPPFLAGS = \
 	-std=c++11 \

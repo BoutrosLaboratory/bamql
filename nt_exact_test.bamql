@@ -1,0 +1,20 @@
+(!header ~/A/ ^ nt_exact(10099,G)) &
+(!header ~/A/ | nt_exact(10109,A)) &
+(!header ~/B/ ^ nt_exact(10110,T)) &
+(!header ~/B/ ^ nt_exact(10112,G)) &
+(!header ~/B/ ^ nt_exact(10114,C)) &
+(!header ~/C/ ^ nt_exact(10109,G)) &
+(!header ~/D/ ^ nt_exact(10083,G)) &
+(!header ~/E/ ^ nt_exact(10408,C)) &
+(!header ~/F/ ^ nt_exact(10377,G)) &
+(!header ~/F/ ^ nt_exact(10378,T)) &
+(!header ~/H/ ^ nt_exact(10374,T)) &
+(!header ~/I/ ^ nt_exact(10420,G)) &
+(!header ~/I/ ^ nt_exact(10424,G)) &
+(!header ~/I/ ^ nt_exact(10426,T)) &
+(!header ~/I/ ^ nt_exact(10438,G)) &
+!nt_exact(10370,T) &
+!nt_exact(10100,T) &
+!nt_exact(10119,A) &
+!nt_exact(10434,G) &
+!nt_exact(10110,G)

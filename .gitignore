@@ -1,9 +1,11 @@
 *.bc
 *.la
 *.lo
+*.log
 *.o
 *.pc
 *.swp
+*.trs
 *~
 .deps
 .libs

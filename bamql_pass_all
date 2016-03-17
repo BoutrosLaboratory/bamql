@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -eu
+echo -n "$1: "
+RC="$(./bamql -f "$(basename "$1" .bamql).sam" -q "$1" | grep Rejected | cut -f 2 -d :)"
+if [ $RC -gt 0 ]
+then
+	echo Failed $RC reads
+	exit 1
+else
+	echo Success
+	exit 0
+fi
