@@ -1,3 +1,9 @@
+bamql (1.1~ppa1) trusty; urgency=medium
+
+  * Force build against LVMM 3.6
+
+ -- Andre Masella <andre@masella.name>  Thu, 17 Mar 2016 16:12:38 -0400
+
 bamql (1.1~ppa0) trusty; urgency=medium
 
   * Correctly used CIGAR strings in nt_exact position calculation
