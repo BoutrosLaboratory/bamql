@@ -2,10 +2,10 @@ sudo: required
 dist: trusty
 language: c
 env:
-  - LLVM_TARGET_VERSION=3.4 LLVM_STATIC=no
+  - LLVM_TARGET_VERSION=3.4 LLVM_STATIC=no LIBS="-lncruses -ldl -lpthread"
   - LLVM_TARGET_VERSION=3.5 LLVM_STATIC=no
   - LLVM_TARGET_VERSION=3.6 LLVM_STATIC=no
-  - LLVM_TARGET_VERSION=3.4 LLVM_STATIC=yes
+  - LLVM_TARGET_VERSION=3.4 LLVM_STATIC=yes LIBS="-lncruses -ldl -lpthread"
   - LLVM_TARGET_VERSION=3.5 LLVM_STATIC=yes
   - LLVM_TARGET_VERSION=3.6 LLVM_STATIC=yes
 before_script:
