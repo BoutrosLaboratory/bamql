@@ -1,11 +1,19 @@
 sudo: required
 dist: trusty
 language: c
+env:
+  - LLVM_TARGET_VERSION=3.4 LLVM_STATIC=no
+  - LLVM_TARGET_VERSION=3.5 LLVM_STATIC=no
+  - LLVM_TARGET_VERSION=3.6 LLVM_STATIC=no
+  - LLVM_TARGET_VERSION=3.4 LLVM_STATIC=yes
+  - LLVM_TARGET_VERSION=3.5 LLVM_STATIC=yes
+  - LLVM_TARGET_VERSION=3.6 LLVM_STATIC=yes
 before_script:
   - sudo apt-get update
   - sudo apt-get install -qq -y --force-yes devscripts equivs
   - sudo mk-build-deps -i -t "apt-get -qq -y --force-yes --no-install-recommends"
-script: "autoreconf -i && ./configure --enable-llvm-static=no && make && make check"
+  - sudo apt-get install -qq -y --force-yes llvm-${LLVM_TARGET_VERSION}-dev
+script: "autoreconf -i && ./configure --enable-llvm-static=${LLVM_STATIC} --with-llvm=/usr/bin/llvm-config-${LLVM_TARGET_VERSION} && make && make check"
 notifications:
   on_success: never
   on_failure: change
