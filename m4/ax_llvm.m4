@@ -54,6 +54,7 @@ AC_ARG_WITH([llvm],
 			[$1]_CPPFLAGS="$($ac_llvm_config_path --cxxflags | sed -e 's/-fno-exceptions//g')"
 			[$1]_LDFLAGS="$($ac_llvm_config_path --ldflags)"
 			LLVM_VERSION="$($ac_llvm_config_path --version)"
+      LLVM_COMPONENTS="$2"
 
 			if test "x$enable_static_llvm" != "xyes" ; then
 				if test "x${LLVM_VERSION}" = "x3.4"; then
@@ -61,8 +62,11 @@ AC_ARG_WITH([llvm],
 				else
 					AX_LLVM_SYSLIBS="--system-libs"
 				fi
-			echo $ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $2
-				[$1]_LIBS="$($ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $2 | tr '\n' ' ')"
+				if test "x${LLVM_VERSION}" = "x3.4" -o "x${LLVM_VERSION}" = "x3.5" && echo "${LLVM_COMPONENTS}" | grep mcjit > /dev/null ; then
+          LLVM_COMPONENTS="${LLVM_COMPONENTS} jit"
+        fi
+        echo $ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $LLVM_COMPONENTS
+				[$1]_LIBS="$($ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $LLVM_COMPONENTS | tr '\n' ' ')"
 			else
 				[$1]_LIBS="-lLLVM-${LLVM_VERSION}"
 			fi
