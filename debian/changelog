@@ -1,3 +1,9 @@
+bamql (1.1~ppa2) trusty; urgency=medium
+
+  * Fix LLVM discovery and configuration
+
+ -- Andre Masella <andre@masella.name>  Thu, 17 Mar 2016 18:09:00 -0400
+
 bamql (1.1~ppa1) trusty; urgency=medium
 
   * Force build against LVMM 3.6
