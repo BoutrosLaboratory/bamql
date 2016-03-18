@@ -32,17 +32,17 @@ AC_ARG_ENABLE([static-llvm], AS_HELP_STRING([--enable-static-llvm], [compiled ag
 AC_ARG_WITH([llvm],
 	AS_HELP_STRING([--with-llvm@<:@=DIR@:>@], [use llvm (default is yes) - it is possible to specify the root directory for llvm (optional)]),
 	[
-    if test "$withval" = "no"; then
+		if test "$withval" = "no"; then
 		want_llvm="no"
-    elif test "$withval" = "yes"; then
-        want_llvm="yes"
-        ac_llvm_config_path=`which llvm-config`
-    else
-	    want_llvm="yes"
-        ac_llvm_config_path="$withval"
+		elif test "$withval" = "yes"; then
+				want_llvm="yes"
+				ac_llvm_config_path=`which llvm-config`
+		else
+			want_llvm="yes"
+				ac_llvm_config_path="$withval"
 	fi
-    ],
-    [want_llvm="yes"])
+		],
+		[want_llvm="yes"])
 
 	succeeded=no
 	if test -z "$ac_llvm_config_path"; then
@@ -54,7 +54,7 @@ AC_ARG_WITH([llvm],
 			[$1]_CPPFLAGS="$($ac_llvm_config_path --cxxflags | sed -e 's/-fno-exceptions//g')"
 			[$1]_LDFLAGS="$($ac_llvm_config_path --ldflags)"
 			LLVM_VERSION="$($ac_llvm_config_path --version)"
-      LLVM_COMPONENTS="$2"
+			LLVM_COMPONENTS="$2"
 
 			if test "x$enable_static_llvm" != "xyes" ; then
 				if test "x${LLVM_VERSION}" = "x3.4"; then
@@ -63,9 +63,9 @@ AC_ARG_WITH([llvm],
 					AX_LLVM_SYSLIBS="--system-libs"
 				fi
 				if test "x${LLVM_VERSION}" = "x3.4" -o "x${LLVM_VERSION}" = "x3.5" && echo "${LLVM_COMPONENTS}" | grep mcjit > /dev/null ; then
-          LLVM_COMPONENTS="${LLVM_COMPONENTS} jit"
-        fi
-        echo $ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $LLVM_COMPONENTS
+					LLVM_COMPONENTS="${LLVM_COMPONENTS} jit"
+				fi
+				echo $ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $LLVM_COMPONENTS
 				[$1]_LIBS="$($ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $LLVM_COMPONENTS | tr '\n' ' ')"
 			else
 				[$1]_LIBS="-lLLVM-${LLVM_VERSION}"
@@ -82,14 +82,13 @@ AC_ARG_WITH([llvm],
 			LIBS="$[$1]_LIBS $LIBS"
 
 			AC_CACHE_CHECK(can compile with and link with llvm([$2]),
-						   ax_cv_llvm,
-		[AC_LANG_PUSH([C++])
-				 AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <llvm/IR/LLVMContext.h>
-													]],
-					   [[llvm::LLVMContext& C = llvm::getGlobalContext(); return 0;]])],
-			   ax_cv_llvm=yes, ax_cv_llvm=no)
-		 AC_LANG_POP([C++])
-			])
+				ax_cv_llvm, [
+					AC_LANG_PUSH([C++])
+					AC_LINK_IFELSE(
+						[AC_LANG_PROGRAM([[@%:@include <llvm/IR/LLVMContext.h>]], [[llvm::LLVMContext& C = llvm::getGlobalContext(); return 0;]])],
+						ax_cv_llvm=yes, ax_cv_llvm=no)
+					AC_LANG_POP([C++])
+				])
 
 			if test "x$ax_cv_llvm" = "xyes"; then
 				succeeded=yes
