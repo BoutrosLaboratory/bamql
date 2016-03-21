@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+import pysam
+import sys
+import re
+
+infile = pysam.AlignmentFile(sys.argv[1], "rb")
+output = pysam.AlignmentFile(sys.argv[2], "wb", template=infile)
+is_m = re.compile('^(chr)?(mt?|25)$', re.IGNORECASE)
+for read in infile:
+	if read.reference_id != -1 and is_m.match(infile.getrname(read.reference_id)) or read.next_reference_id != -1 and is_m.match(infile.getrname(read.next_reference_id)) or read.mate_is_unmapped or read.is_unmapped:
+		output.write(read)
+infile.close()
+output.close()

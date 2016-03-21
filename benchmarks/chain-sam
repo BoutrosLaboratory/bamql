@@ -1,0 +1,6 @@
+#!/bin/sh
+
+samtools view -h $1 -b -o "chrom1-sam.bam" chr1
+samtools view -h $1 -b -o "chrom2-sam.bam" chr2
+samtools view -h $1 -b -o "chrom3-sam.bam" chr3
+

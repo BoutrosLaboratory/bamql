@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+import pysam
+import sys
+
+infile = pysam.AlignmentFile(sys.argv[1], "rb")
+output = pysam.AlignmentFile(sys.argv[2], "wb", template=infile)
+for read in infile:
+	if (read.is_paired):
+		output.write(read)
+infile.close()
+output.close()

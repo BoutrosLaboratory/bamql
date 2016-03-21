@@ -1,0 +1,5 @@
+#!/bin/sh
+
+sambamba view -f bam -o "chrom1-sambamba.bam" $1 chr1 
+sambamba view -f bam -o "chrom2-sambamba.bam" $1 chr2
+sambamba view -f bam -o "chrom3-sambamba.bam" $1 chr3

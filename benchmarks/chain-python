@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+import pysam
+import sys
+import re
+
+infile = pysam.AlignmentFile(sys.argv[1], "rb")
+output1 = pysam.AlignmentFile("chrom1-python.bam", "wb", template=infile)
+output2 = pysam.AlignmentFile("chrom2-python.bam", "wb", template=infile)
+output3 = pysam.AlignmentFile("chrom3-python.bam", "wb", template=infile)
+is_chr1 = re.compile('^(chr)?(1)$', re.IGNORECASE)
+is_chr2 = re.compile('^(chr)?(2)$', re.IGNORECASE)
+is_chr3 = re.compile('^(chr)?(3)$', re.IGNORECASE)
+
+for read in infile:
+        if read.reference_id != -1 and is_chr1.match(infile.getrname(read.reference_id)):
+                output1.write(read)
+	if read.reference_id != -1 and is_chr2.match(infile.getrname(read.reference_id)):
+                output2.write(read)
+	if read.reference_id != -1 and is_chr3.match(infile.getrname(read.reference_id)):
+                output3.write(read)
+
+infile.close()
+output1.close()
+output2.close()
+output3.close()                

@@ -1,0 +1,2 @@
+#!/bin/sh
+sambamba view -f bam -o $2 -F "ref_id == 24 or mate_ref_id == 24 or unmapped or mate_is_unmapped" $1

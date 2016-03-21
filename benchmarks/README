@@ -1,0 +1,13 @@
+This directory contains tests written in BAMQL, c, perl, python, SAMtools and Sambamba languages. The tests demonstrate the expressiveness of the BAMQL language in comparison to the other languages for extracting BAM-formatted reads. A binary file with the appropriate version is provided for Sambamba.
+
+all:	copies the input to establish a baseline I/O cost
+
+paired:	keeps only reads which are paired
+
+chrY:	keeps reads on the Y chromosome, whether it is named ``Y'' or ``24'', optionally prefixed with ``chr'', irrespective of case
+
+mt: 	keeps all reads which they or their mate pair are unmapped or mapped to the mitochondrial genome (named ``M'', ``MT'' or ``25'', optionally prefixed with ``chr'', irrespective of case)
+
+nt: 	keeps all reads which have base C at position 13353 of the reference genome after alignment
+
+chain: 	filters chromosomes 1, 2 and 3 into separate BAM files

@@ -1,0 +1,7 @@
+#!/bin/sh
+
+sambamba view -h $1  | gawk '(/^[a-zA-Z]/){{ position = 13353; mapped_position = 0; actLength = 0}{ split($6, len , /([A-Z]+)/); split($6, op , /([0-9]+)/); }{ for (i = 0; i < length(op); i++){if (op[i+1] ~ /M/ || op[i+1] ~ /D/ || op[i+1] ~ /N/ || op[i+1] ~ /X/) actLength = actLength + len[i]; }} {  if (and($2, 16)){required_offset = $4 + actLength - position-1; } else {required_offset = position - $4; }}{ for(i = 1; i < length(op); i++){ for (incr = 0; incr < len[i] && required_offset >= 0; incr++){if (op[i+1] ~ /M/ || op[i+1] ~ /D/ || op[i+1] ~ /N/ || op[i+1] ~ /X/) required_offset--;if(op[i+1] ~ /M/ || op[i+1] ~ /I/ || op[i+1] ~ /S/ || op[i+1] ~ /X/) mapped_position++;}}}} (/^@/) || (position >= $4  && $4+actLength >= position &&  substr($10,mapped_position) ~ /^C/ && $6 !~ /*/) { }' > tmp.sam
+
+sambamba view -f bam -S -o $2 tmp.sam
+rm -f tmp.sam 
+
