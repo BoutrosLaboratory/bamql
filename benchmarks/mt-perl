@@ -1,12 +1,16 @@
 #!/usr/bin/env perl
 use strict;
 use Bio::DB::Sam;
-my $input = Bio::DB::Bam->open($ARGV[0], "rb");
-my $output = Bio::DB::Bam->open($ARGV[1], "wb");
+my $input  = Bio::DB::Bam->open( $ARGV[0], "rb" );
+my $output = Bio::DB::Bam->open( $ARGV[1], "wb" );
 my $header = $input->header();
 $output->header_write($header);
-while (my $read = $input->read1) {
-	if ($header->target_name->[$read->tid] =~ /^(chr)?(MT?|25)$/i || $header->target_name->[$read->mtid] =~ /^(chr)?(MT?|25)$/i || $read->unmapped || $read->munmapped) {
-		$output->write1($read);
-	}
+while ( my $read = $input->read1 ) {
+    if (   $header->target_name->[ $read->tid ] =~ /^(chr)?(MT?|25)$/i
+        || $header->target_name->[ $read->mtid ] =~ /^(chr)?(MT?|25)$/i
+        || $read->unmapped
+        || $read->munmapped )
+    {
+        $output->write1($read);
+    }
 }

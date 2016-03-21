@@ -1,25 +1,25 @@
 #!/usr/bin/env perl
 use strict;
 use Bio::DB::Sam;
-my $input = Bio::DB::Bam->open($ARGV[0], "rb");
-my $output1 = Bio::DB::Bam->open("chrom1-perl.bam", "wb");
-my $output2 = Bio::DB::Bam->open("chrom2-perl.bam", "wb");
-my $output3 = Bio::DB::Bam->open("chrom3-perl.bam", "wb");
-my $header = $input->header();
+my $input   = Bio::DB::Bam->open( $ARGV[0],          "rb" );
+my $output1 = Bio::DB::Bam->open( "chrom1-perl.bam", "wb" );
+my $output2 = Bio::DB::Bam->open( "chrom2-perl.bam", "wb" );
+my $output3 = Bio::DB::Bam->open( "chrom3-perl.bam", "wb" );
+my $header  = $input->header();
 $output1->header_write($header);
 $output2->header_write($header);
 $output3->header_write($header);
-while (my $read = $input->read1) {
-        if ($header->target_name->[$read->tid] =~ /^(chr)?(1)$/i) {
-                $output1->write1($read);
-        }
 
-	        if ($header->target_name->[$read->tid] =~ /^(chr)?(2)$/i) {
-                $output2->write1($read);
-        }
+while ( my $read = $input->read1 ) {
+    if ( $header->target_name->[ $read->tid ] = ~/^(chr) ? (1) $ /i ) {
+        $output1->write1($read);
+    }
 
-	        if ($header->target_name->[$read->tid] =~ /^(chr)?(3)$/i ) {
-                $output3->write1($read);
-        }
+    if ( $header->target_name->[ $read->tid ] = ~/^(chr) ? (2) $ /i ) {
+        $output2->write1($read);
+    }
+
+    if ( $header->target_name->[ $read->tid ] = ~/^(chr) ? (3) $ /i ) {
+        $output3->write1($read);
+    }
 }
-
