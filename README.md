@@ -8,11 +8,18 @@ Ubuntu users can install from the PPA by executing:
 
     sudo apt-add-repository ppa:boutroslab/ppa && sudo apt-get update && sudo apt-get install bamql
 
-In order to compile, [LLVM](http://llvm.org/), [CLANG](http://clang.llvm.org/), [HTSlib](https://github.com/samtools/htslib/), and libuuid are required.
+In order to compile, [LLVM](http://llvm.org/) 3.4 - 3.7, [CLANG](http://clang.llvm.org/) (matched to LLVM version), [HTSlib](https://github.com/samtools/htslib/), and libuuid are required.
 
 On Debian/Ubuntu, these can be installed by:
 
     sudo apt-get install autotools-dev build-essential clang libhts-dev libtool libpcre++-dev llvm-dev pkg-config uuid-dev zlib1g-dev libedit-dev
+
+On RedHat/Fedora, these can be installed by:
+
+    sudo yum groupinstall "Development Tools"
+    sudo yum install clang libtool pcre-devel llvm-devel pkgconfig libuuid-devel zlib-devel libedit-devel
+
+and HTSlib must be installed from sources.
 
 In the source directory,
 
