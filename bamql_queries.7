@@ -181,7 +181,7 @@ Never satisfied.
 
 \fBrandom(\fRprobability\fB)\fR
 
-This chooses a uniform pseudo-random variable and is satisfied with frequency \fIprobability\fR. This can be used to provide a random sub-sample of reads. The probability must be between 0 and 1 and can be specified using scientific notation. The random number chosen is selected using
+This chooses a uniform pseudo-random variable and is satisfied with frequency \fIprobability\fR. This can be used to provide a random sub-sample of reads, keeping the proportion of total reads specified as the probability. The probability must be between 0 and 1 and can be specified using scientific notation. The random number chosen is selected using
 .BR drand48 (3)
 if one is inclined to care about such things.
 
