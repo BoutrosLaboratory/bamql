@@ -258,5 +258,5 @@ bool check_split_pair(bam_hdr_t *header, bam1_t *read)
 
 bool randomly(double probability)
 {
-	return probability < drand48();
+	return probability >= drand48();
 }
