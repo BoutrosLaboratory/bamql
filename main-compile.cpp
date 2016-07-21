@@ -124,6 +124,9 @@ int main(int argc, char *const *argv) {
     case 'g':
       debug = true;
       break;
+    case 'h':
+      help = true;
+      break;
     case 'H':
       output_header = optarg;
       break;
