@@ -16,6 +16,7 @@
 
 #include <libgen.h>
 #include <unistd.h>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -40,6 +41,14 @@
 #include <llvm/Target/TargetSubtargetInfo.h>
 #include "bamql.hpp"
 #include "config.h"
+
+std::vector<std::string> reserved = {
+  "main",    "auto",     "break",  "case",     "char",   "const",    "continue",
+  "default", "do",       "double", "else",     "enum",   "extern",   "float",
+  "for",     "goto",     "if",     "int",      "long",   "register", "return",
+  "short",   "signed",   "sizeof", "static",   "struct", "switch",   "typedef",
+  "union",   "unsigned", "void",   "volatile", "while"
+};
 
 class ExistingFunction : public bamql::AstNode {
 public:
@@ -66,6 +75,23 @@ private:
   llvm::Function *index;
 };
 
+bool checkBadName(const bamql::PredicateMap &predicates,
+                  bamql::ParseState &state,
+                  const std::string &filename,
+                  const std::string &name) {
+  if (std::find(reserved.begin(), reserved.end(), name) != reserved.end()) {
+    std::cerr << filename << ":" << state.currentLine()
+              << ": Unwilling to use C keyword \"" << name << "\" as a name."
+              << std::endl;
+    return true;
+  }
+  if (predicates.find(name) != predicates.end()) {
+    std::cerr << filename << ":" << state.currentLine()
+              << ": Redefinition of built-in \"" << name << "\"." << std::endl;
+    return true;
+  }
+  return false;
+}
 std::string createFileName(const char *input_filename,
                            const char *output,
                            const char *suffix) {
@@ -250,9 +276,7 @@ int main(int argc, char *const *argv) {
         return 1;
       }
       state.parseCharInSpace(';');
-      if (predicates.find(name) != predicates.end()) {
-        std::cerr << argv[optind] << ":" << state.currentLine()
-                  << ": Redefinition of \"" << name << "\"." << std::endl;
+      if (checkBadName(predicates, state, argv[optind], name)) {
         return 1;
       }
       auto index_name = name + "_index";
@@ -294,10 +318,7 @@ int main(int argc, char *const *argv) {
         return 1;
       }
 
-      if (predicates.find(name) != predicates.end()) {
-        std::cerr << argv[optind] << ":" << state.currentLine()
-                  << ": Redefinition of built-in \"" << name << "\"."
-                  << std::endl;
+      if (checkBadName(predicates, state, argv[optind], name)) {
         return 1;
       }
 
