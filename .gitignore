@@ -18,6 +18,7 @@ bamql
 bamql-chain
 bamql-compile
 check_bamql*
+compiler_check.?
 compile
 config.*
 configure

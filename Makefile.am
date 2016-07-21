@@ -9,7 +9,7 @@ pkgconfig_DATA = bamql.pc bamql-rt.pc bamql-jit.pc
 man1_MANS = bamql.1 bamql-chain.1 bamql-compile.1
 man7_MANS = bamql_queries.7
 
-TESTS = check_bamql nt_exact_test.bamql
+TESTS = check_bamql check_compiler nt_exact_test.bamql
 check_PROGRAMS = check_bamql
 
 TEST_EXTENSIONS = .bamql
@@ -155,10 +155,6 @@ check_bamql_LDADD = \
 	libbamql-jit.la \
 	$(HTS_LIBS) \
 	$(LLVM_RUN_LIBS) \
-	$(NULL)
-
-EXTRA_DIST = \
-	bamql.hpp \
 	$(NULL)
 
 CLEANFILES = \
