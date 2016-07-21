@@ -207,8 +207,7 @@ llvm::Value *Generator::createString(std::string &str) {
 #else
       global_variable->getValueType(),
 #endif
-      global_variable,
-      indicies);
+      global_variable, indicies);
   constant_pool[str] = result;
   return result;
 }

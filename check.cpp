@@ -81,8 +81,8 @@ public:
   bool isCorrect() { return correct; }
 
 private:
-  int index;
   bool correct;
+  int index;
 };
 
 int main(int argc, char *const *argv) {
@@ -100,7 +100,7 @@ int main(int argc, char *const *argv) {
   }
 
   std::vector<Checker> checkers;
-  for (int index = 0; index < queries.size(); index++) {
+  for (size_t index = 0; index < queries.size(); index++) {
     auto ast = bamql::AstNode::parseWithLogging(queries[index].first,
                                                 bamql::getDefaultPredicates());
 
@@ -116,7 +116,7 @@ int main(int argc, char *const *argv) {
   }
   engine->finalizeObject();
 
-  for (int index = 0; index < queries.size(); index++) {
+  for (size_t index = 0; index < queries.size(); index++) {
     checkers[index].prepareExecution();
     bool test_success = checkers[index].processFile("test.sam", false, false) &&
                         checkers[index].isCorrect();

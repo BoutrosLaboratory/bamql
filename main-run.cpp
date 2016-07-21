@@ -39,7 +39,7 @@ public:
                 std::shared_ptr<htsFile> &r)
       : bamql::CheckIterator::CheckIterator(
             engine, generator, node, std::string("filter")),
-        query(query_), verbose(verbose_), accept(a), reject(r) {}
+        accept(a), query(query_), reject(r), verbose(verbose_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
     auto version = bamql::version();
     uuid_t uuid;
@@ -80,10 +80,10 @@ public:
 
 private:
   std::shared_ptr<htsFile> accept;
-  std::shared_ptr<htsFile> reject;
   size_t accept_count = 0;
-  size_t reject_count = 0;
   std::string query;
+  std::shared_ptr<htsFile> reject;
+  size_t reject_count = 0;
   bool verbose;
 };
 

@@ -109,11 +109,11 @@ public:
                          std::shared_ptr<bam1_t> &read) = 0;
 
 private:
-  bamql::FilterFunction filter;
-  bamql::IndexFunction index;
-  llvm::Function *filter_func;
-  llvm::Function *index_func;
   std::shared_ptr<llvm::ExecutionEngine> engine;
+  bamql::FilterFunction filter = nullptr;
+  bamql::IndexFunction index = nullptr;
+  llvm::Function *filter_func = nullptr;
+  llvm::Function *index_func = nullptr;
 };
 
 /**

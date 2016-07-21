@@ -58,8 +58,8 @@ public:
                  std::shared_ptr<htsFile> &o,
                  std::shared_ptr<OutputWrangler> &n)
       : bamql::CheckIterator::CheckIterator(engine, generator, node, name),
-        chain(c), file_name(file_name_), output_file(o), query(query_),
-        next(n) {}
+        chain(c), file_name(file_name_), output_file(o), next(n),
+        query(query_) {}
   virtual void prepareExecution() {
     CheckIterator::prepareExecution();
     if (next) {
@@ -131,13 +131,13 @@ public:
 
 private:
   ChainPattern chain;
-  std::shared_ptr<htsFile> output_file;
+  size_t count = 0;
+  std::string file_name;
   bamql::FilterFunction filter;
   bamql::IndexFunction index;
+  std::shared_ptr<htsFile> output_file;
   std::shared_ptr<OutputWrangler> next;
-  std::string file_name;
   std::string query;
-  size_t count = 0;
 };
 
 /**
