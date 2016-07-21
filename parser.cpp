@@ -144,7 +144,7 @@ std::shared_ptr<AstNode> bamql::AstNode::parseWithLogging(
     ast = AstNode::parse(input, predicates);
   } catch (ParseError e) {
     std::cerr << "Error: " << e.what() << std::endl << input << std::endl;
-    for (auto i = 0; i < e.where(); i++) {
+    for (size_t i = 0; i < e.where(); i++) {
       std::cerr << " ";
     }
     std::cerr << "^" << std::endl;

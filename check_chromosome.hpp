@@ -76,7 +76,7 @@ public:
          set++) {
       for (auto equiv = set->begin(); equiv != set->end(); equiv++) {
         bool same = equiv->length() == str.length();
-        for (auto i = 0; i < equiv->length() && same; i++) {
+        for (size_t i = 0; i < equiv->length() && same; i++) {
           same = tolower(str[i]) == (*equiv)[i];
         }
         if (!same) {
