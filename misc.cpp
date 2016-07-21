@@ -17,8 +17,6 @@
 #include "bamql.hpp"
 
 namespace bamql {
-extern llvm::Module *define_runtime(llvm::Module *module);
-
 llvm::Value *AstNode::generateIndex(GenerateState &state,
                                     llvm::Value *read,
                                     llvm::Value *header) {
@@ -85,10 +83,65 @@ void DebuggableNode::writeDebug(GenerateState &state) {
         llvm::DebugLoc::get(line, column, *state.debugScope()));
 }
 
+static void createFunction(llvm::Module *module,
+                           const std::string &name,
+                           const std::vector<llvm::Type *> &args) {
+  auto func = llvm::Function::Create(
+      llvm::FunctionType::get(
+          llvm::IntegerType::get(module->getContext(), 1), args, false),
+      llvm::GlobalValue::ExternalLinkage,
+      name,
+      module);
+  func->setCallingConv(llvm::CallingConv::C);
+}
+
 llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
   auto struct_ty = module->getTypeByName(name);
   if (struct_ty == nullptr) {
-    define_runtime(module);
+    auto struct_bam1_t =
+        llvm::StructType::create(module->getContext(), "struct.bam1_t");
+    auto struct_bam_hdr_t =
+        llvm::StructType::create(module->getContext(), "struct.bam_hdr_t");
+    auto ptr_bam1_t = llvm::PointerType::get(struct_bam1_t, 0);
+    auto ptr_bam_hdr_t = llvm::PointerType::get(struct_bam_hdr_t, 0);
+    auto base_bool = llvm::IntegerType::get(module->getContext(), 1);
+    auto base_uint8 = llvm::IntegerType::get(module->getContext(), 8);
+    auto base_uint16 = llvm::IntegerType::get(module->getContext(), 16);
+    auto base_uint32 = llvm::IntegerType::get(module->getContext(), 32);
+    auto base_str = llvm::PointerType::get(base_uint8, 0);
+    auto base_double = llvm::Type::getDoubleTy(module->getContext());
+
+    createFunction(module,
+                   "bamql_check_aux_char",
+                   { ptr_bam1_t, base_uint8, base_uint8, base_uint8 });
+    createFunction(module,
+                   "bamql_check_aux_double",
+                   { ptr_bam1_t, base_uint8, base_uint8, base_double });
+    createFunction(module,
+                   "bamql_check_aux_int",
+                   { ptr_bam1_t, base_uint8, base_uint8, base_uint32 });
+    createFunction(module,
+                   "bamql_check_aux_str",
+                   { ptr_bam1_t, base_uint8, base_uint8, base_str });
+    createFunction(module,
+                   "bamql_check_chromosome",
+                   { ptr_bam_hdr_t, ptr_bam1_t, base_str });
+    createFunction(module,
+                   "bamql_check_chromosome_id",
+                   { ptr_bam_hdr_t, base_uint32, base_str });
+    createFunction(module, "bamql_check_flag", { ptr_bam1_t, base_uint8 });
+    createFunction(
+        module, "bamql_check_mapping_quality", { ptr_bam1_t, base_uint8 });
+    createFunction(module,
+                   "bamql_check_nt",
+                   { ptr_bam1_t, base_uint32, base_uint8, base_bool });
+    createFunction(module,
+                   "bamql_check_position",
+                   { ptr_bam_hdr_t, ptr_bam1_t, base_uint32, base_uint32 });
+    createFunction(
+        module, "bamql_check_split_pair", { ptr_bam_hdr_t, ptr_bam1_t });
+    createFunction(module, "bamql_header_regex", { ptr_bam1_t, base_str });
+    createFunction(module, "bamql_randomly", { base_double });
     struct_ty = module->getTypeByName(name);
   }
   return struct_ty;

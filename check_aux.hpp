@@ -32,15 +32,15 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_aux_str");
+    auto function = state.module()->getFunction("bamql_check_aux_str");
     return state->CreateCall4(
         function,
         read,
-        state.createString(name),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
                                G1),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-                               G2));
+                               G2),
+        state.createString(name));
   }
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('(');
@@ -74,15 +74,15 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_aux_str");
+    auto function = state.module()->getFunction("bamql_check_aux_str");
     return state->CreateCall4(
         function,
         read,
-        state.createString(name),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
                                first),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-                               second));
+                               second),
+        state.createString(name));
   }
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('(');
@@ -133,16 +133,16 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_aux_char");
+    auto function = state.module()->getFunction("bamql_check_aux_char");
     return state->CreateCall4(
         function,
         read,
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-                               value),
-        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
                                first),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-                               second));
+                               second),
+        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+                               value));
   }
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('(');
@@ -183,16 +183,16 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_aux_int");
+    auto function = state.module()->getFunction("bamql_check_aux_int");
     return state->CreateCall4(
         function,
         read,
-        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
-                               value),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
                                first),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-                               second));
+                               second),
+        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
+                               value));
   }
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('(');
@@ -238,16 +238,16 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_aux_double");
+    auto function = state.module()->getFunction("bamql_check_aux_double");
     return state->CreateCall4(
         function,
         read,
-        llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                              value),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
                                first),
         llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-                               second));
+                               second),
+        llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
+                              value));
   }
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('(');

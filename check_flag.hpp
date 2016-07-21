@@ -28,7 +28,7 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_flag");
+    auto function = state.module()->getFunction("bamql_check_flag");
     return state->CreateCall2(
         function,
         read,

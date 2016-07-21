@@ -1,11 +1,11 @@
 NULL = 
 ACLOCAL_AMFLAGS = -I m4
 bin_PROGRAMS = bamql bamql-chain bamql-compile
-lib_LTLIBRARIES = libbamql.la libbamql-jit.la
+lib_LTLIBRARIES = libbamql.la libbamql-rt.la libbamql-jit.la
 library_includedir=$(includedir)/bamql
-library_include_HEADERS = bamql.hpp bamql-jit.hpp
+library_include_HEADERS = bamql.hpp bamql-rt.h bamql-jit.hpp
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = bamql.pc bamql-jit.pc
+pkgconfig_DATA = bamql.pc bamql-rt.pc bamql-jit.pc
 man1_MANS = bamql.1 bamql-chain.1 bamql-compile.1
 man7_MANS = bamql_queries.7
 
@@ -38,8 +38,25 @@ libbamql_la_SOURCES = \
 	pcre.cpp \
 	predicates.cpp \
 	parser.cpp \
-	runtime.cpp \
 	version.cpp \
+	$(NULL)
+
+libbamql_rt_la_CPPFLAGS = \
+	-std=c99 \
+	$(HTS_CFLAGS) \
+	$(PCRE_CFLAGS) \
+	-g -O2 \
+	$(NULL)
+libbamql_rt_la_LIBADD = \
+	$(PCRE_LIBS) \
+	$(HTS_LIBS) \
+	$(NULL)
+libbamql_rt_la_LDFLAGS = \
+	-version-info 0:0:0 \
+	-no-undefined \
+	$(NULL)
+libbamql_rt_la_SOURCES = \
+	runtime.c \
 	$(NULL)
 
 libbamql_jit_la_CPPFLAGS = \
@@ -49,6 +66,7 @@ libbamql_jit_la_CPPFLAGS = \
 	$(NULL)
 libbamql_jit_la_LIBADD = \
 	libbamql.la \
+	libbamql-rt.la \
 	$(LLVM_RUN_LIBS) \
 	$(HTS_LIBS) \
 	$(NULL)
@@ -129,7 +147,7 @@ check_bamql_CPPFLAGS = \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) \
 	$(NULL)
-check_bamql_LDFLAGS =\
+check_bamql_LDFLAGS = \
 	$(LLVM_RUN_LDFLAGS) \
 	$(NULL)
 check_bamql_LDADD = \
@@ -139,22 +157,9 @@ check_bamql_LDADD = \
 	$(LLVM_RUN_LIBS) \
 	$(NULL)
 
-runtime.bc: runtime.c
-	## For reasons that are totally incomprehensible, LLC will die if -g is
-	## provided, so we strip it out.
-	$(CLANG) -c -emit-llvm -o $@ $$(echo $(HTS_CFLAGS) | sed 's/-g//g') -O2 $<
-
-runtime.cpp: runtime.bc
-	echo -e "#include <llvm/IR/IRBuilder.h>\n#include <llvm/IR/Module.h>\nusing namespace llvm;\nnamespace bamql {" > $@
-	$(LLC) -march=cpp -cppfname=define_runtime --cppfor=__dummy__ -cppgen=contents -o - $< | sed '/setModuleIdentifier/d' >> $@
-	echo "}" >> $@
-
 EXTRA_DIST = \
 	bamql.hpp \
-	runtime.c \
 	$(NULL)
 
 CLEANFILES = \
-	runtime.bc \
-	runtime.cpp \
 	$(NULL)

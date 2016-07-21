@@ -1,1 +1,2 @@
-usr/lib/libbamql*.so.*
+usr/lib/libbamql.so.*
+usr/lib/libbamql-jit.so.*

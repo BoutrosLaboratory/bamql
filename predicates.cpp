@@ -46,7 +46,7 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_mapping_quality");
+    auto function = state.module()->getFunction("bamql_check_mapping_quality");
     return state->CreateCall2(
         function,
         read,
@@ -82,7 +82,7 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("randomly");
+    auto function = state.module()->getFunction("bamql_randomly");
     return state->CreateCall(
         function,
         llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
@@ -146,7 +146,7 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_position");
+    auto function = state.module()->getFunction("bamql_check_position");
     return state->CreateCall4(
         function,
         header,
@@ -194,7 +194,7 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_split_pair");
+    auto function = state.module()->getFunction("bamql_check_split_pair");
     return state->CreateCall2(function, header, read);
   }
 
@@ -210,8 +210,8 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("header_regex");
-    return state->CreateCall2(function, regex(state), read);
+    auto function = state.module()->getFunction("bamql_header_regex");
+    return state->CreateCall2(function, read, regex(state));
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {

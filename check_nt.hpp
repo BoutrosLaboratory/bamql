@@ -28,7 +28,7 @@ public:
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
-    auto function = state.module()->getFunction("check_nt");
+    auto function = state.module()->getFunction("bamql_check_nt");
     return state->CreateCall4(
         function,
         read,

@@ -10,11 +10,6 @@ AC_PROG_LIBTOOL
 AX_LLVM(LLVM_CORE, [core])
 AX_LLVM(LLVM_WRITE, [core nativecodegen])
 AX_LLVM(LLVM_RUN, [core executionengine native mcjit])
-AC_CHECK_PROGS(CLANG, [clang clang-${LLVM_VERSION} clang-${LLVM_VERSION%.*}])
-if test "x$CLANG" = x
-then
-	AC_MSG_ERROR([*** clang is required, install clang compiler])
-fi
 AC_CHECK_PROGS(LLC, [llc llc-${LLVM_VERSION} llc-${LLVM_VERSION%.*}])
 if test "x$LLC" = x
 then
@@ -40,5 +35,5 @@ PKG_CHECK_MODULES(HTS, [ htslib ], [], [
 	LIBS="$ORIGINAL_LIBS"
 ])
 
-AC_CONFIG_FILES([Makefile bamql.pc bamql-jit.pc])
+AC_CONFIG_FILES([Makefile bamql.pc bamql-rt.pc bamql-jit.pc])
 AC_OUTPUT
