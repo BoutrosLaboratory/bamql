@@ -57,7 +57,7 @@ AC_ARG_WITH([llvm],
 			LLVM_COMPONENTS="$2"
 
 			if test "x$enable_static_llvm" != "xyes" ; then
-				if test "x${LLVM_VERSION}" = "x3.4"; then
+				if test "x${LLVM_VERSION%*.*}" = "x3.4"; then
 					AX_LLVM_SYSLIBS=""
 				else
 					AX_LLVM_SYSLIBS="--system-libs"
