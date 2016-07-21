@@ -203,7 +203,8 @@ llvm::Value *Generator::createString(std::string &str) {
   indicies.push_back(zero);
   indicies.push_back(zero);
   auto result = llvm::ConstantExpr::getGetElementPtr(
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 7
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+#else
       global_variable->getValueType(),
 #endif
       global_variable,
