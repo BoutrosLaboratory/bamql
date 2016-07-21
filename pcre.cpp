@@ -32,7 +32,7 @@ bamql::RegularExpression bamql::ParseState::parseRegEx() throw(ParseError) {
 
   return [regex, size](GenerateState &generate) {
     auto array = llvm::ConstantDataArray::get(
-        llvm::getGlobalContext(),
+        generate.module()->getContext(),
         llvm::ArrayRef<uint8_t>((uint8_t *)regex.get(), size));
     auto global_variable = new llvm::GlobalVariable(
         *generate.module(),
@@ -49,6 +49,11 @@ bamql::RegularExpression bamql::ParseState::parseRegEx() throw(ParseError) {
     std::vector<llvm::Value *> indicies;
     indicies.push_back(zero);
     indicies.push_back(zero);
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
     return llvm::ConstantExpr::getGetElementPtr(global_variable, indicies);
+#else
+    return llvm::ConstantExpr::getGetElementPtr(
+        global_variable->getValueType(), global_variable, indicies);
+#endif
   };
 }

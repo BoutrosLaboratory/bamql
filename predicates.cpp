@@ -47,11 +47,12 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("bamql_check_mapping_quality");
-    return state->CreateCall2(
-        function,
-        read,
-        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-                               -10 * log(probability)));
+    llvm::Value *args[] = { read,
+                            llvm::ConstantInt::get(
+                                llvm::Type::getInt8Ty(
+                                    state.module()->getContext()),
+                                -10 * log(probability)) };
+    return state->CreateCall(function, args);
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
@@ -83,10 +84,9 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("bamql_randomly");
-    return state->CreateCall(
-        function,
-        llvm::ConstantFP::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                              probability));
+    llvm::Value *args[] = { llvm::ConstantFP::get(
+        llvm::Type::getDoubleTy(state.module()->getContext()), probability) };
+    return state->CreateCall(function, args);
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
@@ -118,11 +118,12 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("check_flag");
-    return state->CreateCall2(
-        function,
-        read,
-        llvm::ConstantInt::get(llvm::Type::getInt16Ty(llvm::getGlobalContext()),
-                               raw));
+    llvm::Value *args[] = {
+      read,
+      llvm::ConstantInt::get(
+          llvm::Type::getInt16Ty(state.module()->getContext()), raw)
+    };
+    return state->CreateCall(function, args);
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
@@ -147,14 +148,15 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("bamql_check_position");
-    return state->CreateCall4(
-        function,
-        header,
-        read,
-        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
-                               start),
-        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
-                               end));
+    llvm::Value *args[] = {
+      header,
+      read,
+      llvm::ConstantInt::get(
+          llvm::Type::getInt32Ty(state.module()->getContext()), start),
+      llvm::ConstantInt::get(
+          llvm::Type::getInt32Ty(state.module()->getContext()), end)
+    };
+    return state->CreateCall(function, args);
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
@@ -195,7 +197,8 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("bamql_check_split_pair");
-    return state->CreateCall2(function, header, read);
+    llvm::Value *args[] = { header, read };
+    return state->CreateCall(function, args);
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
@@ -211,7 +214,8 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("bamql_header_regex");
-    return state->CreateCall2(function, read, regex(state));
+    llvm::Value *args[] = { read, regex(state) };
+    return state->CreateCall(function, args);
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {

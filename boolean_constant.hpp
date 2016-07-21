@@ -29,12 +29,12 @@ public:
   llvm::Value *generate(GenerateState &state,
                         llvm::Value *read,
                         llvm::Value *header) {
-    return CF(llvm::getGlobalContext());
+    return CF(state.module()->getContext());
   }
   llvm::Value *generateIndex(GenerateState &state,
                              llvm::Value *tid,
                              llvm::Value *header) {
-    return CF(llvm::getGlobalContext());
+    return CF(state.module()->getContext());
   }
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     static auto result = std::make_shared<ConstantNode<CF>>();

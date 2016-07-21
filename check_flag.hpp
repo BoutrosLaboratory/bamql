@@ -29,11 +29,12 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("bamql_check_flag");
-    return state->CreateCall2(
-        function,
-        read,
-        llvm::ConstantInt::get(llvm::Type::getInt16Ty(llvm::getGlobalContext()),
-                               F));
+    llvm::Value *args[] = {
+      read,
+      llvm::ConstantInt::get(
+          llvm::Type::getInt16Ty(state.module()->getContext()), F)
+    };
+    return state->CreateCall(function, args);
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {

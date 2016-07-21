@@ -1,3 +1,4 @@
+*.dwo
 *.la
 *.lo
 *.log

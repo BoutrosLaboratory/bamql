@@ -85,7 +85,7 @@ AC_ARG_WITH([llvm],
 				ax_cv_llvm, [
 					AC_LANG_PUSH([C++])
 					AC_LINK_IFELSE(
-						[AC_LANG_PROGRAM([[@%:@include <llvm/IR/LLVMContext.h>]], [[llvm::LLVMContext& C = llvm::getGlobalContext(); return 0;]])],
+						[AC_LANG_PROGRAM([[@%:@include <llvm/IR/LLVMContext.h>]], [[llvm::LLVMContext C; return 0;]])],
 						ax_cv_llvm=yes, ax_cv_llvm=no)
 					AC_LANG_POP([C++])
 				])

@@ -29,14 +29,15 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("bamql_check_nt");
-    return state->CreateCall4(
-        function,
-        read,
-        llvm::ConstantInt::get(llvm::Type::getInt32Ty(llvm::getGlobalContext()),
-                               position),
-        llvm::ConstantInt::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
-                               nt),
-        EXACT(llvm::getGlobalContext()));
+    llvm::Value *args[] = {
+      read,
+      llvm::ConstantInt::get(
+          llvm::Type::getInt32Ty(state.module()->getContext()), position),
+      llvm::ConstantInt::get(
+          llvm::Type::getInt8Ty(state.module()->getContext()), nt),
+      EXACT(state.module()->getContext())
+    };
+    return state->CreateCall(function, args);
   }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {

@@ -19,7 +19,7 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <llvm/Config/config.h>
+#include <llvm/Config/llvm-config.h>
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
 #include <llvm/DIBuilder.h>
 #else
@@ -208,7 +208,7 @@ public:
   /**
    * The value that causes short circuting.
    */
-  virtual llvm::Value *branchValue() = 0;
+  virtual llvm::Value *branchValue(llvm::LLVMContext &context) = 0;
 
   void writeDebug(GenerateState &state);
 
@@ -226,7 +226,7 @@ private:
 class AndNode : public ShortCircuitNode {
 public:
   AndNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
-  virtual llvm::Value *branchValue();
+  virtual llvm::Value *branchValue(llvm::LLVMContext &context);
 };
 /**
  * A syntax node for logical disjunction (OR).
@@ -234,7 +234,7 @@ public:
 class OrNode : public ShortCircuitNode {
 public:
   OrNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
-  virtual llvm::Value *branchValue();
+  virtual llvm::Value *branchValue(llvm::LLVMContext &context);
 };
 /**
  * A syntax node for exclusive disjunction (XOR).

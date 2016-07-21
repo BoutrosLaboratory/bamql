@@ -20,7 +20,7 @@ namespace bamql {
 llvm::Value *AstNode::generateIndex(GenerateState &state,
                                     llvm::Value *read,
                                     llvm::Value *header) {
-  return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+  return llvm::ConstantInt::getTrue(state.module()->getContext());
 }
 
 bool AstNode::usesIndex() { return false; }
@@ -33,24 +33,37 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
   auto func =
       llvm::cast<llvm::Function>(generator->module()->getOrInsertFunction(
           name,
-          llvm::Type::getInt1Ty(llvm::getGlobalContext()),
+          llvm::Type::getInt1Ty(generator->module()->getContext()),
           llvm::PointerType::get(bamql::getBamHeaderType(generator->module()),
                                  0),
           param_type,
           nullptr));
 
-  auto entry =
-      llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", func);
+  auto entry = llvm::BasicBlock::Create(
+      generator->module()->getContext(), "entry", func);
   GenerateState state(generator, entry);
   auto args = func->arg_begin();
-  auto header_value = args++;
+  auto header_value =
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
+      args++;
+#else
+      &*args;
+  args++;
+#endif
   header_value->setName("header");
-  auto param_value = args++;
+  auto param_value =
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
+      args++;
+#else
+      &*args;
+  args++;
+#endif
   param_value->setName(param_name);
   this->writeDebug(state);
-  state->CreateRet(member == nullptr
-                       ? llvm::ConstantInt::getTrue(llvm::getGlobalContext())
-                       : (this->*member)(state, param_value, header_value));
+  state->CreateRet(
+      member == nullptr
+          ? llvm::ConstantInt::getTrue(generator->module()->getContext())
+          : (this->*member)(state, param_value, header_value));
 
   return func;
 }
@@ -67,20 +80,26 @@ llvm::Function *AstNode::createFilterFunction(
 
 llvm::Function *AstNode::createIndexFunction(
     std::shared_ptr<Generator> &generator, llvm::StringRef name) {
-  return createFunction(generator,
-                        name,
-                        "tid",
-                        llvm::Type::getInt32Ty(llvm::getGlobalContext()),
-                        this->usesIndex() ? &bamql::AstNode::generateIndex
-                                          : nullptr);
+  return createFunction(
+      generator,
+      name,
+      "tid",
+      llvm::Type::getInt32Ty(generator->module()->getContext()),
+      this->usesIndex() ? &bamql::AstNode::generateIndex : nullptr);
 }
 
 DebuggableNode::DebuggableNode(ParseState &state)
     : line(state.currentLine()), column(state.currentColumn()) {}
 void DebuggableNode::writeDebug(GenerateState &state) {
   if (state.debugScope() != nullptr)
-    state->SetCurrentDebugLocation(
-        llvm::DebugLoc::get(line, column, *state.debugScope()));
+    state->SetCurrentDebugLocation(llvm::DebugLoc::get(line,
+                                                       column,
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+                                                       *state.debugScope()
+#else
+                                                       state.debugScope()
+#endif
+                                                       ));
 }
 
 static void createFunction(llvm::Module *module,
@@ -129,7 +148,7 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
     createFunction(module,
                    "bamql_check_chromosome_id",
                    { ptr_bam_hdr_t, base_uint32, base_str });
-    createFunction(module, "bamql_check_flag", { ptr_bam1_t, base_uint8 });
+    createFunction(module, "bamql_check_flag", { ptr_bam1_t, base_uint16 });
     createFunction(
         module, "bamql_check_mapping_quality", { ptr_bam1_t, base_uint8 });
     createFunction(module,
@@ -167,11 +186,10 @@ llvm::Value *Generator::createString(std::string &str) {
     return iterator->second;
   }
 
-  auto array =
-      llvm::ConstantDataArray::getString(llvm::getGlobalContext(), str);
+  auto array = llvm::ConstantDataArray::getString(mod->getContext(), str);
   auto global_variable = new llvm::GlobalVariable(
       *mod,
-      llvm::ArrayType::get(llvm::Type::getInt8Ty(llvm::getGlobalContext()),
+      llvm::ArrayType::get(llvm::Type::getInt8Ty(mod->getContext()),
                            str.length() + 1),
       true,
       llvm::GlobalValue::PrivateLinkage,
@@ -179,12 +197,17 @@ llvm::Value *Generator::createString(std::string &str) {
       ".str");
   global_variable->setAlignment(1);
   global_variable->setInitializer(array);
-  auto zero = llvm::ConstantInt::get(
-      llvm::Type::getInt8Ty(llvm::getGlobalContext()), 0);
+  auto zero =
+      llvm::ConstantInt::get(llvm::Type::getInt8Ty(mod->getContext()), 0);
   std::vector<llvm::Value *> indicies;
   indicies.push_back(zero);
   indicies.push_back(zero);
-  auto result = llvm::ConstantExpr::getGetElementPtr(global_variable, indicies);
+  auto result = llvm::ConstantExpr::getGetElementPtr(
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR >= 7
+      global_variable->getValueType(),
+#endif
+      global_variable,
+      indicies);
   constant_pool[str] = result;
   return result;
 }

@@ -211,8 +211,8 @@ int main(int argc, char *const *argv) {
   LLVMInitializeNativeTarget();
   llvm::InitializeNativeTargetAsmParser();
   llvm::InitializeNativeTargetAsmPrinter();
-  std::unique_ptr<llvm::Module> module(
-      new llvm::Module("bamql", llvm::getGlobalContext()));
+  llvm::LLVMContext context;
+  std::unique_ptr<llvm::Module> module(new llvm::Module("bamql", context));
   auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
   auto engine = bamql::createEngine(std::move(module));
   if (!engine) {

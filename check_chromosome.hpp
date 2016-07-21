@@ -37,23 +37,24 @@ public:
                                 llvm::Value *read,
                                 llvm::Value *header) {
     auto function = state.module()->getFunction("bamql_check_chromosome");
-    return state->CreateCall4(
-        function,
-        header,
-        read,
-        state.createString(name),
-        mate ? llvm::ConstantInt::getTrue(llvm::getGlobalContext())
-             : llvm::ConstantInt::getFalse(llvm::getGlobalContext()));
+    llvm::Value *args[] = {
+      header,
+      read,
+      state.createString(name),
+      mate ? llvm::ConstantInt::getTrue(state.module()->getContext())
+           : llvm::ConstantInt::getFalse(state.module()->getContext())
+    };
+    return state->CreateCall(function, args);
   }
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *chromosome,
                                      llvm::Value *header) {
     if (mate) {
-      return llvm::ConstantInt::getTrue(llvm::getGlobalContext());
+      return llvm::ConstantInt::getTrue(state.module()->getContext());
     }
     auto function = state.module()->getFunction("bamql_check_chromosome_id");
-    return state->CreateCall3(
-        function, header, chromosome, state.createString(name));
+    llvm::Value *args[] = { header, chromosome, state.createString(name) };
+    return state->CreateCall(function, args);
   }
 
   bool usesIndex() { return !mate; }

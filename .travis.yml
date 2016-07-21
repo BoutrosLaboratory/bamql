@@ -8,7 +8,11 @@ env:
   - LLVM_TARGET_VERSION=3.4 LLVM_STATIC=yes LIBS="-lncurses -ldl -lpthread"
   - LLVM_TARGET_VERSION=3.5 LLVM_STATIC=yes
   - LLVM_TARGET_VERSION=3.6 LLVM_STATIC=yes
+  - LLVM_TARGET_VERSION=3.7 LLVM_STATIC=yes
+  - LLVM_TARGET_VERSION=3.8 LLVM_STATIC=yes
+  - LLVM_TARGET_VERSION=3.9 LLVM_STATIC=yes
 before_script:
+  - echo -e "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.8 main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.9 main" | sudo tee /etc/apt/sources.list.d/llvm.list
   - sudo apt-get update
   - sudo apt-get install -qq -y --force-yes devscripts equivs
   - sudo mk-build-deps -i -t "apt-get -qq -y --force-yes --no-install-recommends"

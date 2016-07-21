@@ -22,7 +22,11 @@
 #include <system_error>
 #include <vector>
 #include <llvm/IR/Module.h>
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
 #include <llvm/PassManager.h>
+#else
+#include <llvm/IR/LegacyPassManager.h>
+#endif
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/Host.h>
@@ -41,13 +45,15 @@ public:
   llvm::Value *generate(bamql::GenerateState &state,
                         llvm::Value *read,
                         llvm::Value *header) {
-    return state->CreateCall2(main, header, read);
+    llvm::Value *args[] = { header, read };
+    return state->CreateCall(main, args);
   }
 
   llvm::Value *generateIndex(bamql::GenerateState &state,
                              llvm::Value *chromosome,
                              llvm::Value *header) {
-    return state->CreateCall2(index, header, chromosome);
+    llvm::Value *args[] = { header, chromosome };
+    return state->CreateCall(index, args);
   }
   bool usesIndex() { return true; }
   void writeDebug(bamql::GenerateState &state) {}
@@ -167,23 +173,39 @@ int main(int argc, char *const *argv) {
                       std::istreambuf_iterator<char>());
 
   // Create a new LLVM module and our functions
-  auto module =
-      std::make_shared<llvm::Module>("bamql", llvm::getGlobalContext());
+  llvm::LLVMContext context;
+  auto module = std::make_shared<llvm::Module>("bamql", context);
   std::shared_ptr<llvm::DIBuilder> debug_builder;
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
   std::shared_ptr<llvm::DIScope> scope;
+#else
+  llvm::DIScope *scope = nullptr;
+#endif
   if (debug) {
     debug_builder = std::make_shared<llvm::DIBuilder>(*module);
-    llvm::DIScope scope =
-        debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C,
-                                         argv[optind],
-                                         ".",
-                                         "BAMQL Compiler",
-                                         false,
-                                         "",
-                                         0);
+    scope =
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+        std::make_shared<llvm::DIScope>(
+#endif
+            debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C,
+                                             argv[optind],
+                                             ".",
+                                             "BAMQL Compiler",
+                                             false,
+                                             "",
+                                             0)
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+            )
+#endif
+        ;
   }
-  auto generator =
-      std::make_shared<bamql::Generator>(module.get(), scope.get());
+  auto generator = std::make_shared<bamql::Generator>(module.get(),
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+                                                      scope.get()
+#else
+                                                      scope
+#endif
+                                                      );
   std::string header_filename(
       createFileName(argv[optind], output_header, ".h"));
   std::ofstream header_file(header_filename);
@@ -229,7 +251,7 @@ int main(int argc, char *const *argv) {
           createExternFunction(
               generator,
               index_name,
-              llvm::Type::getInt32Ty(llvm::getGlobalContext())));
+              llvm::Type::getInt32Ty(generator->module()->getContext())));
       predicates[name] = [=](bamql::ParseState &state) { return node; };
     }
     do {
@@ -314,15 +336,19 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
-  llvm::PassManager pass_man;
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
+  llvm::PassManager pass_man;
   pass_man.add(new llvm::DataLayout(*target_machine->getDataLayout()));
 #elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
+  llvm::legacy::PassManager pass_man;
   pass_man.add(new llvm::DataLayoutPass(*target_machine->getDataLayout()));
 #elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+  llvm::legacy::PassManager pass_man;
   auto dlp = new llvm::DataLayoutPass();
   dlp->doInitialization(*module);
   pass_man.add(dlp);
+#else
+  llvm::legacy::PassManager pass_man;
 #endif
 
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
@@ -339,10 +365,16 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
   llvm::formatted_raw_ostream raw_output_stream(output_stream);
+#endif
 
   if (target_machine->addPassesToEmitFile(pass_man,
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
                                           raw_output_stream,
+#else
+                                          output_stream,
+#endif
                                           llvm::TargetMachine::CGFT_ObjectFile,
                                           false)) {
     std::cerr << "Cannot create object file on this architecture." << std::endl;
