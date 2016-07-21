@@ -9,6 +9,7 @@ datadir=@datadir@
 Name: BAMQL Runtime
 Description: Filter SAM/BAM reads using a query language -- Used for linking generated object files
 Version: @VERSION@
-Requires: 
+Requires: htslib
+Requires.private: libpcre
 Libs: -L${libdir} -lbamql-rt
 Cflags: -I${includedir}

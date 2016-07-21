@@ -151,10 +151,11 @@ int main(int argc, char *const *argv) {
     std::cout << "\t-g\tGenerate debugging symbols." << std::endl;
     std::cout
         << "\t-H\tThe C header file for functions produced. If unspecified, it "
-           "will be inferred from the input file name." << std::endl;
+           "will be inferred from the input file name suffixed by `.h'."
+        << std::endl;
     std::cout
         << "\t-o\tThe output file containing the object code. If unspecified, "
-           "it will be the function name suffixed by `.o'." << std::endl;
+           "it will be the input file name suffixed by `.o'." << std::endl;
     return 0;
   }
 
