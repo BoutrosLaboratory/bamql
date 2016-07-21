@@ -14,7 +14,7 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 
 namespace bamql {
 llvm::Value *AstNode::generateIndex(GenerateState &state,

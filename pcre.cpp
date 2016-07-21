@@ -1,5 +1,5 @@
 #include <pcre.h>
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 
 bamql::RegularExpression bamql::ParseState::parseRegEx() throw(ParseError) {
   auto start = index;

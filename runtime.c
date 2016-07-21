@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <pcre.h>
-#include "bamql-rt.h"
+#include "bamql-runtime.h"
 
 /*
  * This file contains the runtime library for BAMQL.

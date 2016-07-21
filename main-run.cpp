@@ -21,14 +21,14 @@
 #include <uuid.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/Support/TargetSelect.h>
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 #include "bamql-jit.hpp"
 
 /**
  * Handler for output collection. Shunts reads into appropriate files and tracks
  * stats.
  */
-class DataCollector : public bamql::CheckIterator {
+class DataCollector : public bamql::CompileIterator {
 public:
   DataCollector(std::shared_ptr<llvm::ExecutionEngine> &engine,
                 std::shared_ptr<bamql::Generator> &generator,
@@ -37,7 +37,7 @@ public:
                 bool verbose_,
                 std::shared_ptr<htsFile> &a,
                 std::shared_ptr<htsFile> &r)
-      : bamql::CheckIterator::CheckIterator(
+      : bamql::CompileIterator::CompileIterator(
             engine, generator, node, std::string("filter")),
         accept(a), query(query_), reject(r), verbose(verbose_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {

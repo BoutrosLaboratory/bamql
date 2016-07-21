@@ -21,7 +21,7 @@
 #include <vector>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/Support/TargetSelect.h>
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 #include "bamql-jit.hpp"
 
 /*
@@ -57,14 +57,14 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "chr(1*) ^ chr(*2)", { "A", "B", "C", "D", "E", "I" } }
 };
 
-class Checker : public bamql::CheckIterator {
+class Checker : public bamql::CompileIterator {
 public:
   Checker(std::shared_ptr<llvm::ExecutionEngine> &engine,
           std::shared_ptr<bamql::Generator> &generator,
           std::shared_ptr<bamql::AstNode> &node,
           std::string name,
           int index_)
-      : bamql::CheckIterator::CheckIterator(engine, generator, node, name),
+      : bamql::CompileIterator::CompileIterator(engine, generator, node, name),
         correct(true), index(index_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {}
   void readMatch(bool matches,

@@ -21,7 +21,7 @@
 #include <uuid.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/Support/TargetSelect.h>
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 #include "bamql-jit.hpp"
 
 /**
@@ -46,7 +46,7 @@ bool checkChain(ChainPattern chain, bool matches) {
  * One link of a chain. It checks the filter, writes matching reads to a file,
  * and propagates the read to the next link in the chain.
  */
-class OutputWrangler : public bamql::CheckIterator {
+class OutputWrangler : public bamql::CompileIterator {
 public:
   OutputWrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
                  std::shared_ptr<bamql::Generator> &generator,
@@ -57,11 +57,11 @@ public:
                  std::string file_name_,
                  std::shared_ptr<htsFile> &o,
                  std::shared_ptr<OutputWrangler> &n)
-      : bamql::CheckIterator::CheckIterator(engine, generator, node, name),
+      : bamql::CompileIterator::CompileIterator(engine, generator, node, name),
         chain(c), file_name(file_name_), output_file(o), next(n),
         query(query_) {}
   virtual void prepareExecution() {
-    CheckIterator::prepareExecution();
+    CompileIterator::prepareExecution();
     if (next) {
       next->prepareExecution();
     }
@@ -73,9 +73,9 @@ public:
    * is determined by ours.
    */
   bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid) {
-    return CheckIterator::wantChromosome(header, tid) ||
-           next && checkChain(chain, false) &&
-               next->wantChromosome(header, tid);
+    return CompileIterator::wantChromosome(header, tid) ||
+           (next && checkChain(chain, false) &&
+            next->wantChromosome(header, tid));
   }
 
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {

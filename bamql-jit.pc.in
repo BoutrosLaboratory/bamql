@@ -6,10 +6,10 @@ includedir=@includedir@
 datarootdir=@datarootdir@
 datadir=@datadir@
 
-Name: BAMQL
-Description: Filter SAM/BAM reads using a query language - JIT
+Name: BAMQL JIT
+Description: Filter SAM/BAM reads using a query language
 Version: @VERSION@
-Requires: 
-Requires.private: bamql bamql-rt
+Requires: bamql-cpl bamql-itr
+Requires.private: bamql-rt
 Libs: -L${libdir} -lbamql-jit @LLVM_RUN_LDFLAGS@ @LLVM_RUN_LIBS@
 Cflags: -I${includedir} @LLVM_RUN_CPPFLAGS@ -fexceptions

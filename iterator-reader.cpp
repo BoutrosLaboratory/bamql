@@ -15,9 +15,10 @@
  */
 
 #include <cstdio>
+#include <climits>
 #include <iostream>
 #include <sstream>
-#include "bamql-jit.hpp"
+#include "bamql-iterator.hpp"
 
 bamql::ReadIterator::ReadIterator() {}
 
@@ -92,31 +93,4 @@ bool bamql::ReadIterator::processFile(const char *file_name,
     processRead(header, read);
   }
   return checkHtsError(result);
-}
-
-bamql::CheckIterator::CheckIterator(std::shared_ptr<llvm::ExecutionEngine> &e,
-                                    std::shared_ptr<Generator> &generator,
-                                    std::shared_ptr<AstNode> &node,
-                                    std::string name)
-    : engine(e), filter_func(node->createFilterFunction(generator, name)) {
-  // Compile the query into native functions. We must hold a reference to the
-  // execution engine as long as we intend for these pointers to be valid.
-  std::stringstream index_function_name;
-  index_function_name << name << "_index";
-  index_func = node->createIndexFunction(generator, index_function_name.str());
-}
-
-void bamql::CheckIterator::prepareExecution() {
-  filter = getNativeFunction<FilterFunction>(engine, filter_func);
-  index = getNativeFunction<IndexFunction>(engine, index_func);
-}
-
-bool bamql::CheckIterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,
-                                          uint32_t tid) {
-  return index(header.get(), tid);
-}
-
-void bamql::CheckIterator::processRead(std::shared_ptr<bam_hdr_t> &header,
-                                       std::shared_ptr<bam1_t> &read) {
-  readMatch(filter(header.get(), read.get()), header, read);
 }

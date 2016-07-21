@@ -16,7 +16,7 @@
 
 #pragma once
 #include <htslib/sam.h>
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 
 namespace bamql {
 typedef llvm::ConstantInt *(*BoolConstant)(llvm::LLVMContext &);

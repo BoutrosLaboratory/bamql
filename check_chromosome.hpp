@@ -16,7 +16,7 @@
 
 #include <set>
 #include <htslib/sam.h>
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 
 namespace bamql {
 

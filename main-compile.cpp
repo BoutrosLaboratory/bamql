@@ -39,7 +39,7 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Target/TargetSubtargetInfo.h>
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 #include "config.h"
 
 std::vector<std::string> reserved = {

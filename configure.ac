@@ -35,5 +35,5 @@ PKG_CHECK_MODULES(HTS, [ htslib ], [], [
 	LIBS="$ORIGINAL_LIBS"
 ])
 
-AC_CONFIG_FILES([Makefile bamql.pc bamql-rt.pc bamql-jit.pc])
+AC_CONFIG_FILES([Makefile bamql-cpl.pc bamql-itr.pc bamql-jit.pc bamql-rt.pc])
 AC_OUTPUT

@@ -16,7 +16,7 @@
 
 #include <cctype>
 #include <sstream>
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 
 namespace bamql {
 ParseError::ParseError(size_t index, std::string what)

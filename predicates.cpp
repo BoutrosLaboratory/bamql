@@ -16,7 +16,7 @@
 
 #include <cstdint>
 #include <htslib/sam.h>
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 #include "boolean_constant.hpp"
 #include "check_aux.hpp"
 #include "check_chromosome.hpp"

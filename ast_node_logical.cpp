@@ -14,7 +14,7 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include "bamql.hpp"
+#include "bamql-compiler.hpp"
 
 bamql::ShortCircuitNode::ShortCircuitNode(std::shared_ptr<AstNode> left,
                                           std::shared_ptr<AstNode> right) {
@@ -193,9 +193,9 @@ llvm::Value *bamql::ConditionalNode::generate(GenerateState &state,
 }
 
 bool bamql::ConditionalNode::usesIndex() {
-  return then_part->usesIndex() && else_part->usesIndex() ||
-         condition->usesIndex() &&
-             (then_part->usesIndex() || else_part->usesIndex());
+  return (then_part->usesIndex() && else_part->usesIndex()) ||
+         (condition->usesIndex() &&
+          (then_part->usesIndex() || else_part->usesIndex()));
 }
 
 llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
