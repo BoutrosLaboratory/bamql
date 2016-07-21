@@ -144,7 +144,7 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
                    { ptr_bam1_t, base_uint8, base_uint8, base_str });
     createFunction(module,
                    "bamql_check_chromosome",
-                   { ptr_bam_hdr_t, ptr_bam1_t, base_str });
+                   { ptr_bam_hdr_t, ptr_bam1_t, base_str, base_bool });
     createFunction(module,
                    "bamql_check_chromosome_id",
                    { ptr_bam_hdr_t, base_uint32, base_str });
