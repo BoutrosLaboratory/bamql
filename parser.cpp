@@ -51,10 +51,10 @@ static std::shared_ptr<AstNode> parseTerminal(
     }
   }
   size_t start = state.where();
-  while (!state.empty() &&
-         (*state >= 'a' && *state <= 'z' ||
-          ((state.where() - start) > 0) && (*state == '_' || *state == '?' ||
-                                            *state >= '0' && *state <= '9'))) {
+  while (!state.empty() && ((*state >= 'a' && *state <= 'z') ||
+                            ((state.where() - start) > 0 &&
+                             (*state == '_' || *state == '?' ||
+                              (*state >= '0' && *state <= '9'))))) {
     state.next();
   }
   if (start == state.where()) {
