@@ -213,36 +213,69 @@ int main(int argc, char *const *argv) {
   llvm::LLVMContext context;
   auto module = std::make_shared<llvm::Module>("bamql", context);
   std::shared_ptr<llvm::DIBuilder> debug_builder;
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-  std::shared_ptr<llvm::DIScope> scope;
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
+  llvm::DIFile diFile;
+  llvm::DIType diInt32;
+  llvm::DIType diBam1;
+  llvm::DIType diBamHdr;
+  llvm::DICompositeType diFilterFunc;
+  llvm::DICompositeType diIndexFunc;
+#elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 6
+  llvm::DIFile diFile;
+  llvm::DIType diInt32;
+  llvm::DIType diBam1;
+  llvm::DIType diBamHdr;
+  llvm::DISubroutineType diFilterFunc;
+  llvm::DISubroutineType diIndexFunc;
 #else
-  llvm::DIScope *scope = nullptr;
+  llvm::DIFile *diFile = nullptr;
+  llvm::DIType *diInt32 = nullptr;
+  llvm::DIType *diBam1 = nullptr;
+  llvm::DIType *diBamHdr = nullptr;
+  llvm::DISubroutineType *diFilterFunc = nullptr;
+  llvm::DISubroutineType *diIndexFunc = nullptr;
 #endif
   if (debug) {
     debug_builder = std::make_shared<llvm::DIBuilder>(*module);
-    scope =
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-        std::make_shared<llvm::DIScope>(
-#endif
-            debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C,
-                                             base_name,
-                                             dir_name,
-                                             PACKAGE_STRING,
-                                             false,
-                                             "",
-                                             0)
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-            )
-#endif
-        ;
-  }
-  auto generator = std::make_shared<bamql::Generator>(module.get(),
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-                                                      scope.get()
+    debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C,
+                                     base_name,
+                                     dir_name,
+                                     PACKAGE_STRING,
+                                     false,
+                                     "",
+                                     0);
+    diFile = debug_builder->createFile(base_name, dir_name);
+    diInt32 = debug_builder->createBasicType(
+        "uint32", 32, 32, llvm::dwarf::DW_ATE_unsigned);
+    diBamHdr = debug_builder->createUnspecifiedType("bam_hdr_t");
+    diBam1 = debug_builder->createUnspecifiedType("bam1_t");
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
+    llvm::Value *diFilterArgs[] = { diBamHdr, diBam1 };
+    llvm::Value *diIndexArgs[] = { diBamHdr, diInt32 };
+    auto diFilterSignature = debug_builder->getOrCreateArray(diFilterArgs);
+    auto diIndexSignature = debug_builder->getOrCreateArray(diIndexArgs);
+#elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 6
+    llvm::Metadata *diFilterArgs[] = { diBamHdr, diBam1 };
+    llvm::Metadata *diIndexArgs[] = { diBamHdr, diInt32 };
+    auto diFilterSignature = debug_builder->getOrCreateTypeArray(diFilterArgs);
+    auto diIndexSignature = debug_builder->getOrCreateTypeArray(diIndexArgs);
 #else
-                                                      scope
+    auto diFilterSignature =
+        debug_builder->getOrCreateTypeArray({ diBamHdr, diBam1 });
+    auto diIndexSignature =
+        debug_builder->getOrCreateTypeArray({ diBamHdr, diInt32 });
 #endif
-                                                      );
+    diFilterFunc = debug_builder->createSubroutineType(
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
+        diFile,
+#endif
+        diFilterSignature);
+    diIndexFunc = debug_builder->createSubroutineType(
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
+        diFile,
+#endif
+        diIndexSignature);
+  }
   std::string header_filename(
       createFileName(argv[optind], output_header, ".h"));
   std::ofstream header_file(header_filename);
@@ -279,6 +312,8 @@ int main(int argc, char *const *argv) {
       if (checkBadName(predicates, state, argv[optind], name)) {
         return 1;
       }
+      auto generator =
+          std::make_shared<bamql::Generator>(module.get(), nullptr);
       auto index_name = name + "_index";
       auto node = std::make_shared<ExistingFunction>(
           createExternFunction(generator,
@@ -293,6 +328,7 @@ int main(int argc, char *const *argv) {
     }
     do {
       state.parseSpace();
+      auto startLine = state.currentLine();
       auto name = state.parseStr(
           "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
       if (name[0] >= '0' && name[0] <= '9') {
@@ -329,9 +365,97 @@ int main(int argc, char *const *argv) {
       header_file << "extern bool " << index_name.str()
                   << "(bam_hdr_t*, uint32_t);" << std::endl;
 
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+      llvm::DISubprogram filter_scope;
+      llvm::DISubprogram index_scope;
+#else
+      llvm::DISubprogram *filter_scope = nullptr;
+      llvm::DISubprogram *index_scope = nullptr;
+#endif
+      if (debug) {
+        filter_scope = debug_builder->createFunction(diFile,
+                                                     name,
+                                                     name,
+                                                     diFile,
+                                                     startLine,
+                                                     diFilterFunc,
+                                                     false,
+                                                     true,
+                                                     startLine);
+
+        index_scope = debug_builder->createFunction(diFile,
+                                                    index_name.str(),
+                                                    index_name.str(),
+                                                    diFile,
+                                                    startLine,
+                                                    diIndexFunc,
+                                                    false,
+                                                    true,
+                                                    startLine);
+      }
+      auto filter_generator = std::make_shared<bamql::Generator>(module.get(),
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+
+                                                                 &filter_scope
+#else
+                                                                 filter_scope
+#endif
+                                                                 );
+      auto index_generator = std::make_shared<bamql::Generator>(module.get(),
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+
+                                                                &index_scope
+#else
+                                                                index_scope
+#endif
+
+                                                                );
+      if (debug) {
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
+        debug_builder->createLocalVariable(
+            llvm::dwarf::DW_AT_variable_parameter,
+            filter_scope,
+            "header",
+            diFile,
+            startLine,
+            diBamHdr);
+        debug_builder->createLocalVariable(
+            llvm::dwarf::DW_AT_variable_parameter,
+            filter_scope,
+            "read",
+            diFile,
+            startLine,
+            diBam1);
+
+        debug_builder->createLocalVariable(
+            llvm::dwarf::DW_AT_variable_parameter,
+            index_scope,
+            "header",
+            diFile,
+            startLine,
+            diBamHdr);
+        debug_builder->createLocalVariable(
+            llvm::dwarf::DW_AT_variable_parameter,
+            index_scope,
+            "tid",
+            diFile,
+            startLine,
+            diInt32);
+#else
+        debug_builder->createParameterVariable(
+            filter_scope, "header", 0, diFile, startLine, diBamHdr, true);
+        debug_builder->createParameterVariable(
+            filter_scope, "read", 1, diFile, startLine, diBam1, true);
+
+        debug_builder->createParameterVariable(
+            index_scope, "header", 0, diFile, startLine, diBamHdr, true);
+        debug_builder->createParameterVariable(
+            index_scope, "tid", 0, diFile, startLine, diInt32, true);
+#endif
+      }
       auto node = std::make_shared<ExistingFunction>(
-          ast->createFilterFunction(generator, name),
-          ast->createIndexFunction(generator, index_name.str()));
+          ast->createFilterFunction(filter_generator, name),
+          ast->createIndexFunction(index_generator, index_name.str()));
       predicates[name] = [=](bamql::ParseState &state) { return node; };
     } while (!state.empty());
   } catch (bamql::ParseError e) {
@@ -343,6 +467,9 @@ int main(int argc, char *const *argv) {
   header_file << "}" << std::endl;
   header_file << "#endif" << std::endl;
 
+  if (debug) {
+    debug_builder->finalize();
+  }
   if (dump) {
     module->dump();
   }

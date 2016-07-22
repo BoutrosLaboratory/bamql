@@ -111,6 +111,7 @@ public:
 private:
   std::shared_ptr<Generator> generator;
   llvm::IRBuilder<> builder;
+  llvm::DIScope *debug_scope = nullptr;
 };
 typedef llvm::Value *(bamql::AstNode::*GenerateMember)(GenerateState &state,
                                                        llvm::Value *param,
