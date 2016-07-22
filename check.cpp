@@ -14,6 +14,7 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include <iomanip>
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -120,8 +121,9 @@ int main(int argc, char *const *argv) {
     checkers[index].prepareExecution();
     bool test_success = checkers[index].processFile("test.sam", false, false) &&
                         checkers[index].isCorrect();
-    std::cerr << index << " " << (test_success ? "----" : "FAIL") << " "
-              << queries[index].first << std::endl;
+    std::cerr << std::setw(2) << index << " "
+              << (test_success ? "----" : "FAIL") << " " << queries[index].first
+              << std::endl;
     success &= test_success;
   }
   return success ? 0 : 1;
