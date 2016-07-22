@@ -32,9 +32,10 @@
 std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "mapping_quality(0.5)", { "E", "F" } },
   { "before(10060)", { "A", "B", "C", "D" } },
-  { "nt(10360, A)", { "E", "F" } },
-  { "nt(10360, R)", { "E", "F" } },
-  { "nt_exact(10360, R)", {} },
+  { "nt(10360, C)", { "E", "F" } },
+  { "nt(10360, Y)", { "E", "F" } },
+  { "nt_exact(10360, C)", { "E", "F" } },
+  { "nt_exact(10360, Y)", {} },
   { "paired?", { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" } },
   { "mate_unmapped?", {} },
   { "split_pair?", { "C", "D", "G" } },

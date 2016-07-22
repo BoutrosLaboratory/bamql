@@ -149,8 +149,8 @@ bool bamql_check_chromosome(bam_hdr_t *header, bam1_t *read,
 			    const char *pattern, bool mate)
 {
 	return bamql_check_chromosome_id(header,
-					 mate ? read->core.mtid : read->
-					 core.tid, pattern);
+					 mate ? read->core.mtid : read->core.
+					 tid, pattern);
 }
 
 bool bamql_check_chromosome_id(bam_hdr_t *header, uint32_t chr_id,
@@ -183,7 +183,6 @@ bool bamql_check_nt(bam1_t *read, int32_t position, unsigned char nt,
 {
 	unsigned char read_nt;
 	int32_t mapped_position;
-	bool match;
 	if (read->core.flag & BAM_FUNMAP) {
 		return false;
 	}
@@ -193,15 +192,9 @@ bool bamql_check_nt(bam1_t *read, int32_t position, unsigned char nt,
 	}
 
 	if (read->core.n_cigar == 0) {
-		mapped_position =
-		    bam_is_rev(read) ? (compute_mapped_end(read) -
-					position) : (position - read->core.pos -
-						     1);
+		mapped_position = position - read->core.pos - 1;
 	} else {
-		int32_t required_offset =
-		    bam_is_rev(read) ? (compute_mapped_end(read) -
-					position) : (position - read->core.pos -
-						     1);
+		int32_t required_offset = position - read->core.pos - 1;
 		mapped_position = 0;
 
 		for (int cigar_index = 0; cigar_index < read->core.n_cigar;
@@ -223,14 +216,11 @@ bool bamql_check_nt(bam1_t *read, int32_t position, unsigned char nt,
 				/* Consume reference */
 				if (consume & 2)
 					required_offset--;
-
-				/* keep track of matched bases */
-				match = (consume == 3);
 			}
 		}
 	}
 	read_nt = bam_seqi(bam_get_seq(read), mapped_position - 1);
-	return exact ? (read_nt == nt && match) : (read_nt != 0);
+	return exact ? (read_nt == nt) : ((read_nt & nt) != 0);
 }
 
 bool bamql_check_position(bam_hdr_t *header, bam1_t *read, uint32_t start,
