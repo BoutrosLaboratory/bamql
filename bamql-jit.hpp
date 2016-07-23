@@ -19,6 +19,7 @@
 #include <bamql-iterator.hpp>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 
+#define BAMQL_JIT_API_VERSION 1
 namespace bamql {
 
 /**

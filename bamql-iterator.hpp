@@ -19,6 +19,7 @@
 #include <htslib/sam.h>
 #include <memory>
 
+#define BAMQL_ITERARTOR_API_VERSION 1
 namespace bamql {
 
 /**

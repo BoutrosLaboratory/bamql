@@ -28,6 +28,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 
+#define BAMQL_COMPILER_API_VERSION 1
 namespace bamql {
 
 /**

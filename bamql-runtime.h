@@ -21,6 +21,7 @@ extern "C" {
 #include <stdbool.h>
 #include <htslib/sam.h>
 
+#define BAMQL_RUNTIME_API_VERSION 1
 /*
  * This file contains the runtime library for BAMQL.
  */
