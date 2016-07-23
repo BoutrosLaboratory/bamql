@@ -8,8 +8,8 @@ bin_PROGRAMS = \
 lib_LTLIBRARIES = \
 	libbamql-cpl.la \
 	libbamql-itr.la \
-	libbamql-jit.la \
 	libbamql-rt.la \
+	libbamql-jit.la \
 	$(NULL)
 library_includedir=$(includedir)/bamql
 library_include_HEADERS = \

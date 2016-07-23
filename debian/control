@@ -38,7 +38,7 @@ Description: BAM read filtering runtime library
 
 Package: bamql-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libbamql0 (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, libbamqlcpl0 (= ${binary:Version}), libbamqlitr0 (= ${binary:Version}), libbamqljit0 (= ${binary:Version}), libbamqlrt0 (= ${binary:Version})
 Description: BAM read filtering -- Development tools
  Filter BAM reads using simple queries
  .
