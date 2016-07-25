@@ -120,7 +120,7 @@ int main(int argc, char *const *argv) {
 
   for (size_t index = 0; index < queries.size(); index++) {
     checkers[index].prepareExecution();
-    bool test_success = checkers[index].processFile("test.sam", false, false) &&
+    bool test_success = checkers[index].processFile("test/test.sam", false, false) &&
                         checkers[index].isCorrect();
     std::cerr << std::setw(2) << index << " "
               << (test_success ? "----" : "FAIL") << " " << queries[index].first

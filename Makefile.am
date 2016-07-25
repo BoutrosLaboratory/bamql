@@ -13,22 +13,22 @@ lib_LTLIBRARIES = \
 	$(NULL)
 library_includedir=$(includedir)/bamql
 library_include_HEADERS = \
-	bamql-compiler.hpp \
-	bamql-iterator.hpp \
-	bamql-jit.hpp \
-	bamql-runtime.h \
+	compiler/bamql-compiler.hpp \
+	iterator/bamql-iterator.hpp \
+	jit/bamql-jit.hpp \
+	runtime/bamql-runtime.h \
 	$(NULL)
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = \
-	bamql-cpl.pc \
-	bamql-itr.pc \
-	bamql-jit.pc \
-	bamql-rt.pc \
+	compiler/bamql-cpl.pc \
+	iterator/bamql-itr.pc \
+	jit/bamql-jit.pc \
+	runtime/bamql-rt.pc \
 	$(NULL)
 man1_MANS = \
-	bamql.1 \
-	bamql-chain.1 \
-	bamql-compile.1 \
+	tools/bamql.1 \
+	tools/bamql-chain.1 \
+	tools/bamql-compile.1 \
 	$(NULL)
 man7_MANS = \
 	bamql_queries.7 \
@@ -36,8 +36,8 @@ man7_MANS = \
 
 TESTS = \
 	check_bamql \
-	check_compiler \
-	nt_exact_test.bamql \
+	test/check_compiler \
+	test/nt_exact_test.bamql \
 	$(NULL)
 check_PROGRAMS = \
 	check_bamql \
@@ -46,7 +46,7 @@ check_PROGRAMS = \
 TEST_EXTENSIONS = \
 	.bamql \
 	$(NULL)
-BAMQL_LOG_COMPILER = ./bamql_pass_all
+BAMQL_LOG_COMPILER = ./test/bamql_pass_all
 
 libbamql_cpl_la_CPPFLAGS = \
 	-std=c++11 \
@@ -65,13 +65,13 @@ libbamql_cpl_la_LDFLAGS = \
 	-no-undefined \
 	$(NULL)
 libbamql_cpl_la_SOURCES = \
-	ast_node_logical.cpp \
-	misc.cpp \
-	parser.cpp \
-	parser_misc.cpp \
-	pcre.cpp \
-	predicates.cpp \
-	version.cpp \
+	compiler/ast_node_logical.cpp \
+	compiler/misc.cpp \
+	compiler/parser.cpp \
+	compiler/parser_misc.cpp \
+	compiler/pcre.cpp \
+	compiler/predicates.cpp \
+	compiler/version.cpp \
 	$(NULL)
 
 libbamql_rt_la_CPPFLAGS = \
@@ -89,7 +89,7 @@ libbamql_rt_la_LDFLAGS = \
 	-no-undefined \
 	$(NULL)
 libbamql_rt_la_SOURCES = \
-	runtime.c \
+	runtime/runtime.c \
 	$(NULL)
 
 libbamql_itr_la_CPPFLAGS = \
@@ -105,14 +105,17 @@ libbamql_itr_la_LDFLAGS = \
 	-no-undefined \
 	$(NULL)
 libbamql_itr_la_SOURCES = \
-	iterator-misc.cpp \
-	iterator-reader.cpp \
+	iterator/misc.cpp \
+	iterator/reader.cpp \
 	$(NULL)
 
 libbamql_jit_la_CPPFLAGS = \
 	-std=c++11 \
 	$(LLVM_RUN_CPPFLAGS) \
 	$(HTS_CFLAGS) -g -O2 \
+	-Icompiler \
+	-Iiterator \
+	-Iruntime \
 	$(NULL)
 libbamql_jit_la_LIBADD = \
 	libbamql-cpl.la \
@@ -127,18 +130,22 @@ libbamql_jit_la_LDFLAGS = \
 	-no-undefined \
 	$(NULL)
 libbamql_jit_la_SOURCES = \
-	jit-misc.cpp \
-	jit-reader.cpp \
+	jit/misc.cpp \
+	jit/reader.cpp \
 	$(NULL)
 
 bamql_SOURCES = \
-	main-run.cpp \
+	tools/run.cpp \
 	$(NULL)
 bamql_CPPFLAGS = \
 	-std=c++11 \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) \
 	$(UUID_CFLAGS) \
+	-Icompiler \
+	-Iiterator \
+	-Ijit \
+	-Iruntime \
 	$(NULL)
 bamql_LDFLAGS =\
 	$(LLVM_RUN_LDFLAGS) \
@@ -153,13 +160,17 @@ bamql_LDADD = \
 	$(NULL)
 
 bamql_chain_SOURCES = \
-	main-chain.cpp \
+	tools/chain.cpp \
 	$(NULL)
 bamql_chain_CPPFLAGS = \
 	-std=c++11 \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) \
 	$(UUID_CFLAGS) \
+	-Icompiler \
+	-Iiterator \
+	-Ijit \
+	-Iruntime \
 	$(NULL)
 bamql_chain_LDFLAGS =\
 	$(LLVM_RUN_LDFLAGS) \
@@ -174,13 +185,14 @@ bamql_chain_LDADD = \
 	$(NULL)
 
 bamql_compile_SOURCES = \
-	main-compile.cpp \
+	tools/compile.cpp \
 	$(NULL)
 bamql_compile_CPPFLAGS = \
 	-std=c++11 \
 	$(Z_CPPFLAGS) \
 	$(LLVM_WRITE_CPPFLAGS) \
 	-g -O2 \
+	-Icompiler \
 	$(NULL)
 bamql_compile_LDFLAGS =\
 	$(Z_LDFLAGS) \
@@ -193,12 +205,16 @@ bamql_compile_LDADD = \
 	$(NULL)
 
 check_bamql_SOURCES = \
-	check.cpp \
+	test/check.cpp \
 	$(NULL)
 check_bamql_CPPFLAGS = \
 	-std=c++11 \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) \
+	-Icompiler \
+	-Iiterator \
+	-Ijit \
+	-Iruntime \
 	$(NULL)
 check_bamql_LDFLAGS = \
 	$(LLVM_RUN_LDFLAGS) \
@@ -212,4 +228,6 @@ check_bamql_LDADD = \
 	$(NULL)
 
 CLEANFILES = \
+	compiler_check.h \
+	compiler_check.o \
 	$(NULL)

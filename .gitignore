@@ -8,6 +8,7 @@
 *.trs
 *~
 .deps
+.dirstamp
 .libs
 Makefile
 Makefile.in
@@ -18,8 +19,8 @@ bamql
 bamql-chain
 bamql-compile
 check_bamql*
-compiler_check.?
 compile
+compiler_check.?
 config.*
 configure
 debian/*debhelper*

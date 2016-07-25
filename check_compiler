@@ -1,7 +1,0 @@
-#!/bin/sh
-
-set -eu
-
-./bamql-compile -g compiler_check.bamql
-test -f compiler_check.h
-test -f compiler_check.o

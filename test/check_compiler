@@ -1,0 +1,7 @@
+#!/bin/sh
+
+set -eux
+
+./bamql-compile -g $(dirname $0)/compiler_check.bamql
+test -f $(dirname $0)/compiler_check.h
+test -f $(dirname $0)/compiler_check.o

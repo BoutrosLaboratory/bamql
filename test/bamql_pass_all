@@ -2,7 +2,7 @@
 
 set -eu
 echo -n "$1: "
-RC="$(./bamql -f "$(basename "$1" .bamql).sam" -q "$1" | grep Rejected | cut -f 2 -d :)"
+RC="$(./bamql -f "$(dirname "$1")/$(basename "$1" .bamql).sam" -q "$1" | grep Rejected | cut -f 2 -d :)"
 if [ $RC -gt 0 ]
 then
 	echo Failed $RC reads
