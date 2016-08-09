@@ -21,6 +21,87 @@ namespace bamql {
 
 typedef std::shared_ptr<AstNode>(*ParseFunc)(ParseState &state,
                                              PredicateMap &predicates);
+class UseNode : public DebuggableNode {
+public:
+  UseNode(ParseState &state, std::shared_ptr<AstNode> e)
+      : DebuggableNode(state), expr(e) {}
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header) {
+    return state.definitions[this];
+  }
+  virtual llvm::Value *generateIndex(GenerateState &state,
+                                     llvm::Value *read,
+                                     llvm::Value *header) {
+    return state.definitionsIndex[this];
+  }
+  llvm::Value *generateAtDefinition(GenerateState &state,
+                                    llvm::Value *read,
+                                    llvm::Value *header) {
+    auto result = expr->generate(state, read, header);
+    state.definitions[this] = result;
+    return result;
+  }
+  llvm::Value *generateIndexAtDefinition(GenerateState &state,
+                                         llvm::Value *read,
+                                         llvm::Value *header) {
+    auto result = expr->generateIndex(state, read, header);
+    state.definitionsIndex[this] = result;
+    return result;
+  }
+
+private:
+  std::shared_ptr<AstNode> expr;
+};
+
+class BindingNode : public DebuggableNode {
+public:
+  BindingNode(ParseState &state) : DebuggableNode(state) {}
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header) {
+    for (auto it = definitions.begin(); it != definitions.end(); it++) {
+      (*it)->generateAtDefinition(state, read, header);
+    }
+    return body->generate(state, read, header);
+  }
+  virtual llvm::Value *generateIndex(GenerateState &state,
+                                     llvm::Value *read,
+                                     llvm::Value *header) {
+    for (auto it = definitions.begin(); it != definitions.end(); it++) {
+      (*it)->generateIndexAtDefinition(state, read, header);
+    }
+    return body->generateIndex(state, read, header);
+  }
+
+  void parse(ParseState &state, PredicateMap &predicates) throw(ParseError) {
+    PredicateMap childPredicates(predicates);
+    while (!state.empty() && (definitions.size() == 0 || *state == ',')) {
+      if (definitions.size() > 0) {
+        state.next();
+      }
+      state.parseSpace();
+      auto name = state.parseStr(
+          "ABCDEFGHIJLKLMNOPQRSTUVWXYZabcdefghijlklmnopqrstuvwxyz0123456789_");
+      state.parseCharInSpace('=');
+      auto use =
+          std::make_shared<UseNode>(state, AstNode::parse(state, predicates));
+      definitions.push_back(use);
+      childPredicates[name] = [=](ParseState & state) throw(ParseError) {
+        return std::static_pointer_cast<AstNode>(use);
+      };
+      state.parseSpace();
+    }
+    if (!state.parseKeyword("in")) {
+      throw ParseError(state.where(), "Expected `in' or `,' in `let'.");
+    }
+    body = AstNode::parse(state, childPredicates);
+  }
+
+private:
+  std::vector<std::shared_ptr<UseNode>> definitions;
+  std::shared_ptr<AstNode> body;
+};
 
 /**
  * Handle terminal operators (final step in the recursive descent)
@@ -103,9 +184,9 @@ static std::shared_ptr<AstNode> parseIntermediate(
 }
 
 /**
- * Handle conditional operators (first step in the recursive descent)
+ * Handle conditional operators
  */
-std::shared_ptr<AstNode> AstNode::parse(
+static std::shared_ptr<AstNode> parseConditional(
     ParseState &state, PredicateMap &predicates) throw(ParseError) {
   auto cond_part = parseIntermediate(state, predicates);
   state.parseSpace();
@@ -118,6 +199,21 @@ std::shared_ptr<AstNode> AstNode::parse(
   }
   auto else_part = parseIntermediate(state, predicates);
   return std::make_shared<ConditionalNode>(cond_part, then_part, else_part);
+}
+
+/**
+ * Handle let operators (first step in the recursive descent)
+ */
+std::shared_ptr<AstNode> AstNode::parse(
+    ParseState &state, PredicateMap &predicates) throw(ParseError) {
+  state.parseSpace();
+  if (state.parseKeyword("let")) {
+    auto let = std::make_shared<BindingNode>(state);
+    let->parse(state, predicates);
+    return let;
+  } else {
+    return parseConditional(state, predicates);
+  }
 }
 
 /**

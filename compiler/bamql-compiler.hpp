@@ -108,6 +108,8 @@ public:
    * One would think this is trivial, but it isn't.
    */
   llvm::Value *createString(std::string &str);
+  std::map<void *, llvm::Value *> definitions;
+  std::map<void *, llvm::Value *> definitionsIndex;
 
 private:
   std::shared_ptr<Generator> generator;

@@ -10,6 +10,11 @@ The language consists of logical connectives, specifically and, or, not, and a t
 .SH LOGICAL CONNECTIVES
 The logical connectives are presented in order from lowest precedence to highest precedence.
 
+.SS VARIABLES
+\fBlet\fR name1 \fB=\fR expr1 [\fB,\fR name2 \fB=\fR expr2 ...] \fBin\fR body_expr
+
+Computes the value of \fIexprN\fR and assigns it to \fInameN\fR which can then be used in \fIbody_expr\fR. The name may contain only alphanumeric characters or underscore.
+
 .SS TERNARY IF
 cond \fBthen\fR then_expression \fBelse\fR else_expression
 

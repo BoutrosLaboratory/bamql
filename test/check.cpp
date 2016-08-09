@@ -32,6 +32,8 @@
 std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "mapping_quality(0.5)", { "E", "F" } },
   { "before(10060)", { "A", "B", "C", "D" } },
+  { "let x = before(10060), y = mapping_quality(0.5) in x | y",
+    { "A", "B", "C", "D", "E", "F" } },
   { "nt(10360, C)", { "E", "F" } },
   { "nt(10360, Y)", { "E", "F" } },
   { "nt_exact(10360, C)", { "E", "F" } },
