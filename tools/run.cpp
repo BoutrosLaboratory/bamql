@@ -195,8 +195,8 @@ int main(int argc, char *const *argv) {
                                 std::istreambuf_iterator<char>());
   }
   // Parse the input query.
-  auto ast = bamql::AstNode::parseWithLogging(query_content,
-                                              bamql::getDefaultPredicates());
+  bamql::PredicateMap predicates = bamql::getDefaultPredicates();
+  auto ast = bamql::AstNode::parseWithLogging(query_content, predicates);
   if (!ast) {
     return 1;
   }

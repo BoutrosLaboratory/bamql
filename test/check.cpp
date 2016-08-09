@@ -101,10 +101,11 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
+  auto predicates = bamql::getDefaultPredicates();
   std::vector<Checker> checkers;
   for (size_t index = 0; index < queries.size(); index++) {
-    auto ast = bamql::AstNode::parseWithLogging(queries[index].first,
-                                                bamql::getDefaultPredicates());
+    auto ast =
+        bamql::AstNode::parseWithLogging(queries[index].first, predicates);
 
     if (!ast) {
       std::cerr << "Could not compile test: " << queries[index].first
@@ -120,8 +121,9 @@ int main(int argc, char *const *argv) {
 
   for (size_t index = 0; index < queries.size(); index++) {
     checkers[index].prepareExecution();
-    bool test_success = checkers[index].processFile("test/test.sam", false, false) &&
-                        checkers[index].isCorrect();
+    bool test_success =
+        checkers[index].processFile("test/test.sam", false, false) &&
+        checkers[index].isCorrect();
     std::cerr << std::setw(2) << index << " "
               << (test_success ? "----" : "FAIL") << " " << queries[index].first
               << std::endl;

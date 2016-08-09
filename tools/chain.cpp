@@ -234,8 +234,8 @@ int main(int argc, char *const *argv) {
     }
     // Parse the input query.
     std::string query(argv[it]);
-    auto ast =
-        bamql::AstNode::parseWithLogging(query, bamql::getDefaultPredicates());
+    bamql::PredicateMap predicates = bamql::getDefaultPredicates();
+    auto ast = bamql::AstNode::parseWithLogging(query, predicates);
     if (!ast) {
       return 1;
     }

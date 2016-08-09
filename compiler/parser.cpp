@@ -20,13 +20,13 @@
 namespace bamql {
 
 typedef std::shared_ptr<AstNode>(*ParseFunc)(ParseState &state,
-                                             PredicateMap predicates);
+                                             PredicateMap &predicates);
 
 /**
  * Handle terminal operators (final step in the recursive descent)
  */
 static std::shared_ptr<AstNode> parseTerminal(
-    ParseState &state, PredicateMap predicates) throw(ParseError) {
+    ParseState &state, PredicateMap &predicates) throw(ParseError) {
 
   state.parseSpace();
   if (state.empty()) {
@@ -75,7 +75,7 @@ static std::shared_ptr<AstNode> parseTerminal(
  */
 template <char S, class T, ParseFunc N>
 static std::shared_ptr<AstNode> parseBinary(
-    ParseState &state, PredicateMap predicates) throw(ParseError) {
+    ParseState &state, PredicateMap &predicates) throw(ParseError) {
   std::vector<std::shared_ptr<AstNode>> items;
 
   std::shared_ptr<AstNode> node = N(state, predicates);
@@ -94,7 +94,7 @@ static std::shared_ptr<AstNode> parseBinary(
 }
 
 static std::shared_ptr<AstNode> parseIntermediate(
-    ParseState &state, PredicateMap predicates) throw(ParseError) {
+    ParseState &state, PredicateMap &predicates) throw(ParseError) {
   return parseBinary<
       '|',
       OrNode,
@@ -106,7 +106,7 @@ static std::shared_ptr<AstNode> parseIntermediate(
  * Handle conditional operators (first step in the recursive descent)
  */
 std::shared_ptr<AstNode> AstNode::parse(
-    ParseState &state, PredicateMap predicates) throw(ParseError) {
+    ParseState &state, PredicateMap &predicates) throw(ParseError) {
   auto cond_part = parseIntermediate(state, predicates);
   state.parseSpace();
   if (!state.parseKeyword("then")) {
@@ -125,7 +125,7 @@ std::shared_ptr<AstNode> AstNode::parse(
  * the predicates provided.
  */
 std::shared_ptr<AstNode> AstNode::parse(
-    const std::string &input, PredicateMap predicates) throw(ParseError) {
+    const std::string &input, PredicateMap &predicates) throw(ParseError) {
   ParseState state(input);
   std::shared_ptr<AstNode> node = AstNode::parse(state, predicates);
 
@@ -138,7 +138,7 @@ std::shared_ptr<AstNode> AstNode::parse(
 }
 
 std::shared_ptr<AstNode> bamql::AstNode::parseWithLogging(
-    const std::string &input, PredicateMap predicates) {
+    const std::string &input, PredicateMap &predicates) {
   std::shared_ptr<AstNode> ast;
   try {
     ast = AstNode::parse(input, predicates);
