@@ -280,7 +280,7 @@ PredicateMap getDefaultPredicates() {
     { std::string("nt_exact"),
       NucleotideNode<llvm::ConstantInt::getTrue>::parse },
     { std::string("split_pair?"), SplitPairNode::parse },
-    { std::string("random"), RandomlyNode::parse }
+    { std::string("random"), RandomlyNode::parse },
   };
 }
 }
