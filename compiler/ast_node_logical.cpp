@@ -16,8 +16,9 @@
 
 #include "bamql-compiler.hpp"
 
-bamql::ShortCircuitNode::ShortCircuitNode(std::shared_ptr<AstNode> left,
-                                          std::shared_ptr<AstNode> right) {
+bamql::ShortCircuitNode::ShortCircuitNode(
+    const std::shared_ptr<AstNode> &left,
+    const std::shared_ptr<AstNode> &right) {
   this->left = left;
   this->right = right;
 }
@@ -81,22 +82,22 @@ bool bamql::ShortCircuitNode::usesIndex() {
 }
 void bamql::ShortCircuitNode::writeDebug(GenerateState &state) {}
 
-bamql::AndNode::AndNode(std::shared_ptr<AstNode> left,
-                        std::shared_ptr<AstNode> right)
+bamql::AndNode::AndNode(const std::shared_ptr<AstNode> &left,
+                        const std::shared_ptr<AstNode> &right)
     : ShortCircuitNode(left, right) {}
 llvm::Value *bamql::AndNode::branchValue(llvm::LLVMContext &context) {
   return llvm::ConstantInt::getFalse(context);
 }
 
-bamql::OrNode::OrNode(std::shared_ptr<AstNode> left,
-                      std::shared_ptr<AstNode> right)
+bamql::OrNode::OrNode(const std::shared_ptr<AstNode> &left,
+                      const std::shared_ptr<AstNode> &right)
     : ShortCircuitNode(left, right) {}
 llvm::Value *bamql::OrNode::branchValue(llvm::LLVMContext &context) {
   return llvm::ConstantInt::getTrue(context);
 }
 
-bamql::XOrNode::XOrNode(std::shared_ptr<AstNode> left_,
-                        std::shared_ptr<AstNode> right_)
+bamql::XOrNode::XOrNode(const std::shared_ptr<AstNode> &left_,
+                        const std::shared_ptr<AstNode> &right_)
     : left(left_), right(right_) {}
 llvm::Value *bamql::XOrNode::generate(GenerateState &state,
                                       llvm::Value *read,
@@ -122,7 +123,7 @@ bool bamql::XOrNode::usesIndex() {
 
 void bamql::XOrNode::writeDebug(GenerateState &state) {}
 
-bamql::NotNode::NotNode(std::shared_ptr<AstNode> expr_) : expr(expr_) {}
+bamql::NotNode::NotNode(const std::shared_ptr<AstNode> &expr_) : expr(expr_) {}
 llvm::Value *bamql::NotNode::generate(GenerateState &state,
                                       llvm::Value *read,
                                       llvm::Value *header) {
@@ -141,9 +142,10 @@ llvm::Value *bamql::NotNode::generateIndex(GenerateState &state,
 bool bamql::NotNode::usesIndex() { return expr->usesIndex(); }
 void bamql::NotNode::writeDebug(GenerateState &state) {}
 
-bamql::ConditionalNode::ConditionalNode(std::shared_ptr<AstNode> condition,
-                                        std::shared_ptr<AstNode> then_part,
-                                        std::shared_ptr<AstNode> else_part) {
+bamql::ConditionalNode::ConditionalNode(
+    const std::shared_ptr<AstNode> &condition,
+    const std::shared_ptr<AstNode> &then_part,
+    const std::shared_ptr<AstNode> &else_part) {
   this->condition = condition;
   this->then_part = then_part;
   this->else_part = else_part;

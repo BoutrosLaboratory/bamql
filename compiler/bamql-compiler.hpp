@@ -201,7 +201,8 @@ private:
  */
 class ShortCircuitNode : public AstNode {
 public:
-  ShortCircuitNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode>);
+  ShortCircuitNode(const std::shared_ptr<AstNode> &left,
+                   const std::shared_ptr<AstNode> &right);
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header);
@@ -229,7 +230,8 @@ private:
  */
 class AndNode : public ShortCircuitNode {
 public:
-  AndNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
+  AndNode(const std::shared_ptr<AstNode> &left,
+          const std::shared_ptr<AstNode> &right);
   virtual llvm::Value *branchValue(llvm::LLVMContext &context);
 };
 /**
@@ -237,7 +239,8 @@ public:
  */
 class OrNode : public ShortCircuitNode {
 public:
-  OrNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
+  OrNode(const std::shared_ptr<AstNode> &left,
+         const std::shared_ptr<AstNode> &right);
   virtual llvm::Value *branchValue(llvm::LLVMContext &context);
 };
 /**
@@ -245,7 +248,8 @@ public:
  */
 class XOrNode : public AstNode {
 public:
-  XOrNode(std::shared_ptr<AstNode> left, std::shared_ptr<AstNode> right);
+  XOrNode(const std::shared_ptr<AstNode> &left,
+          const std::shared_ptr<AstNode> &right);
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header);
@@ -265,7 +269,7 @@ private:
  */
 class NotNode : public AstNode {
 public:
-  NotNode(std::shared_ptr<AstNode> expr);
+  NotNode(const std::shared_ptr<AstNode> &expr);
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header);
@@ -284,9 +288,9 @@ private:
  */
 class ConditionalNode : public AstNode {
 public:
-  ConditionalNode(std::shared_ptr<AstNode> condition,
-                  std::shared_ptr<AstNode> then_part,
-                  std::shared_ptr<AstNode> else_part);
+  ConditionalNode(const std::shared_ptr<AstNode> &condition,
+                  const std::shared_ptr<AstNode> &then_part,
+                  const std::shared_ptr<AstNode> &else_part);
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header);
