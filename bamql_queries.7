@@ -35,6 +35,15 @@ expr \fB&\fR expr
 
 Is satisfied only if both operands are satisfied.
 
+.SS MATERIAL CONDITONAL (IMPLIES)
+antecedent \fB->\fR assertion
+
+Is satisfied if either both the \fIantecedent\fR and \fIassertion\fR are staisfied or the \fIantecedent\fR is not satisfied. Consider the following:
+
+.B position(500) -> nt_exact(500, G)
+
+Thsi will reject any reads where position 500 is not \fBG\fR, but keep reads which either have a \fBG\fR at position 500 or do not overlap with position 500.
+
 .SS NEGATION (NOT)
 \fB!\fR expr
 

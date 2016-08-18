@@ -151,6 +151,22 @@ static std::shared_ptr<AstNode> parseTerminal(
 }
 
 /**
+ * Parse the implication (->) operator.
+ */
+static std::shared_ptr<AstNode> parseImplication(
+    ParseState &state, PredicateMap &predicates) throw(ParseError) {
+  auto antecedent = parseTerminal(state, predicates);
+  state.parseSpace();
+  while (state.parseKeyword("->")) {
+    auto assertion = parseTerminal(state, predicates);
+    antecedent = std::make_shared<OrNode>(std::make_shared<NotNode>(antecedent),
+                                          assertion);
+    state.parseSpace();
+  }
+  return antecedent;
+}
+
+/**
  * Handle binary operators operators (the intermediate steps in recursive
  * descent)
  */
@@ -179,7 +195,7 @@ static std::shared_ptr<AstNode> parseIntermediate(
   return parseBinary<
       '|',
       OrNode,
-      parseBinary<'^', XOrNode, parseBinary<'&', AndNode, parseTerminal>>>(
+      parseBinary<'^', XOrNode, parseBinary<'&', AndNode, parseImplication>>>(
       state, predicates);
 }
 
