@@ -102,8 +102,31 @@ void DebuggableNode::writeDebug(GenerateState &state) {
                                                        ));
 }
 
+typedef void (*MemoryPolicy)(llvm::Function *func);
+static void PureReadArg(llvm::Function *func) {
+  func->setOnlyReadsMemory();
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 8
+#else
+  func->setOnlyAccessesArgMemory();
+#endif
+}
+static void MutateInaccessible(llvm::Function *func) {
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 8
+#else
+  func->setOnlyAccessesInaccessibleMemory();
+#endif
+}
+static void PureReadArgNoRecurse(llvm::Function *func) {
+  PureReadArg(func);
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 8
+#else
+  func->setDoesNotRecurse();
+#endif
+}
+
 static void createFunction(llvm::Module *module,
                            const std::string &name,
+                           MemoryPolicy policy,
                            const std::vector<llvm::Type *> &args) {
   auto func = llvm::Function::Create(
       llvm::FunctionType::get(
@@ -112,6 +135,7 @@ static void createFunction(llvm::Module *module,
       name,
       module);
   func->setCallingConv(llvm::CallingConv::C);
+  policy(func);
 }
 
 llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
@@ -132,35 +156,52 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
 
     createFunction(module,
                    "bamql_check_aux_char",
+                   PureReadArg,
                    { ptr_bam1_t, base_uint8, base_uint8, base_uint8 });
     createFunction(module,
                    "bamql_check_aux_double",
+                   PureReadArg,
                    { ptr_bam1_t, base_uint8, base_uint8, base_double });
     createFunction(module,
                    "bamql_check_aux_int",
+                   PureReadArg,
                    { ptr_bam1_t, base_uint8, base_uint8, base_uint32 });
     createFunction(module,
                    "bamql_check_aux_str",
+                   PureReadArg,
                    { ptr_bam1_t, base_uint8, base_uint8, base_str });
     createFunction(module,
                    "bamql_check_chromosome",
+                   PureReadArg,
                    { ptr_bam_hdr_t, ptr_bam1_t, base_str, base_bool });
     createFunction(module,
                    "bamql_check_chromosome_id",
+                   PureReadArg,
                    { ptr_bam_hdr_t, base_uint32, base_str });
-    createFunction(module, "bamql_check_flag", { ptr_bam1_t, base_uint16 });
-    createFunction(
-        module, "bamql_check_mapping_quality", { ptr_bam1_t, base_uint8 });
+    createFunction(module,
+                   "bamql_check_flag",
+                   PureReadArgNoRecurse,
+                   { ptr_bam1_t, base_uint16 });
+    createFunction(module,
+                   "bamql_check_mapping_quality",
+                   PureReadArgNoRecurse,
+                   { ptr_bam1_t, base_uint8 });
     createFunction(module,
                    "bamql_check_nt",
+                   PureReadArgNoRecurse,
                    { ptr_bam1_t, base_uint32, base_uint8, base_bool });
     createFunction(module,
                    "bamql_check_position",
+                   PureReadArgNoRecurse,
                    { ptr_bam_hdr_t, ptr_bam1_t, base_uint32, base_uint32 });
+    createFunction(module,
+                   "bamql_check_split_pair",
+                   PureReadArgNoRecurse,
+                   { ptr_bam_hdr_t, ptr_bam1_t });
     createFunction(
-        module, "bamql_check_split_pair", { ptr_bam_hdr_t, ptr_bam1_t });
-    createFunction(module, "bamql_header_regex", { ptr_bam1_t, base_str });
-    createFunction(module, "bamql_randomly", { base_double });
+        module, "bamql_header_regex", PureReadArg, { ptr_bam1_t, base_str });
+    createFunction(
+        module, "bamql_randomly", MutateInaccessible, { base_double });
     struct_ty = module->getTypeByName(name);
   }
   return struct_ty;
