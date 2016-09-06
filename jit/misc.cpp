@@ -19,26 +19,26 @@
 #include "bamql-runtime.h"
 #include "bamql-jit.hpp"
 
-std::map<std::string, void *> known = {
-  { "bamql_check_aux_char", (void *)bamql_check_aux_char },
-  { "bamql_check_aux_double", (void *)bamql_check_aux_double },
-  { "bamql_check_aux_int", (void *)bamql_check_aux_int },
-  { "bamql_check_aux_str", (void *)bamql_check_aux_str },
-  { "bamql_check_chromosome", (void *)bamql_check_chromosome },
-  { "bamql_check_chromosome_id", (void *)bamql_check_chromosome_id },
-  { "bamql_check_flag", (void *)bamql_check_flag },
-  { "bamql_check_mapping_quality", (void *)bamql_check_mapping_quality },
-  { "bamql_check_nt", (void *)bamql_check_nt },
-  { "bamql_check_position", (void *)bamql_check_position },
-  { "bamql_check_split_pair", (void *)bamql_check_split_pair },
-  { "bamql_header_regex", (void *)bamql_header_regex },
-  { "bamql_randomly", (void *)bamql_randomly }
+std::map<std::string, void (*)()> known = {
+  { "bamql_check_aux_char", (void (*)())bamql_check_aux_char },
+  { "bamql_check_aux_double", (void (*)())bamql_check_aux_double },
+  { "bamql_check_aux_int", (void (*)())bamql_check_aux_int },
+  { "bamql_check_aux_str", (void (*)())bamql_check_aux_str },
+  { "bamql_check_chromosome", (void (*)())bamql_check_chromosome },
+  { "bamql_check_chromosome_id", (void (*)())bamql_check_chromosome_id },
+  { "bamql_check_flag", (void (*)())bamql_check_flag },
+  { "bamql_check_mapping_quality", (void (*)())bamql_check_mapping_quality },
+  { "bamql_check_nt", (void (*)())bamql_check_nt },
+  { "bamql_check_position", (void (*)())bamql_check_position },
+  { "bamql_check_split_pair", (void (*)())bamql_check_split_pair },
+  { "bamql_header_regex", (void (*)())bamql_header_regex },
+  { "bamql_randomly", (void (*)())bamql_randomly }
 };
 
 std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
     std::unique_ptr<llvm::Module> module) {
 
-  std::map<llvm::Function *, void *> required;
+  std::map<llvm::Function *, void (*)()> required;
   for (auto func_it = known.begin(); func_it != known.end(); func_it++) {
     auto func = module->getFunction(func_it->first);
     if (func != nullptr) {
@@ -74,7 +74,12 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
   } else {
     for (auto func_it = required.begin(); func_it != required.end();
          func_it++) {
-      engine->addGlobalMapping(func_it->first, func_it->second);
+      union {
+        void (*func)();
+        void *ptr;
+      } convert;
+      convert.func = func_it->second;
+      engine->addGlobalMapping(func_it->first, convert.ptr);
     }
   }
   return engine;
