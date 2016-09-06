@@ -16,6 +16,7 @@ before_script:
   - echo -e "deb http://ppa.launchpad.net/jonathonf/llvm/ubuntu trusty main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.8 main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.9 main" | sudo tee /etc/apt/sources.list.d/llvm.list
   - sudo apt-get update
   - sudo apt-get install -qq -y --force-yes devscripts equivs
+  - sed -i -e 's/, *llvm-[0-9.-]*dev[^,]*,/,/g' debian/control
   - sudo mk-build-deps -i -t "apt-get -qq -y --force-yes --no-install-recommends"
   - sudo apt-get install -qq -y --force-yes llvm-${LLVM_TARGET_VERSION}-dev
 script: "autoreconf -i && ./configure --enable-llvm-static=${LLVM_STATIC} --with-llvm=/usr/bin/llvm-config-${LLVM_TARGET_VERSION} && make && make check"
