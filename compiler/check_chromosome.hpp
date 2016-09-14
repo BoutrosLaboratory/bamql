@@ -31,8 +31,8 @@ extern const std::set<std::set<std::string>> equivalence_sets;
  */
 template <bool mate> class CheckChromosomeNode : public DebuggableNode {
 public:
-  CheckChromosomeNode(std::string name_, ParseState &state)
-      : DebuggableNode(state), name(name_) {}
+  CheckChromosomeNode(RegularExpression &&name_, ParseState &state)
+      : DebuggableNode(state), name(std::move(name_)) {}
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
@@ -40,7 +40,7 @@ public:
     llvm::Value *args[] = {
       header,
       read,
-      state.createString(name),
+      name(state),
       mate ? llvm::ConstantInt::getTrue(state.module()->getContext())
            : llvm::ConstantInt::getFalse(state.module()->getContext())
     };
@@ -53,7 +53,7 @@ public:
       return llvm::ConstantInt::getTrue(state.module()->getContext());
     }
     auto function = state.module()->getFunction("bamql_check_chromosome_id");
-    llvm::Value *args[] = { header, chromosome, state.createString(name) };
+    llvm::Value *args[] = { header, chromosome, name(state) };
     return state->CreateCall(function, args);
   }
 
@@ -83,26 +83,16 @@ public:
         if (!same) {
           continue;
         }
-        std::shared_ptr<AstNode> node;
-        for (auto equiv_str = set->begin(); equiv_str != set->end();
-             equiv_str++) {
-          if (node) {
-            node = std::make_shared<OrNode>(
-                std::make_shared<CheckChromosomeNode<mate>>(*equiv_str, state),
-                node);
-          } else {
-            node =
-                std::make_shared<CheckChromosomeNode<mate>>(*equiv_str, state);
-          }
-        }
-        return node;
+        return std::make_shared<CheckChromosomeNode<mate>>(
+            setToRegEx("^(chr)?", *set, "$"), state);
       }
     }
     // otherwise, just match the provided chromosome.
-    return std::make_shared<CheckChromosomeNode<mate>>(str, state);
+    return std::make_shared<CheckChromosomeNode<mate>>(
+        globToRegEx("^(chr)?", str, "$"), state);
   }
 
 private:
-  std::string name;
+  RegularExpression name;
 };
 }

@@ -27,8 +27,8 @@ typedef bool (*ValidChar)(char, bool not_first);
 template <char G1, char G2, ValidChar VC>
 class CheckAuxStringNode : public DebuggableNode {
 public:
-  CheckAuxStringNode(std::string name_, ParseState &state)
-      : DebuggableNode(state), name(name_) {}
+  CheckAuxStringNode(RegularExpression &&name_, ParseState &state)
+      : DebuggableNode(state), name(std::move(name_)) {}
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
@@ -39,7 +39,7 @@ public:
           llvm::Type::getInt8Ty(state.module()->getContext()), G1),
       llvm::ConstantInt::get(
           llvm::Type::getInt8Ty(state.module()->getContext()), G2),
-      state.createString(name)
+      name(state)
     };
     return state->CreateCall(function, args);
   }
@@ -54,24 +54,27 @@ public:
     if (name_start == state.where()) {
       throw ParseError(state.where(), "Expected valid identifier.");
     }
-    auto match = state.strFrom(name_start);
+
+    auto match = globToRegEx("^", state.strFrom(name_start), "$");
 
     state.parseCharInSpace(')');
 
-    return std::make_shared<CheckAuxStringNode<G1, G2, VC>>(match, state);
+    return std::make_shared<CheckAuxStringNode<G1, G2, VC>>(std::move(match),
+                                                            state);
   }
 
 private:
-  std::string name;
+  RegularExpression name;
 };
 
 class CheckAuxUserStringNode : public DebuggableNode {
 public:
   CheckAuxUserStringNode(char first_,
                          char second_,
-                         std::string name_,
+                         RegularExpression &&name_,
                          ParseState &state)
-      : DebuggableNode(state), first(first_), second(second_), name(name_) {}
+      : DebuggableNode(state), first(first_), second(second_),
+        name(std::move(name_)) {}
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
@@ -82,7 +85,7 @@ public:
           llvm::Type::getInt8Ty(state.module()->getContext()), first),
       llvm::ConstantInt::get(
           llvm::Type::getInt8Ty(state.module()->getContext()), second),
-      state.createString(name)
+      name(state)
     };
     return state->CreateCall(function, args);
   }
@@ -111,18 +114,18 @@ public:
     if (name_start == state.where()) {
       throw ParseError(state.where(), "Expected valid string.");
     }
-    auto match = state.strFrom(name_start);
+    auto match = globToRegEx("^", state.strFrom(name_start), "$");
 
     state.parseCharInSpace(')');
 
     return std::make_shared<CheckAuxUserStringNode>(
-        first, second, match, state);
+        first, second, std::move(match), state);
   }
 
 private:
   char first;
   char second;
-  std::string name;
+  RegularExpression name;
 };
 
 class CheckAuxUserCharNode : public DebuggableNode {

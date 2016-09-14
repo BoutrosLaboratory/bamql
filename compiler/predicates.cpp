@@ -208,8 +208,8 @@ public:
 
 class HeaderRegExNode : public DebuggableNode {
 public:
-  HeaderRegExNode(ParseState &state, RegularExpression &regex_)
-      : DebuggableNode(state), regex(regex_) {}
+  HeaderRegExNode(ParseState &state, RegularExpression &&regex_)
+      : DebuggableNode(state), regex(std::move(regex_)) {}
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
                                 llvm::Value *header) {
@@ -221,7 +221,7 @@ public:
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('~');
     auto regex = state.parseRegEx();
-    return std::make_shared<HeaderRegExNode>(state, regex);
+    return std::make_shared<HeaderRegExNode>(state, std::move(regex));
   }
 
 private:

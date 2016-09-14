@@ -19,6 +19,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <set>
 #include <llvm/Config/llvm-config.h>
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
 #include <llvm/DIBuilder.h>
@@ -80,6 +81,19 @@ typedef std::map<std::string, Predicate> PredicateMap;
  * described in the documenation.
  */
 PredicateMap getDefaultPredicates();
+
+/**
+ * Create a regular expression for a glob.
+ */
+RegularExpression globToRegEx(const std::string &prefix,
+                              const std::string &glob_str,
+                              const std::string &suffix) throw(ParseError);
+/**
+ * Create a regular expression for a set of strings.
+ */
+RegularExpression setToRegEx(const std::string &prefix,
+                             const std::set<std::string> &names,
+                             const std::string &suffix) throw(ParseError);
 
 class Generator {
 public:

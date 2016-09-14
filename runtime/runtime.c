@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 #include <pcre.h>
 #include "bamql-runtime.h"
@@ -51,57 +52,6 @@ static uint32_t compute_mapped_end(bam1_t *read)
 	}
 }
 
-static bool globish_match(const char *pattern, const char *input)
-{
-	for (; *pattern != '\0'; pattern++) {
-		const char *next_input;
-		switch (*pattern) {
-		case '?':
-			/*
-			 * Accept any character except the end of the string.
-			 */
-			if (*input == '\0')
-				return false;
-			input++;
-			break;
-		case '*':
-			/*
-			 * Eat any stars that have bunched together.
-			 */
-			while (pattern[1] == '*') {
-				pattern++;
-			}
-			/*
-			 * If there is no more pattern, then whatever remaining input matches.
-			 */
-			if (pattern[1] == '\0') {
-				return true;
-			}
-
-			/*
-			 * If there is input, it could be consumed by the star, or match after
-			 * the star, so consume the input, character by character, each time
-			 * recursively checking if the input matches the rest of the string.
-			 */
-			for (next_input = input; *next_input != '\0';
-			     next_input++) {
-				if (globish_match(pattern, next_input + 1)) {
-					return true;
-				}
-			}
-			break;
-		default:
-			if (*input == '\0'
-			    || tolower(*pattern) != tolower(*input)) {
-				return false;
-			}
-			input++;
-			break;
-		}
-	}
-	return *pattern == *input;
-}
-
 static bool re_match(const char *pattern, const char *input,
 		     size_t input_length)
 {
@@ -119,7 +69,7 @@ bool bamql_check_aux_str(bam1_t *read, char group1, char group2,
 	if (value == NULL || (str = bam_aux2Z(value)) == NULL) {
 		return false;
 	}
-	return globish_match(pattern, str);
+	return re_match(pattern, str, strlen(str));
 }
 
 bool bamql_check_aux_char(bam1_t *read, char group1, char group2, char pattern)
@@ -158,13 +108,8 @@ bool bamql_check_chromosome_id(bam_hdr_t *header, uint32_t chr_id,
 	if (chr_id >= header->n_targets) {
 		return false;
 	}
-
-	const char *real_name = header->target_name[chr_id];
-
-	if (strncasecmp("chr", real_name, 3) == 0) {
-		real_name += 3;
-	}
-	return globish_match(pattern, real_name);
+	return re_match(pattern, header->target_name[chr_id],
+			strlen(header->target_name[chr_id]));
 }
 
 bool bamql_check_flag(bam1_t *read, uint16_t flag)
