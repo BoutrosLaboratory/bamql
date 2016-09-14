@@ -1,3 +1,17 @@
+bamql (1.2~ppa1) xenial; urgency=medium
+
+  * [lang] Add implication operator and `let` expression
+  * [lang] Prevent C keywords from being used as function names
+  * [lang] Inverting the random predicate's meaning
+  * [lang] Fix bugs in `check_nt` calculations
+  * [tool] Add missing -h switch for compiler
+  * [tool] Move runtime to a shared library
+  * [dev] Pass more things by reference
+  * [dev] Include static libraries
+  * [dev] Add API version #define in header files
+
+ -- Andre Masella <andre@masella.name>  Tue, 13 Sep 2016 22:28:26 -0400
+
 bamql (1.2~ppa0) trusty; urgency=medium
 
   * [lang] Add implication operator and `let` expression
