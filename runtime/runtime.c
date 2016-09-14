@@ -148,9 +148,8 @@ bool bamql_check_aux_double(bam1_t *read, char group1, char group2,
 bool bamql_check_chromosome(bam_hdr_t *header, bam1_t *read,
 			    const char *pattern, bool mate)
 {
-	return bamql_check_chromosome_id(header,
-					 mate ? read->core.mtid : read->core.
-					 tid, pattern);
+	uint32_t tid = mate ? read->core.mtid : read->core.tid;
+	return bamql_check_chromosome_id(header, tid, pattern);
 }
 
 bool bamql_check_chromosome_id(bam_hdr_t *header, uint32_t chr_id,
