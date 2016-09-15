@@ -19,7 +19,7 @@ before_script:
   - sed -i -e 's/, *llvm-[0-9.-]*dev[^,]*,/,/g' debian/control
   - sudo mk-build-deps -i -t "apt-get -qq -y --force-yes --no-install-recommends"
   - sudo apt-get install -qq -y --force-yes llvm-${LLVM_TARGET_VERSION}-dev
-script: "autoreconf -i && ./configure --enable-llvm-static=${LLVM_STATIC} --with-llvm=/usr/bin/llvm-config-${LLVM_TARGET_VERSION} && make && make check"
+script: "./.travis.sh"
 notifications:
   on_success: never
   on_failure: change
