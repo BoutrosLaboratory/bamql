@@ -1,3 +1,9 @@
+bamql (1.2~ppa2) xenial; urgency=medium
+
+  * [tool] Add missing data layout in compiler
+
+ -- Andre Masella <andre@masella.name>  Wed, 14 Sep 2016 21:53:05 -0400
+
 bamql (1.2~ppa1) xenial; urgency=medium
 
   * [lang] Add implication operator and `let` expression
