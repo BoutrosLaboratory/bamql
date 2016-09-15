@@ -227,4 +227,11 @@ check_bamql_LDADD = \
 CLEANFILES = \
 	compiler_check.h \
 	compiler_check.o \
+	$(libbamql_cpl_la_OBJECTS:.lo=.dwo) \
+	$(libbamql_itr_la_OBJECTS:.lo=.dwo) \
+	$(libbamql_jit_la_OBJECTS:.lo=.dwo) \
+	$(libbamql_rt_la_OBJECTS:.lo=.dwo) \
+	$(bamql_OBJECTS:.lo=.dwo) \
+	$(bamql_chain_OBJECTS:.lo=.dwo) \
+	$(bamql_compile_OBJECTS:.lo=.dwo) \
 	$(NULL)
