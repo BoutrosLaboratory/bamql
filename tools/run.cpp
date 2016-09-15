@@ -52,13 +52,21 @@ public:
       std::string name("bamql-accept");
       auto copy = bamql::appendProgramToHeader(
           header.get(), name, id_str, version, query);
-      sam_hdr_write(accept.get(), copy.get());
+      if (sam_hdr_write(accept.get(), copy.get()) == -1) {
+        std::cerr << "Error writing to output BAM. Giving up on file."
+                  << std::endl;
+        accept = nullptr;
+      }
     }
     if (reject) {
       std::string name("bamql-reject");
       auto copy = bamql::appendProgramToHeader(
           header.get(), name, id_str, version, query);
-      sam_hdr_write(reject.get(), copy.get());
+      if (sam_hdr_write(reject.get(), copy.get()) == -1) {
+        std::cerr << "Error writing to output BAM. Giving up on file."
+                  << std::endl;
+        reject = nullptr;
+      }
     }
   }
   void readMatch(bool matches,
@@ -66,8 +74,13 @@ public:
                  std::shared_ptr<bam1_t> &read) {
     (matches ? accept_count : reject_count)++;
     std::shared_ptr<htsFile> &chosen = matches ? accept : reject;
-    if (chosen)
-      sam_write1(chosen.get(), header.get(), read.get());
+    if (chosen) {
+      if (sam_write1(chosen.get(), header.get(), read.get()) == -1) {
+        std::cerr << "Error writing to output BAM. Giving up on file."
+                  << std::endl;
+        chosen = nullptr;
+      }
+    }
     if (verbose && (accept_count + reject_count) % 1000000 == 0) {
       std::cout << "So far, Accepted: " << accept_count
                 << " Rejected: " << reject_count << std::endl;

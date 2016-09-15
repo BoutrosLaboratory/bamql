@@ -98,7 +98,11 @@ public:
     auto copy = bamql::appendProgramToHeader(
         header.get(), name.str(), std::string(id_str), version, query);
     if (output_file) {
-      sam_hdr_write(output_file.get(), copy.get());
+      if (sam_hdr_write(output_file.get(), copy.get()) == -1) {
+        std::cerr << "Error writing to output BAM. Giving up on file."
+                  << std::endl;
+        output_file = nullptr;
+      }
     }
     if (next)
       next->ingestHeader(chain == 3 ? header : copy);
@@ -114,7 +118,11 @@ public:
     if (matches) {
       count++;
       if (output_file) {
-        sam_write1(output_file.get(), header.get(), read.get());
+        if (sam_write1(output_file.get(), header.get(), read.get()) == -1) {
+          std::cerr << "Error writing to output BAM. Giving up on file."
+                    << std::endl;
+          output_file = nullptr;
+        }
       }
     }
     if (next && checkChain(chain, matches)) {
