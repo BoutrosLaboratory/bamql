@@ -12,7 +12,24 @@ AX_LLVM(LLVM_WRITE, [core nativecodegen])
 AX_LLVM(LLVM_RUN, [core executionengine native mcjit])
 PKG_CHECK_MODULES(UUID, [ uuid ])
 PKG_CHECK_MODULES(PCRE, [ libpcre ])
-PKG_CHECK_MODULES(HTS, [ htslib ])
+PKG_CHECK_MODULES(HTS, [ htslib ], [], [
+  # This is only to support the very old HTSLib on Trusty. Delete in April 2019
+	ORIGINAL_CFLAGS="$CPPFLAGS"
+	ORIGINAL_LIBS="$LIBS"
+	# This is here because libhts does not correctly link against libm, zlib and pthread
+	AC_CHECK_LIB([m],[pow])
+	PKG_CHECK_MODULES(Z, [ zlib ])
+	ACX_PTHREAD
+
+	AC_CHECK_HEADER([htslib/sam.h], [], [AC_MSG_ERROR([*** htslib is required, install htslib header files])])
+	AC_CHECK_LIB([hts], [hts_open], [], [AC_MSG_ERROR([*** htslib is required, install htslib library files])], [$PTHREAD_CFLAGS $Z_CFLAGS])
+	HTS_CFLAGS="$CFLAGS $PTHREAD_CPPFLAGS $Z_CFLAGS"
+	HTS_LIBS="$LIBS $PTHREAD_LIBS $Z_LIBS"
+	AC_SUBST(HTS_CFLAGS)
+	AC_SUBST(HTS_LIBS)
+	CPPFLAGS="$ORIGINAL_CFLAGS"
+	LIBS="$ORIGINAL_LIBS"
+])
 
 AC_CONFIG_FILES([Makefile compiler/bamql-cpl.pc iterator/bamql-itr.pc jit/bamql-jit.pc runtime/bamql-rt.pc])
 AC_OUTPUT
