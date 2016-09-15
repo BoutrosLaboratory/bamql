@@ -10,30 +10,9 @@ AC_PROG_LIBTOOL
 AX_LLVM(LLVM_CORE, [core])
 AX_LLVM(LLVM_WRITE, [core nativecodegen])
 AX_LLVM(LLVM_RUN, [core executionengine native mcjit])
-AC_CHECK_PROGS(LLC, [llc llc-${LLVM_VERSION} llc-${LLVM_VERSION%.*}])
-if test "x$LLC" = x
-then
-	AC_MSG_ERROR([*** llc is required, install LLVM utiltities])
-fi
-PKG_CHECK_MODULES(Z, [ zlib ])
 PKG_CHECK_MODULES(UUID, [ uuid ])
 PKG_CHECK_MODULES(PCRE, [ libpcre ])
-PKG_CHECK_MODULES(HTS, [ htslib ], [], [
-	ORIGINAL_CFLAGS="$CPPFLAGS"
-	ORIGINAL_LIBS="$LIBS"
-	# This is here because libhts does not correctly link against libm and pthread
-	AC_CHECK_LIB([m],[pow])
-	ACX_PTHREAD
-
-	AC_CHECK_HEADER([htslib/sam.h], [], [AC_MSG_ERROR([*** htslib is required, install htslib header files])])
-	AC_CHECK_LIB([hts], [hts_open], [], [AC_MSG_ERROR([*** htslib is required, install htslib library files])], [$PTHREAD_CFLAGS])
-	HTS_CFLAGS="$CFLAGS $PTHREAD_CPPFLAGS"
-	HTS_LIBS="$LIBS $PTHREAD_LIBS"
-	AC_SUBST(HTS_CFLAGS)
-	AC_SUBST(HTS_LIBS)
-	CPPFLAGS="$ORIGINAL_CFLAGS"
-	LIBS="$ORIGINAL_LIBS"
-])
+PKG_CHECK_MODULES(HTS, [ htslib ])
 
 AC_CONFIG_FILES([Makefile compiler/bamql-cpl.pc iterator/bamql-itr.pc jit/bamql-jit.pc runtime/bamql-rt.pc])
 AC_OUTPUT

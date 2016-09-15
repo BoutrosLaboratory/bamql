@@ -1,7 +1,7 @@
 Source: bamql
 Section: science
 Maintainer: Andre Masella <andre@masella.name>
-Build-Depends: debhelper (>= 7.0.50~), automake, libedit-dev, libhts-dev, libtool, libpcre++-dev, llvm-dev, pkg-config, uuid-dev, zlib1g-dev
+Build-Depends: debhelper (>= 7.0.50~), automake, libhts-dev, libtool, libpcre++-dev, llvm-dev, pkg-config, uuid-dev, zlib1g-dev
 Priority: extra
 Standards-Version: 3.9.7
 Homepage: http://github.com/BoutrosLabratory/bamql

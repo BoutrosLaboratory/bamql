@@ -189,18 +189,15 @@ bamql_compile_SOURCES = \
 	$(NULL)
 bamql_compile_CPPFLAGS = \
 	-std=c++11 \
-	$(Z_CPPFLAGS) \
 	$(LLVM_WRITE_CPPFLAGS) \
 	-g -O2 \
 	-Icompiler \
 	$(NULL)
 bamql_compile_LDFLAGS =\
-	$(Z_LDFLAGS) \
 	$(LLVM_WRITE_LDFLAGS) \
 	$(NULL)
 bamql_compile_LDADD = \
 	libbamql-cpl.la \
-	$(Z_LIBS) \
 	$(LLVM_WRITE_LIBS) \
 	$(NULL)
 

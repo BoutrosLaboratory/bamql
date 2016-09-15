@@ -12,12 +12,12 @@ In order to compile, [LLVM](http://llvm.org/) 3.4 - 4.0, [HTSlib](https://github
 
 On Debian/Ubuntu, these can be installed by:
 
-    sudo apt-get install autotools-dev build-essential libhts-dev libtool libpcre++-dev llvm-dev pkg-config uuid-dev zlib1g-dev libedit-dev
+    sudo apt-get install autotools-dev build-essential libhts-dev libtool libpcre++-dev llvm-dev pkg-config uuid-dev zlib1g-dev
 
 On RedHat/Fedora, these can be installed by:
 
     sudo yum groupinstall "Development Tools"
-    sudo yum install libtool pcre-devel llvm-devel pkgconfig libuuid-devel zlib-devel libedit-devel
+    sudo yum install libtool pcre-devel llvm-devel pkgconfig libuuid-devel zlib-devel
 
 and HTSlib must be installed from sources.
 
