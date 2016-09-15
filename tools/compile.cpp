@@ -509,6 +509,7 @@ int main(int argc, char *const *argv) {
   dlp->doInitialization(*module);
   pass_man.add(dlp);
 #else
+  module->setDataLayout(target_machine->createDataLayout());
   llvm::legacy::PassManager pass_man;
 #endif
 
