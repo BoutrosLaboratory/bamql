@@ -48,13 +48,13 @@ which contains the BAMQL runtime.
 
 .BR pkg-config (1)
 is recommened to get the correct flags using the packages:
-.B htslib bamql-rt
+.B bamql-rt
 For example:
 
 .RS
 bamql-compile queries.bamql
 .br
-cc -o myprog main.c queries.o $(pkg-config --cflags --libs htslib bamql-rt)
+cc -o myprog main.c queries.o $(pkg-config --cflags --libs bamql-rt)
 .RE
 
 If using
@@ -110,6 +110,10 @@ Queries can make use of previously defined queries. For example:
 All functions generated and consumed by the compiler will have the same signature:
 
 .B bool (*)(bam_hdr_t*, bam1_t*);
+
+and for the \fB_index\fR variant:
+
+.B bool (*)(bam_hdr_t*, uint32_t);
 
 If new functions are required for a query, they can be written in C with the above signature and given appropriate
 .B extern
