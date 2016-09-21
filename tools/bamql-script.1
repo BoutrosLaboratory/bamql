@@ -1,0 +1,18 @@
+.\" Authors: Paul Boutros and Lab Members
+.TH bamql-script 1 "Sep 2016" "1.0" "USER COMMANDS"
+.SH NAME
+bamql-script \- Run BAMQL from a shebang
+.SH SYNOPSIS
+.B bamql-script
+.I query.bamql
+.I args...
+.SH DESCRIPTION
+This run a BAMQL script using the \fB#!\fR convention and takes the same arguments as
+.BR bamql (1).
+
+Create a file with a first line as \fB#!/usr/bin/env bamql-script\fR followed
+by the query. Make the script executable using \fBchmod a+x\fB and then it can
+be invoked from the shell.
+
+.SH SEE ALSO
+.BR bamql (1).

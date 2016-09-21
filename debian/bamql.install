@@ -1,4 +1,5 @@
 usr/bin/bamql
 usr/bin/bamql-chain
+usr/bin/bamql-script
 usr/share/man/man1/bamql.1
 usr/share/man/man1/bamql-chain.1

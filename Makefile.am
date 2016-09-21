@@ -4,6 +4,7 @@ bin_PROGRAMS = \
 	bamql \
 	bamql-chain \
 	bamql-compile \
+	bamql-script \
 	$(NULL)
 lib_LTLIBRARIES = \
 	libbamql-cpl.la \
@@ -29,6 +30,7 @@ man1_MANS = \
 	tools/bamql.1 \
 	tools/bamql-chain.1 \
 	tools/bamql-compile.1 \
+	tools/bamql-script.1 \
 	$(NULL)
 man7_MANS = \
 	bamql_queries.7 \
@@ -199,6 +201,13 @@ bamql_compile_LDFLAGS =\
 bamql_compile_LDADD = \
 	libbamql-cpl.la \
 	$(LLVM_WRITE_LIBS) \
+	$(NULL)
+
+bamql_script_SOURCES = \
+	tools/script.c \
+	$(NULL)
+bamql_script_CPPFLAGS = \
+	-std=c99 \
 	$(NULL)
 
 check_bamql_SOURCES = \

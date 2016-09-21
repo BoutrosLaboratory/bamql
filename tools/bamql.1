@@ -49,7 +49,8 @@ Any reads which are accepted by the query, that is, for which the query is true,
 Any reads which are rejected by the query, that is, for which the query is false, will be placed in this file. If omitted, the number of queries will be tallied, but discarded
 .TP
 \-q query.bamql
-Read the query from a file. This allows the query to be put in a file with a first line of \fB#!/usr/bin/bamql -q\fR such that it can be invoked from the shell.
+Read the query from a file. To run this query from the command line, as a script, set the first line of the file to be \fB#!/usr/bin/env bamql-script\fR. See
+.BR bamql-script (1).
 
 .SH EXAMPLE
 This extracts all the reads on chromosome 7:
@@ -59,5 +60,6 @@ This extracts all the reads on chromosome 7:
 .SH SEE ALSO
 .BR bamql-chain (1),
 .BR bamql-compile (1),
+.BR bamql-script (1),
 .BR bamql_queries (7),
 .BR samtools (1).
