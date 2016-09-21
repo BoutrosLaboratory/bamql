@@ -144,6 +144,10 @@ int main(int argc, char *const *argv) {
       }
       break;
     case 'q':
+      if (query_filename != nullptr) {
+        std::cerr << "Query file already specified." << std::endl;
+        return 1;
+      }
       query_filename = optarg;
       break;
     case 'v':
