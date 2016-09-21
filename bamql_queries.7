@@ -38,11 +38,11 @@ Is satisfied only if both operands are satisfied.
 .SS MATERIAL CONDITONAL (IMPLIES)
 antecedent \fB->\fR assertion
 
-Is satisfied if either both the \fIantecedent\fR and \fIassertion\fR are staisfied or the \fIantecedent\fR is not satisfied. Consider the following:
+Is satisfied if either both the \fIantecedent\fR and \fIassertion\fR are statisfied or the \fIantecedent\fR is not satisfied. Consider the following:
 
 .B position(500) -> nt_exact(500, G)
 
-Thsi will reject any reads where position 500 is not \fBG\fR, but keep reads which either have a \fBG\fR at position 500 or do not overlap with position 500.
+This will reject any reads where position 500 is not \fBG\fR, but keep reads which either have a \fBG\fR at position 500 or do not overlap with position 500.
 
 .SS NEGATION (NOT)
 \fB!\fR expr
@@ -80,9 +80,9 @@ The read is mapped to the reverse strand.
 
 The read's mate is mapped to the reverse strand.
 
-\fBraw_flag(\fInumber\fB)\fR
+\fBraw_flag(\fRnumber\fB)\fR
 
-If numeric BAM flags have been burned into your brain, you can check them directly by specfiying \fInumber\fR.
+If numeric BAM flags have been burned into your brain, you can check them directly by specifying \fInumber\fR.
 
 .B read1?
 
@@ -150,7 +150,7 @@ to match multiple read groups.
 .br
 \fBaux_str(\fRcode\fB, \fRvalue\fB)\fR
 
-Matches a piece of auxiliary data, if specified in the input. The \fIcode\fR is the two symbol identifier for the auxilary format. The \fIvalue\fR must be a single character, float point number, integral numer, or
+Matches a piece of auxiliary data, if specified in the input. The \fIcode\fR is the two symbol identifier for the auxiliary format. The \fIvalue\fR must be a single character, float point number, integral number, or
 .BR glob (7)
 for \fBaux_char\fR, \fBaux_dbl\fR, \fBaux_int\fR, and \fBaux_str\fR, respectively. 
 
@@ -180,7 +180,7 @@ Matches a read has nucleotide \fIn\fR at the provided position, relative to the 
 
 .SS MISCELLANEOUS
 
-\fBheader ~ /\fIregex\fB/\fR
+\fBheader ~ /\RIregex\fB/\fR
 
 Matches a PERL-compatible regular expression agains the read's header. For details, see
 .BR pcrepattern (3).
