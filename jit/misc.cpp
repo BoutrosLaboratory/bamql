@@ -32,6 +32,8 @@ std::map<std::string, void (*)()> known = {
   { "bamql_check_split_pair", (void (*)())bamql_check_split_pair },
   { "bamql_chr", (void (*)())bamql_chr },
   { "bamql_header", (void (*)())bamql_header },
+  { "bamql_position_begin", (void (*)())bamql_position_begin },
+  { "bamql_position_end", (void (*)())bamql_position_end },
   { "bamql_randomly", (void (*)())bamql_randomly },
   { "bamql_re_match", (void (*)())bamql_re_match },
   { "bamql_strcmp", (void (*)())bamql_strcmp },

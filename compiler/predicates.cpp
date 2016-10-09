@@ -180,6 +180,13 @@ PredicateMap getDefaultPredicates() {
       parseFunction<BoolFunctionNode>("bamql_check_position",
                                       { int_arg, int_arg }) },
 
+    { "begin",
+      parseFunction<IntFunctionNode, const std::string &>(
+          "bamql_position_begin", {}, "Read is not mapped.") },
+    { "end",
+      parseFunction<IntFunctionNode, const std::string &>(
+          "bamql_position_end", {}, "Read is not mapped.") },
+
     // Miscellaneous
     { "mapping_quality", MappingQualityNode::parse },
     { "header",

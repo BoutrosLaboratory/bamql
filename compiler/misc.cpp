@@ -245,6 +245,16 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
     createFunction(
         module, "bamql_header", PureReadArg, base_str, { ptr_bam1_t });
     createFunction(module,
+                   "bamql_position_begin",
+                   PureReadArg,
+                   base_bool,
+                   { ptr_bam_hdr_t, ptr_bam1_t, ptr_uint32 });
+    createFunction(module,
+                   "bamql_position_end",
+                   PureReadArg,
+                   base_bool,
+                   { ptr_bam_hdr_t, ptr_bam1_t, ptr_uint32 });
+    createFunction(module,
                    "bamql_randomly",
                    MutateInaccessible,
                    base_bool,

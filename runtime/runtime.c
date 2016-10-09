@@ -212,6 +212,26 @@ const char *bamql_header(bam1_t *read)
 	return bam_get_qname(read);
 }
 
+bool bamql_position_begin(bam_hdr_t *header, bam1_t *read, uint32_t * out)
+{
+	if (read->core.tid >= header->n_targets) {
+		return false;
+	}
+	*out = read->core.pos + 1;
+	return true;
+}
+
+bool bamql_position_end(bam_hdr_t *header, bam1_t *read, uint32_t * out)
+{
+	uint32_t mapped_start = read->core.pos + 1;
+	if (read->core.tid >= header->n_targets) {
+		*out = INT32_MAX;
+		return false;
+	}
+	*out = compute_mapped_end(read);
+	return true;
+}
+
 bool bamql_randomly(double probability)
 {
 	return probability >= drand48();

@@ -45,6 +45,10 @@ extern "C" {
 	bool bamql_check_split_pair(bam_hdr_t *header, bam1_t *read);
 	const char *bamql_chr(bam_hdr_t *header, bam1_t *read, bool mate);
 	const char *bamql_header(bam1_t *read);
+	bool bamql_position_begin(bam_hdr_t *header, bam1_t *read,
+				  uint32_t * out);
+	bool bamql_position_end(bam_hdr_t *header, bam1_t *read,
+				uint32_t * out);
 	bool bamql_randomly(double probability);
 	bool bamql_re_match(const char *pattern, const char *input);
 	int bamql_strcmp(const char *left, const char *right);
