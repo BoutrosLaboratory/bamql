@@ -42,6 +42,8 @@ llvm::Type *getBamType(llvm::Module *module);
  */
 llvm::Type *getBamHeaderType(llvm::Module *module);
 
+llvm::Type *getErrorHandlerType(llvm::Module *module);
+
 /**
  * The exception thrown when a parse error occurs.
  */
@@ -56,6 +58,10 @@ public:
 private:
   size_t index;
 };
+
+enum ExprType { BOOL, INT, FP, STR };
+
+llvm::Type *getReifiedType(ExprType, llvm::LLVMContext &);
 
 class AstNode;
 class ParseState;
@@ -74,7 +80,7 @@ typedef std::function<llvm::Value *(GenerateState &state)> RegularExpression;
  * A collection of predicates, where the name is the keyword in the query
  * indicating which predicate is selected.
  */
-typedef std::map<std::string, Predicate> PredicateMap;
+typedef std::map<const std::string, Predicate> PredicateMap;
 
 /**
  * Get a map of the predicates as included in the library. These should be as
@@ -112,6 +118,7 @@ class GenerateState {
 public:
   GenerateState(std::shared_ptr<Generator> &generator, llvm::BasicBlock *entry);
 
+  llvm::IRBuilder<> *operator*();
   llvm::IRBuilder<> *operator->();
   llvm::Module *module() const;
   llvm::DIScope *debugScope() const;
@@ -132,7 +139,17 @@ private:
 };
 typedef llvm::Value *(bamql::AstNode::*GenerateMember)(GenerateState &state,
                                                        llvm::Value *param,
-                                                       llvm::Value *header);
+                                                       llvm::Value *header,
+                                                       llvm::Value *error_fn,
+                                                       llvm::Value *error_ctx);
+
+typedef llvm::Value *(llvm::IRBuilder<>::*CreateICmp)(llvm::Value *lhs,
+                                                      llvm::Value *rhs,
+                                                      const llvm::Twine &name);
+typedef llvm::Value *(llvm::IRBuilder<>::*CreateFCmp)(llvm::Value *lhs,
+                                                      llvm::Value *rhs,
+                                                      const llvm::Twine &name,
+                                                      llvm::MDNode *fpmathtag);
 
 /**
  * An abstract syntax node representing a predicate or logical operation.
@@ -151,8 +168,7 @@ public:
    * Parse from a parser state. This is useful for embedding in a larger
    * grammar.
    */
-  static std::shared_ptr<AstNode> parse(
-      ParseState &state, PredicateMap &predicates) throw(ParseError);
+  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError);
 
   /**
    * Render this syntax node to LLVM.
@@ -162,7 +178,9 @@ public:
    */
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header) = 0;
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx) = 0;
   /**
    * Render this syntax node to LLVM for the purpose of deciding how to access
    * the index.
@@ -172,7 +190,9 @@ public:
    */
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *chromosome,
-                                     llvm::Value *header);
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx);
   /**
    * Determine if this node uses the BAM index (i.e., will the result of
    * `generateIndex` be non-constant).
@@ -186,6 +206,10 @@ public:
   llvm::Function *createIndexFunction(std::shared_ptr<Generator> &generator,
                                       llvm::StringRef name);
 
+  /**
+   * Gets the type of this expression.
+   */
+  virtual ExprType type() = 0;
   virtual void writeDebug(GenerateState &state) = 0;
 
 private:
@@ -219,11 +243,16 @@ public:
                    const std::shared_ptr<AstNode> &right);
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header);
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx);
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
-                                     llvm::Value *header);
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx);
   bool usesIndex();
+  ExprType type();
   /**
    * The value that causes short circuting.
    */
@@ -235,7 +264,9 @@ private:
   llvm::Value *generateGeneric(GenerateMember member,
                                GenerateState &state,
                                llvm::Value *param,
-                               llvm::Value *header);
+                               llvm::Value *header,
+                               llvm::Value *error_fn,
+                               llvm::Value *error_ctx);
   std::shared_ptr<AstNode> left;
   std::shared_ptr<AstNode> right;
 };
@@ -266,11 +297,16 @@ public:
           const std::shared_ptr<AstNode> &right);
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header);
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx);
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
-                                     llvm::Value *header);
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx);
   bool usesIndex();
+  ExprType type();
 
   void writeDebug(GenerateState &state);
 
@@ -286,11 +322,16 @@ public:
   NotNode(const std::shared_ptr<AstNode> &expr);
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header);
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx);
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
-                                     llvm::Value *header);
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx);
   bool usesIndex();
+  ExprType type();
 
   void writeDebug(GenerateState &state);
 
@@ -307,11 +348,16 @@ public:
                   const std::shared_ptr<AstNode> &else_part);
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header);
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx);
   virtual llvm::Value *generateIndex(GenerateState &state,
                                      llvm::Value *tid,
-                                     llvm::Value *header);
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx);
   bool usesIndex();
+  ExprType type();
   void writeDebug(GenerateState &state);
 
 private:
@@ -319,11 +365,123 @@ private:
   std::shared_ptr<AstNode> then_part;
   std::shared_ptr<AstNode> else_part;
 };
+
+class UseNode;
+class BindingNode : public DebuggableNode {
+public:
+  BindingNode(ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *read,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx);
+
+  void parse(ParseState &state) throw(ParseError);
+
+  ExprType type();
+
+private:
+  std::vector<std::shared_ptr<UseNode>> definitions;
+  std::shared_ptr<AstNode> body;
+};
+
+class RegexNode : public DebuggableNode {
+public:
+  RegexNode(std::shared_ptr<AstNode> &operand,
+            RegularExpression &&pattern,
+            ParseState &state);
+  llvm::Value *generateGeneric(GenerateMember member,
+                               GenerateState &state,
+                               llvm::Value *read,
+                               llvm::Value *header,
+                               llvm::Value *error_fn,
+                               llvm::Value *error_ctx);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *read,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx);
+  bool usesIndex();
+  ExprType type();
+
+private:
+  std::shared_ptr<AstNode> operand;
+  RegularExpression pattern;
+};
+
+class CompareFPNode : public DebuggableNode {
+public:
+  CompareFPNode(CreateFCmp comparator,
+                std::shared_ptr<AstNode> &left,
+                std::shared_ptr<AstNode> &right,
+                ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  ExprType type();
+
+private:
+  CreateFCmp comparator;
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
+};
+
+class CompareIntNode : public DebuggableNode {
+public:
+  CompareIntNode(CreateICmp comparator,
+                 std::shared_ptr<AstNode> &left,
+                 std::shared_ptr<AstNode> &right,
+                 ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  ExprType type();
+
+private:
+  CreateICmp comparator;
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
+};
+
+class CompareStrNode : public DebuggableNode {
+public:
+  CompareStrNode(CreateICmp comparator,
+                 std::shared_ptr<AstNode> &left,
+                 std::shared_ptr<AstNode> &right,
+                 ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  ExprType type();
+
+private:
+  CreateICmp comparator;
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
+};
+
 class ParseState {
 public:
   ParseState(const std::string &input);
   unsigned int currentLine() const;
   unsigned int currentColumn() const;
+  std::string createRuntimeError(const std::string &message);
   bool empty() const;
   void next();
   /**
@@ -334,6 +492,14 @@ public:
    * A function to parse a valid non-empty floating point value.
    */
   double parseDouble() throw(ParseError);
+  /**
+   * Parse a literal value.
+   */
+  std::shared_ptr<AstNode> parseLiteral() throw(ParseError);
+  /**
+   * Parse a predicate's arguments.
+   */
+  std::shared_ptr<AstNode> parsePredicate() throw(ParseError);
   /**
    * A function to parse a non-empty string.
    * @param accept_chars: A list of valid characters that may be present in the
@@ -383,11 +549,21 @@ public:
    */
   char operator*() const;
 
+  /**
+   * Add a new predicate map to the current stack.
+   */
+  void push(const PredicateMap &map);
+  /**
+   * Remove a predicate map from the stack.
+   */
+  void pop(const PredicateMap &map);
+
 private:
   const std::string &input;
   size_t index;
   unsigned int line;
   unsigned int column;
+  std::vector<std::reference_wrapper<const PredicateMap>> predicates;
 };
 
 /**

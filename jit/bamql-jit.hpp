@@ -49,12 +49,13 @@ public:
   CompileIterator(std::shared_ptr<llvm::ExecutionEngine> &engine,
                   std::shared_ptr<Generator> &generator,
                   std::shared_ptr<AstNode> &node,
-                  std::string name);
+                  const std::string &name);
   virtual void prepareExecution();
   virtual bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid);
   virtual void processRead(std::shared_ptr<bam_hdr_t> &header,
                            std::shared_ptr<bam1_t> &read);
   virtual void ingestHeader(std::shared_ptr<bam_hdr_t> &header) = 0;
+  virtual void handleError(const char *message) = 0;
   /**
    * After filtering, do something useful with a read based on whether it
    * matches the filter.

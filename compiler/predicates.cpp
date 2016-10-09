@@ -15,27 +15,21 @@
  */
 
 #include <cstdint>
+#include <iostream>
 #include <htslib/sam.h>
 #include "bamql-compiler.hpp"
-#include "boolean_constant.hpp"
-#include "check_aux.hpp"
+#include "compiler.hpp"
 #include "check_chromosome.hpp"
 #include "check_flag.hpp"
-#include "check_nt.hpp"
+#include "constant.hpp"
 
 // Please keep the predicates in alphabetical order.
 namespace bamql {
-
-/* This insanity is brought to you by samtools's sam_tview.c */
-static bool readGroupChar(char input, bool not_first) {
-  return input >= '!' && input <= '~' && (not_first || input != '=');
-}
 
 // These must be lower case
 const std::set<std::set<std::string>> equivalence_sets = {
   { "23", "x" }, { "24", "y" }, { "25", "m", "mt" }
 };
-
 /**
  * A predicate that is true if the mapping quality is sufficiently good.
  */
@@ -45,7 +39,9 @@ public:
       : DebuggableNode(state), probability(probability_) {}
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header) {
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx) {
     auto function = state.module()->getFunction("bamql_check_mapping_quality");
     llvm::Value *args[] = { read,
                             llvm::ConstantInt::get(
@@ -55,6 +51,7 @@ public:
     return state->CreateCall(function, args);
   }
 
+  ExprType type() { return BOOL; }
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('(');
 
@@ -82,13 +79,16 @@ public:
       : DebuggableNode(state), probability(probability_) {}
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header) {
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx) {
     auto function = state.module()->getFunction("bamql_randomly");
     llvm::Value *args[] = { llvm::ConstantFP::get(
         llvm::Type::getDoubleTy(state.module()->getContext()), probability) };
     return state->CreateCall(function, args);
   }
 
+  ExprType type() { return BOOL; }
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('(');
 
@@ -107,126 +107,17 @@ private:
   double probability;
 };
 
-/**
- * A predicate that check mapped positions.
- */
-class RawFlagNode : public DebuggableNode {
-public:
-  RawFlagNode(uint16_t raw_, ParseState &state)
-      : DebuggableNode(state), raw(raw_) {}
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header) {
-    auto function = state.module()->getFunction("check_flag");
-    llvm::Value *args[] = {
-      read,
-      llvm::ConstantInt::get(
-          llvm::Type::getInt16Ty(state.module()->getContext()), raw)
-    };
-    return state->CreateCall(function, args);
-  }
-
-  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
-    state.parseCharInSpace('(');
-    auto raw = state.parseInt();
-    state.parseCharInSpace(')');
-    return std::make_shared<RawFlagNode>(raw, state);
-  }
-
-private:
-  uint16_t raw;
-};
-
-/**
- * A predicate that check mapped positions.
- */
-class PositionNode : public DebuggableNode {
-public:
-  PositionNode(int32_t start_, int32_t end_, ParseState &state)
-      : DebuggableNode(state), start(start_), end(end_) {}
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header) {
-    auto function = state.module()->getFunction("bamql_check_position");
-    llvm::Value *args[] = {
-      header,
-      read,
-      llvm::ConstantInt::get(
-          llvm::Type::getInt32Ty(state.module()->getContext()), start),
-      llvm::ConstantInt::get(
-          llvm::Type::getInt32Ty(state.module()->getContext()), end)
-    };
-    return state->CreateCall(function, args);
-  }
-
-  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
-    state.parseCharInSpace('(');
-    auto start = state.parseInt();
-    state.parseCharInSpace(',');
-    auto end = state.parseInt();
-    if (end < start) {
-      throw ParseError(state.where(), "End position proceedes start position.");
-    }
-    state.parseCharInSpace(')');
-    return std::make_shared<PositionNode>(start, end, state);
-  }
-  static std::shared_ptr<AstNode> parseAfter(ParseState &state) throw(
-      ParseError) {
-    state.parseCharInSpace('(');
-    auto pos = state.parseInt();
-    state.parseCharInSpace(')');
-    return std::make_shared<PositionNode>(pos, INT32_MAX, state);
-  }
-  static std::shared_ptr<AstNode> parseBefore(ParseState &state) throw(
-      ParseError) {
-    state.parseCharInSpace('(');
-    auto pos = state.parseInt();
-    state.parseCharInSpace(')');
-    return std::make_shared<PositionNode>(0, pos, state);
-  }
-
-private:
-  int32_t start;
-  int32_t end;
-};
-
-class SplitPairNode : public DebuggableNode {
-public:
-  SplitPairNode(ParseState &state) : DebuggableNode(state) {}
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header) {
-    auto function = state.module()->getFunction("bamql_check_split_pair");
-    llvm::Value *args[] = { header, read };
-    return state->CreateCall(function, args);
-  }
-
-  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
-    return std::make_shared<SplitPairNode>(state);
-  }
-};
-
-class HeaderRegExNode : public DebuggableNode {
-public:
-  HeaderRegExNode(ParseState &state, RegularExpression &&regex_)
-      : DebuggableNode(state), regex(std::move(regex_)) {}
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header) {
-    auto function = state.module()->getFunction("bamql_header_regex");
-    llvm::Value *args[] = { read, regex(state) };
-    return state->CreateCall(function, args);
-  }
-
-  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
-    state.parseCharInSpace('~');
-    auto regex = state.parseRegEx();
-    return std::make_shared<HeaderRegExNode>(state, std::move(regex));
-  }
-
-private:
-  RegularExpression regex;
-};
+static const UserArg bool_arg(BOOL);
+static const UserArg fp_arg(FP);
+static const UserArg int_arg(INT);
+static const AuxArg aux_arg;
+static const NucleotideArg nucleotide_arg;
+static const BoolArg true_arg(true);
+static const BoolArg false_arg(false);
+static const CharArg char_r('R');
+static const CharArg char_g('G');
+static const IntArg int_max_arg(INT32_MAX);
+static const IntArg int_zero_arg(0);
 
 /**
  * All the predicates known to the system.
@@ -235,52 +126,74 @@ PredicateMap getDefaultPredicates() {
 
   return {
     // Auxiliary data
-    { std::string("read_group"),
-      CheckAuxStringNode<'R', 'G', readGroupChar>::parse },
-    { std::string("aux_str"), CheckAuxUserStringNode::parse },
-    { std::string("aux_char"), CheckAuxUserCharNode::parse },
-    { std::string("aux_int"), CheckAuxUserIntNode::parse },
-    { std::string("aux_dbl"), CheckAuxUserFloatNode::parse },
+    { "read_group",
+      parseFunction<StrFunctionNode, const std::string &>(
+          "bamql_aux_str", { char_r, char_g }, "Read group not available.") },
+    { "aux_str",
+      parseFunction<StrFunctionNode, const std::string &>(
+          "bamql_aux_str", { aux_arg }, "Auxiliary string not available.") },
+    { "aux_int",
+      parseFunction<IntFunctionNode, const std::string &>(
+          "bamql_aux_int", { aux_arg }, "Auxiliary integer not available.") },
+    { "aux_dbl",
+      parseFunction<DblFunctionNode, const std::string &>(
+          "bamql_aux_fp", { aux_arg }, "Auxiliary double not available.") },
 
     // Chromosome information
-    { std::string("chr"), CheckChromosomeNode<false>::parse },
-    { std::string("mate_chr"), CheckChromosomeNode<true>::parse },
+    { "chr", CheckChromosomeNode<false>::parse },
+    { "mate_chr", CheckChromosomeNode<true>::parse },
+    { "chr_name",
+      parseFunction<StrFunctionNode, const std::string &>(
+          "bamql_chr", { false_arg }, "Read not mapped.") },
+    { "mate_chr_name",
+      parseFunction<StrFunctionNode, const std::string &>(
+          "bamql_chr", { true_arg }, "Read's mate not mapped.") },
 
     // Flags
-    { std::string("duplicate?"), CheckFlag<BAM_FDUP>::parse },
-    { std::string("failed_qc?"), CheckFlag<BAM_FQCFAIL>::parse },
-    { std::string("mapped_to_reverse?"), CheckFlag<BAM_FREVERSE>::parse },
-    { std::string("mate_mapped_to_reverse?"),
+    { "duplicate?", CheckFlag<BAM_FDUP>::parse },
+    { "failed_qc?", CheckFlag<BAM_FQCFAIL>::parse },
+    { "mapped_to_reverse?", CheckFlag<BAM_FREVERSE>::parse },
+    { "mate_mapped_to_reverse?",
       CheckFlag<BAM_FPAIRED | BAM_FMREVERSE>::parse },
-    { std::string("mate_unmapped?"),
-      CheckFlag<BAM_FPAIRED | BAM_FMUNMAP>::parse },
-    { std::string("paired?"), CheckFlag<BAM_FPAIRED>::parse },
-    { std::string("proper_pair?"),
-      CheckFlag<BAM_FPAIRED | BAM_FPROPER_PAIR>::parse },
-    { std::string("raw_flag"), RawFlagNode::parse },
-    { std::string("read1?"), CheckFlag<BAM_FPAIRED | BAM_FREAD1>::parse },
-    { std::string("read2?"), CheckFlag<BAM_FPAIRED | BAM_FREAD2>::parse },
-    { std::string("secondary?"), CheckFlag<BAM_FSECONDARY>::parse },
-    { std::string("supplementary?"), CheckFlag<BAM_FSUPPLEMENTARY>::parse },
-    { std::string("unmapped?"), CheckFlag<BAM_FUNMAP>::parse },
+    { "mate_unmapped?", CheckFlag<BAM_FPAIRED | BAM_FMUNMAP>::parse },
+    { "paired?", CheckFlag<BAM_FPAIRED>::parse },
+    { "proper_pair?", CheckFlag<BAM_FPAIRED | BAM_FPROPER_PAIR>::parse },
+    { "raw_flag", parseFunction<BoolFunctionNode>("check_flag", { int_arg }) },
+    { "read1?", CheckFlag<BAM_FPAIRED | BAM_FREAD1>::parse },
+    { "read2?", CheckFlag<BAM_FPAIRED | BAM_FREAD2>::parse },
+    { "secondary?", CheckFlag<BAM_FSECONDARY>::parse },
+    { "supplementary?", CheckFlag<BAM_FSUPPLEMENTARY>::parse },
+    { "unmapped?", CheckFlag<BAM_FUNMAP>::parse },
 
     // Constants
-    { std::string("false"), ConstantNode<llvm::ConstantInt::getFalse>::parse },
-    { std::string("true"), ConstantNode<llvm::ConstantInt::getTrue>::parse },
+    { "false", FalseNode::parse },
+    { "true", TrueNode::parse },
 
     // Position
-    { std::string("after"), PositionNode::parseAfter },
-    { std::string("before"), PositionNode::parseBefore },
-    { std::string("position"), PositionNode::parse },
+    { "after",
+      parseFunction<BoolFunctionNode>("bamql_check_position",
+                                      { int_arg, int_max_arg }) },
+    { "before",
+      parseFunction<BoolFunctionNode>("bamql_check_position",
+                                      { int_zero_arg, int_arg }) },
+    { "position",
+      parseFunction<BoolFunctionNode>("bamql_check_position",
+                                      { int_arg, int_arg }) },
 
     // Miscellaneous
-    { std::string("mapping_quality"), MappingQualityNode::parse },
-    { std::string("header"), HeaderRegExNode::parse },
-    { std::string("nt"), NucleotideNode<llvm::ConstantInt::getFalse>::parse },
-    { std::string("nt_exact"),
-      NucleotideNode<llvm::ConstantInt::getTrue>::parse },
-    { std::string("split_pair?"), SplitPairNode::parse },
-    { std::string("random"), RandomlyNode::parse },
+    { "mapping_quality", MappingQualityNode::parse },
+    { "header",
+      parseFunction<StrFunctionNode, const std::string &>(
+          "bamql_header", {}, "Header not available.") },
+    { "nt",
+      parseFunction<BoolFunctionNode>("bamql_check_nt",
+                                      { int_arg, nucleotide_arg, false_arg }) },
+    { "nt_exact",
+      parseFunction<BoolFunctionNode>("bamql_check_nt",
+                                      { int_arg, nucleotide_arg, true_arg }) },
+    { "split_pair?",
+      parseFunction<BoolFunctionNode>("bamql_check_split_pair", {}) },
+    { "random", RandomlyNode::parse },
   };
 }
 }

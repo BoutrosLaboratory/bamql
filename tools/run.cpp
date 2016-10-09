@@ -16,6 +16,7 @@
 
 #include <unistd.h>
 #include <fstream>
+#include <map>
 #include <iostream>
 #include <sys/stat.h>
 #include <uuid.h>
@@ -38,7 +39,7 @@ public:
                 std::shared_ptr<htsFile> &a,
                 std::shared_ptr<htsFile> &r)
       : bamql::CompileIterator::CompileIterator(
-            engine, generator, node, std::string("filter")),
+            engine, generator, node, "filter"),
         accept(a), query(query_), reject(r), verbose(verbose_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
     auto version = bamql::version();
@@ -86,14 +87,26 @@ public:
                 << " Rejected: " << reject_count << std::endl;
     }
   }
+  void handleError(const char *message) {
+    if (errors.count(message)) {
+      errors[message]++;
+    } else {
+      errors[message] = 1;
+    }
+  }
   void writeSummary() {
     std::cout << "Accepted: " << accept_count << std::endl
               << "Rejected: " << reject_count << std::endl;
+    for (auto it = errors.begin(); it != errors.end(); it++) {
+      std::cout << it->first << " (Occurred " << it->second << " times)"
+                << std::endl;
+    }
   }
 
 private:
   std::shared_ptr<htsFile> accept;
   size_t accept_count = 0;
+  std::map<const char *, size_t> errors;
   std::string query;
   std::shared_ptr<htsFile> reject;
   size_t reject_count = 0;

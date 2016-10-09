@@ -56,10 +56,11 @@ public:
                  ChainPattern c,
                  std::string file_name_,
                  std::shared_ptr<htsFile> &o,
-                 std::shared_ptr<OutputWrangler> &n)
+                 std::shared_ptr<OutputWrangler> &n,
+                 std::shared_ptr<std::map<const char *, size_t>> &errors_)
       : bamql::CompileIterator::CompileIterator(engine, generator, node, name),
-        chain(c), file_name(file_name_), output_file(o), next(n),
-        query(query_) {}
+        chain(c), errors(errors_), file_name(file_name_), output_file(o),
+        next(n), query(query_) {}
   virtual void prepareExecution() {
     CompileIterator::prepareExecution();
     if (next) {
@@ -130,6 +131,13 @@ public:
     }
   }
 
+  void handleError(const char *message) {
+    if (errors->count(message)) {
+      (*errors)[message]++;
+    } else {
+      (*errors)[message] = 1;
+    }
+  }
   void write_summary() {
     std::cout << count << " " << file_name << std::endl;
     if (next) {
@@ -140,6 +148,7 @@ public:
 private:
   ChainPattern chain;
   size_t count = 0;
+  std::shared_ptr<std::map<const char *, size_t>> errors;
   std::string file_name;
   bamql::FilterFunction filter;
   bamql::IndexFunction index;
@@ -229,6 +238,7 @@ int main(int argc, char *const *argv) {
 
   // Prepare a chain of wranglers.
   std::shared_ptr<OutputWrangler> output;
+  auto errors = std::make_shared<std::map<const char *, size_t>>();
   for (auto it = argc - 2; it >= optind; it -= 2) {
     // Prepare the output file.
     std::shared_ptr<htsFile> output_file;
@@ -259,16 +269,24 @@ int main(int argc, char *const *argv) {
                                               chain,
                                               std::string(argv[it + 1]),
                                               output_file,
-                                              output);
+                                              output,
+                                              errors);
   }
   engine->finalizeObject();
   output->prepareExecution();
 
   // Run the chain.
+  int exitcode;
   if (output->processFile(input_filename, binary, ignore_index)) {
     output->write_summary();
-    return 0;
+    exitcode = 0;
   } else {
-    return 1;
+    exitcode = 1;
   }
+  for (auto it = errors->begin(); it != errors->end(); it++) {
+    std::cout << it->first << " (Occurred " << it->second << " times)"
+              << std::endl;
+  }
+
+  return exitcode;
 }

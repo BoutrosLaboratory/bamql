@@ -15,99 +15,18 @@
  */
 
 #include <iostream>
+#include <vector>
 #include "bamql-compiler.hpp"
 
 namespace bamql {
 
-typedef std::shared_ptr<AstNode>(*ParseFunc)(ParseState &state,
-                                             PredicateMap &predicates);
-class UseNode : public DebuggableNode {
-public:
-  UseNode(ParseState &state, std::shared_ptr<AstNode> e)
-      : DebuggableNode(state), expr(e) {}
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header) {
-    return state.definitions[this];
-  }
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *read,
-                                     llvm::Value *header) {
-    return state.definitionsIndex[this];
-  }
-  llvm::Value *generateAtDefinition(GenerateState &state,
-                                    llvm::Value *read,
-                                    llvm::Value *header) {
-    auto result = expr->generate(state, read, header);
-    state.definitions[this] = result;
-    return result;
-  }
-  llvm::Value *generateIndexAtDefinition(GenerateState &state,
-                                         llvm::Value *read,
-                                         llvm::Value *header) {
-    auto result = expr->generateIndex(state, read, header);
-    state.definitionsIndex[this] = result;
-    return result;
-  }
-
-private:
-  std::shared_ptr<AstNode> expr;
-};
-
-class BindingNode : public DebuggableNode {
-public:
-  BindingNode(ParseState &state) : DebuggableNode(state) {}
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header) {
-    for (auto it = definitions.begin(); it != definitions.end(); it++) {
-      (*it)->generateAtDefinition(state, read, header);
-    }
-    return body->generate(state, read, header);
-  }
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *read,
-                                     llvm::Value *header) {
-    for (auto it = definitions.begin(); it != definitions.end(); it++) {
-      (*it)->generateIndexAtDefinition(state, read, header);
-    }
-    return body->generateIndex(state, read, header);
-  }
-
-  void parse(ParseState &state, PredicateMap &predicates) throw(ParseError) {
-    PredicateMap childPredicates(predicates);
-    while (!state.empty() && (definitions.size() == 0 || *state == ',')) {
-      if (definitions.size() > 0) {
-        state.next();
-      }
-      state.parseSpace();
-      auto name = state.parseStr(
-          "ABCDEFGHIJLKLMNOPQRSTUVWXYZabcdefghijlklmnopqrstuvwxyz0123456789_");
-      state.parseCharInSpace('=');
-      auto use =
-          std::make_shared<UseNode>(state, AstNode::parse(state, predicates));
-      definitions.push_back(use);
-      childPredicates[name] = [=](ParseState & state) throw(ParseError) {
-        return std::static_pointer_cast<AstNode>(use);
-      };
-      state.parseSpace();
-    }
-    if (!state.parseKeyword("in")) {
-      throw ParseError(state.where(), "Expected `in' or `,' in `let'.");
-    }
-    body = AstNode::parse(state, childPredicates);
-  }
-
-private:
-  std::vector<std::shared_ptr<UseNode>> definitions;
-  std::shared_ptr<AstNode> body;
-};
+typedef std::shared_ptr<AstNode>(*ParseFunc)(ParseState &state);
 
 /**
  * Handle terminal operators (final step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseTerminal(
-    ParseState &state, PredicateMap &predicates) throw(ParseError) {
+static std::shared_ptr<AstNode> parseTerminal(ParseState &state) throw(
+    ParseError) {
 
   state.parseSpace();
   if (state.empty()) {
@@ -116,12 +35,12 @@ static std::shared_ptr<AstNode> parseTerminal(
   }
   if (*state == '!') {
     state.next();
-    return std::make_shared<NotNode>(parseTerminal(state, predicates));
+    return std::make_shared<NotNode>(parseTerminal(state));
   }
   if (*state == '(') {
     state.next();
     size_t brace_index = state.where();
-    auto node = AstNode::parse(state, predicates);
+    auto node = AstNode::parse(state);
     state.parseSpace();
     if (!state.empty() && *state == ')') {
       state.next();
@@ -131,34 +50,115 @@ static std::shared_ptr<AstNode> parseTerminal(
                        "Open brace has no matching closing brace.");
     }
   }
-  size_t start = state.where();
-  while (!state.empty() && ((*state >= 'a' && *state <= 'z') ||
-                            ((state.where() - start) > 0 &&
-                             (*state == '_' || *state == '?' ||
-                              (*state >= '0' && *state <= '9'))))) {
-    state.next();
+  auto literal = state.parseLiteral();
+  if (literal) {
+    return literal;
   }
-  if (start == state.where()) {
-    throw ParseError(state.where(), "Missing predicate.");
+  return state.parsePredicate();
+}
+
+class EquivalenceCheck {
+public:
+  EquivalenceCheck(const std::string &symbol_,
+                   CreateICmp integer_compare_,
+                   CreateFCmp float_compare_)
+      : float_compare(float_compare_), integer_compare(integer_compare_),
+        symbol(symbol_) {}
+
+  bool parse(ParseState &state,
+             std::shared_ptr<AstNode> &left) throw(ParseError) {
+    auto where = state.where();
+    if (!state.parseKeyword(symbol)) {
+      return false;
+    }
+    state.parseSpace();
+    auto right = parseTerminal(state);
+    if (left->type() != right->type()) {
+      throw ParseError(where, "Cannot compare different types.");
+    }
+    if (left->type() == FP) {
+      left = std::make_shared<CompareFPNode>(float_compare, left, right, state);
+      return true;
+    }
+    if (left->type() == INT) {
+      left =
+          std::make_shared<CompareIntNode>(integer_compare, left, right, state);
+      return true;
+    }
+    if (left->type() == STR) {
+      left =
+          std::make_shared<CompareStrNode>(integer_compare, left, right, state);
+      return true;
+    }
+    throw ParseError(where,
+                     "Can only compare integers and float point numbers.");
   }
 
-  std::string predicate_name = state.strFrom(start);
-  if (predicates.count(predicate_name)) {
-    return predicates[predicate_name](state);
-  } else {
-    throw ParseError(start, "Unknown predicate.");
+private:
+  CreateFCmp float_compare;
+  CreateICmp integer_compare;
+  const std::string symbol;
+};
+
+std::vector<EquivalenceCheck> equivalence_checks = {
+  { "==", &llvm::IRBuilder<>::CreateICmpEQ, &llvm::IRBuilder<>::CreateFCmpOEQ },
+  { "!=", &llvm::IRBuilder<>::CreateICmpNE, &llvm::IRBuilder<>::CreateFCmpONE },
+  { "<=",
+    &llvm::IRBuilder<>::CreateICmpSLE,
+    &llvm::IRBuilder<>::CreateFCmpOLE },
+  { ">=",
+    &llvm::IRBuilder<>::CreateICmpSGE,
+    &llvm::IRBuilder<>::CreateFCmpOGE },
+  { "<", &llvm::IRBuilder<>::CreateICmpSLE, &llvm::IRBuilder<>::CreateFCmpOLT },
+  { ">", &llvm::IRBuilder<>::CreateICmpSGT, &llvm::IRBuilder<>::CreateFCmpOGT },
+};
+
+static std::shared_ptr<AstNode> parseComparison(ParseState &state) throw(
+    ParseError) {
+  auto left = parseTerminal(state);
+  state.parseSpace();
+  if (state.parseKeyword("~")) {
+    if (left->type() != bamql::STR) {
+      throw ParseError(state.where(),
+                       "Regular expression may only be used on strings.");
+    }
+    state.parseSpace();
+    auto pattern = state.parseRegEx();
+    return std::make_shared<RegexNode>(left, std::move(pattern), state);
   }
+  if (state.parseKeyword(":")) {
+    if (left->type() != bamql::STR) {
+      throw ParseError(state.where(),
+                       "Regular expression may only be used on strings.");
+    }
+    state.parseSpace();
+    auto start = state.where();
+    while (!state.empty() && !isspace(*state)) {
+      state.next();
+    }
+    if (start == state.where()) {
+      throw ParseError(state.where(), "Expected valid glob.");
+    }
+
+    auto pattern = globToRegEx("^", state.strFrom(start), "$");
+    return std::make_shared<RegexNode>(left, std::move(pattern), state);
+  }
+  for (auto it = equivalence_checks.begin();
+       it != equivalence_checks.end() && !it->parse(state, left);
+       it++)
+    ;
+  return left;
 }
 
 /**
  * Parse the implication (->) operator.
  */
-static std::shared_ptr<AstNode> parseImplication(
-    ParseState &state, PredicateMap &predicates) throw(ParseError) {
-  auto antecedent = parseTerminal(state, predicates);
+static std::shared_ptr<AstNode> parseImplication(ParseState &state) throw(
+    ParseError) {
+  auto antecedent = parseComparison(state);
   state.parseSpace();
   while (state.parseKeyword("->")) {
-    auto assertion = parseTerminal(state, predicates);
+    auto assertion = parseComparison(state);
     antecedent = std::make_shared<OrNode>(std::make_shared<NotNode>(antecedent),
                                           assertion);
     state.parseSpace();
@@ -171,16 +171,25 @@ static std::shared_ptr<AstNode> parseImplication(
  * descent)
  */
 template <char S, class T, ParseFunc N>
-static std::shared_ptr<AstNode> parseBinary(
-    ParseState &state, PredicateMap &predicates) throw(ParseError) {
+static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
+    ParseError) {
   std::vector<std::shared_ptr<AstNode>> items;
 
-  std::shared_ptr<AstNode> node = N(state, predicates);
+  auto prev_where = state.where();
+  std::shared_ptr<AstNode> node = N(state);
   state.parseSpace();
   while (!state.empty() && *state == S) {
+    if (node->type() != bamql::BOOL) {
+      throw ParseError(prev_where, "Expression must be Boolean.");
+    }
     state.next();
     items.push_back(node);
-    node = N(state, predicates);
+
+    prev_where = state.where();
+    node = N(state);
+    if (node->type() != bamql::BOOL) {
+      throw ParseError(prev_where, "Expression must be Boolean.");
+    }
     state.parseSpace();
   }
   while (items.size() > 0) {
@@ -190,46 +199,56 @@ static std::shared_ptr<AstNode> parseBinary(
   return node;
 }
 
-static std::shared_ptr<AstNode> parseIntermediate(
-    ParseState &state, PredicateMap &predicates) throw(ParseError) {
+static std::shared_ptr<AstNode> parseIntermediate(ParseState &state) throw(
+    ParseError) {
   return parseBinary<
       '|',
       OrNode,
       parseBinary<'^', XOrNode, parseBinary<'&', AndNode, parseImplication>>>(
-      state, predicates);
+      state);
 }
 
 /**
  * Handle conditional operators
  */
-static std::shared_ptr<AstNode> parseConditional(
-    ParseState &state, PredicateMap &predicates) throw(ParseError) {
-  auto cond_part = parseIntermediate(state, predicates);
+static std::shared_ptr<AstNode> parseConditional(ParseState &state) throw(
+    ParseError) {
+  auto cond_part = parseIntermediate(state);
+  auto prev_where = state.where();
   state.parseSpace();
   if (!state.parseKeyword("then")) {
     return cond_part;
   }
-  auto then_part = parseIntermediate(state, predicates);
+  if (cond_part->type() != bamql::BOOL) {
+    throw ParseError(prev_where, "Condition expression must be Boolean.");
+  }
+  auto then_part = parseIntermediate(state);
   if (!state.parseKeyword("else")) {
     throw ParseError(state.where(), "Ternary operator has no else.");
   }
-  auto else_part = parseIntermediate(state, predicates);
+  prev_where = state.where();
+  auto else_part = parseIntermediate(state);
+  if (then_part->type() != else_part->type()) {
+    throw ParseError(
+        prev_where, "The `then' and `else' expressions must be the same type.");
+  }
   return std::make_shared<ConditionalNode>(cond_part, then_part, else_part);
 }
 
 /**
  * Handle let operators (first step in the recursive descent)
  */
-std::shared_ptr<AstNode> AstNode::parse(
-    ParseState &state, PredicateMap &predicates) throw(ParseError) {
+std::shared_ptr<AstNode> AstNode::parse(ParseState &state) throw(ParseError) {
   state.parseSpace();
+  std::shared_ptr<AstNode> node;
   if (state.parseKeyword("let")) {
     auto let = std::make_shared<BindingNode>(state);
-    let->parse(state, predicates);
-    return let;
+    let->parse(state);
+    node = let;
   } else {
-    return parseConditional(state, predicates);
+    node = parseConditional(state);
   }
+  return node;
 }
 
 /**
@@ -239,12 +258,17 @@ std::shared_ptr<AstNode> AstNode::parse(
 std::shared_ptr<AstNode> AstNode::parse(
     const std::string &input, PredicateMap &predicates) throw(ParseError) {
   ParseState state(input);
-  std::shared_ptr<AstNode> node = AstNode::parse(state, predicates);
+  state.push(predicates);
+  std::shared_ptr<AstNode> node = AstNode::parse(state);
+  state.pop(predicates);
 
   state.parseSpace();
   // check string is fully consumed
   if (!state.empty()) {
     throw ParseError(state.where(), "Junk at end of input.");
+  }
+  if (node->type() != bamql::BOOL) {
+    throw ParseError(state.where(), "Whole expression must be Boolean.");
   }
   return node;
 }

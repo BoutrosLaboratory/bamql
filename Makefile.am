@@ -67,7 +67,10 @@ libbamql_cpl_la_LDFLAGS = \
 	-no-undefined \
 	$(NULL)
 libbamql_cpl_la_SOURCES = \
+	compiler/ast_node_binding.cpp \
+	compiler/ast_node_function.cpp \
 	compiler/ast_node_logical.cpp \
+	compiler/ast_node_matching.cpp \
 	compiler/misc.cpp \
 	compiler/parser.cpp \
 	compiler/parser_misc.cpp \

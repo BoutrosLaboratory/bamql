@@ -41,25 +41,24 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "paired?", { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" } },
   { "mate_unmapped?", {} },
   { "split_pair?", { "C", "D", "G" } },
-  { "read_group(C3BUK.1)", { "A", "J" } },
-  { "read_group(C3BUK.1 )", { "A", "J" } },
-  { "read_group( C3BUK.1 )", { "A", "J" } },
-  { "aux_int(NM, 1)", { "B", "E", "F" } },
-  { "aux_str(MD, 51)", { "D" } },
-  { "aux_char(XC, b)", { "G" } },
-  { "aux_dbl(XB, 3.1)", { "C", "D" } },
+  { "read_group ~ /C3BUK.1/", { "A", "J" } },
+  { "aux_int(NM) == 1", { "B", "E", "F" } },
+  { "aux_str(MD) ~ /51/", { "D" } },
+  { "aux_int(XC) == 'b", { "G" } },
+  { "aux_dbl(XB) < 3.15", { "C", "D" } },
+  { "aux_dbl(XB) == 3.1", { "C", "D" } },
   { "chr(1)", { "A", "B", "C", "D", "E" } },
   { "chr(*2)", { "F", "G", "H", "I", "J" } },
   { "chr(1*)", { "A", "B", "C", "D", "E", "F", "G", "H", "J" } },
   { "mate_chr(1)", { "A", "B", "E", "G" } },
   { "header ~ /A/", { "A" } },
-  { "read_group(C3BUK.1) then chr(2) else chr(12)", { "F", "G", "H" } },
-  { "read_group(C3BUK.1) then chr(1) else chr(2)", { "A", "I" } },
+  { "read_group ~ /C3BUK.1/ then chr(2) else chr(12)", { "F", "G", "H" } },
+  { "read_group ~ /C3BUK.1/ then chr(1) else chr(2)", { "A", "I" } },
   { "!chr(1)", { "F", "G", "H", "I", "J" } },
   { "chr(1*) | chr(*2)", { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" } },
   { "chr(1*) & chr(*2)", { "F", "G", "H", "J" } },
   { "chr(1*) ^ chr(*2)", { "A", "B", "C", "D", "E", "I" } },
-  { "chr(1) -> read_group(C3BUK.1)", { "A", "F", "G", "H", "I", "J" } },
+  { "chr(1) -> read_group : C3BUK.*", { "A", "E", "F", "G", "H", "I", "J" } },
 };
 
 class Checker : public bamql::CompileIterator {
@@ -83,6 +82,7 @@ public:
       correct = false;
     }
   }
+  void handleError(const char *message) {}
   bool isCorrect() { return correct; }
 
 private:

@@ -33,9 +33,11 @@ template <bool mate> class CheckChromosomeNode : public DebuggableNode {
 public:
   CheckChromosomeNode(RegularExpression &&name_, ParseState &state)
       : DebuggableNode(state), name(std::move(name_)) {}
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header) {
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx) {
     auto function = state.module()->getFunction("bamql_check_chromosome");
     llvm::Value *args[] = {
       header,
@@ -46,9 +48,11 @@ public:
     };
     return state->CreateCall(function, args);
   }
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *chromosome,
-                                     llvm::Value *header) {
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *chromosome,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx) {
     if (mate) {
       return llvm::ConstantInt::getTrue(state.module()->getContext());
     }
@@ -58,6 +62,8 @@ public:
   }
 
   bool usesIndex() { return !mate; }
+
+  ExprType type() { return BOOL; }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('(');

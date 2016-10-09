@@ -20,10 +20,9 @@
 #include "bamql-jit.hpp"
 
 std::map<std::string, void (*)()> known = {
-  { "bamql_check_aux_char", (void (*)())bamql_check_aux_char },
-  { "bamql_check_aux_double", (void (*)())bamql_check_aux_double },
-  { "bamql_check_aux_int", (void (*)())bamql_check_aux_int },
-  { "bamql_check_aux_str", (void (*)())bamql_check_aux_str },
+  { "bamql_aux_fp", (void (*)())bamql_aux_fp },
+  { "bamql_aux_int", (void (*)())bamql_aux_int },
+  { "bamql_aux_str", (void (*)())bamql_aux_str },
   { "bamql_check_chromosome", (void (*)())bamql_check_chromosome },
   { "bamql_check_chromosome_id", (void (*)())bamql_check_chromosome_id },
   { "bamql_check_flag", (void (*)())bamql_check_flag },
@@ -31,8 +30,11 @@ std::map<std::string, void (*)()> known = {
   { "bamql_check_nt", (void (*)())bamql_check_nt },
   { "bamql_check_position", (void (*)())bamql_check_position },
   { "bamql_check_split_pair", (void (*)())bamql_check_split_pair },
-  { "bamql_header_regex", (void (*)())bamql_header_regex },
-  { "bamql_randomly", (void (*)())bamql_randomly }
+  { "bamql_chr", (void (*)())bamql_chr },
+  { "bamql_header", (void (*)())bamql_header },
+  { "bamql_randomly", (void (*)())bamql_randomly },
+  { "bamql_re_match", (void (*)())bamql_re_match },
+  { "bamql_strcmp", (void (*)())bamql_strcmp },
 };
 
 std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(

@@ -24,22 +24,29 @@ typedef llvm::ConstantInt *(*BoolConstant)(llvm::LLVMContext &);
 /**
  * A predicate that always returns a constant.
  */
-template <BoolConstant CF> class ConstantNode : public AstNode {
+template <BoolConstant CF, ExprType ET> class ConstantNode : public AstNode {
 public:
   llvm::Value *generate(GenerateState &state,
                         llvm::Value *read,
-                        llvm::Value *header) {
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx) {
     return CF(state.module()->getContext());
   }
   llvm::Value *generateIndex(GenerateState &state,
                              llvm::Value *tid,
-                             llvm::Value *header) {
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx) {
     return CF(state.module()->getContext());
   }
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
-    static auto result = std::make_shared<ConstantNode<CF>>();
+    static auto result = std::make_shared<ConstantNode<CF, ET>>();
     return result;
   }
+  ExprType type() { return ET; }
   void writeDebug(GenerateState &state) {}
 };
+typedef ConstantNode<llvm::ConstantInt::getFalse, BOOL> FalseNode;
+typedef ConstantNode<llvm::ConstantInt::getTrue, BOOL> TrueNode;
 }

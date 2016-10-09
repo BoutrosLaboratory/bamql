@@ -17,11 +17,15 @@
 #include <sstream>
 #include "bamql-jit.hpp"
 
+static void error_wrapper(const char *message, void *context) {
+  ((bamql::CompileIterator *)context)->handleError(message);
+}
+
 bamql::CompileIterator::CompileIterator(
     std::shared_ptr<llvm::ExecutionEngine> &e,
     std::shared_ptr<Generator> &generator,
     std::shared_ptr<AstNode> &node,
-    std::string name)
+    const std::string &name)
     : engine(e), filter_func(node->createFilterFunction(generator, name)) {
   // Compile the query into native functions. We must hold a reference to the
   // execution engine as long as we intend for these pointers to be valid.
@@ -37,10 +41,11 @@ void bamql::CompileIterator::prepareExecution() {
 
 bool bamql::CompileIterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,
                                             uint32_t tid) {
-  return index(header.get(), tid);
+  return index(header.get(), tid, error_wrapper, this);
 }
 
 void bamql::CompileIterator::processRead(std::shared_ptr<bam_hdr_t> &header,
                                          std::shared_ptr<bam1_t> &read) {
-  readMatch(filter(header.get(), read.get()), header, read);
+  readMatch(
+      filter(header.get(), read.get(), error_wrapper, this), header, read);
 }

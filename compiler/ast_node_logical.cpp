@@ -15,18 +15,22 @@
  */
 
 #include "bamql-compiler.hpp"
+#include "compiler.hpp"
 
 bamql::ShortCircuitNode::ShortCircuitNode(
-    const std::shared_ptr<AstNode> &left,
-    const std::shared_ptr<AstNode> &right) {
-  this->left = left;
-  this->right = right;
+    const std::shared_ptr<AstNode> &left_,
+    const std::shared_ptr<AstNode> &right_)
+    : left(left_), right(right_) {
+  type_check(left, bamql::BOOL);
+  type_check(right, bamql::BOOL);
 }
 
 llvm::Value *bamql::ShortCircuitNode::generateGeneric(GenerateMember member,
                                                       GenerateState &state,
                                                       llvm::Value *param,
-                                                      llvm::Value *header) {
+                                                      llvm::Value *header,
+                                                      llvm::Value *error_fn,
+                                                      llvm::Value *error_ctx) {
   /* Create two basic blocks for the possibly executed right-hand expression and
    * the final block. */
   auto function = state->GetInsertBlock()->getParent();
@@ -37,7 +41,8 @@ llvm::Value *bamql::ShortCircuitNode::generateGeneric(GenerateMember member,
 
   /* Generate the left expression in the current block. */
   this->left->writeDebug(state);
-  auto left_value = ((*this->left).*member)(state, param, header);
+  auto left_value =
+      ((*this->left).*member)(state, param, header, error_fn, error_ctx);
   auto short_circuit_value = state->CreateICmpEQ(
       left_value, this->branchValue(state.module()->getContext()));
   /* If short circuiting, jump to the final block, otherwise, do the right-hand
@@ -48,7 +53,8 @@ llvm::Value *bamql::ShortCircuitNode::generateGeneric(GenerateMember member,
   /* Generate the right-hand expression, then jump to the final block.*/
   state->SetInsertPoint(next_block);
   this->right->writeDebug(state);
-  auto right_value = ((*this->right).*member)(state, param, header);
+  auto right_value =
+      ((*this->right).*member)(state, param, header, error_fn, error_ctx);
   state->CreateBr(merge_block);
   next_block = state->GetInsertBlock();
 
@@ -64,15 +70,25 @@ llvm::Value *bamql::ShortCircuitNode::generateGeneric(GenerateMember member,
 
 llvm::Value *bamql::ShortCircuitNode::generate(GenerateState &state,
                                                llvm::Value *read,
-                                               llvm::Value *header) {
-  return generateGeneric(&bamql::AstNode::generate, state, read, header);
+                                               llvm::Value *header,
+                                               llvm::Value *error_fn,
+                                               llvm::Value *error_ctx) {
+  return generateGeneric(
+      &bamql::AstNode::generate, state, read, header, error_fn, error_ctx);
 }
 
 llvm::Value *bamql::ShortCircuitNode::generateIndex(GenerateState &state,
                                                     llvm::Value *tid,
-                                                    llvm::Value *header) {
+                                                    llvm::Value *header,
+                                                    llvm::Value *error_fn,
+                                                    llvm::Value *error_ctx) {
   if (usesIndex()) {
-    return generateGeneric(&bamql::AstNode::generateIndex, state, tid, header);
+    return generateGeneric(&bamql::AstNode::generateIndex,
+                           state,
+                           tid,
+                           header,
+                           error_fn,
+                           error_ctx);
   } else {
     return llvm::ConstantInt::getTrue(state.module()->getContext());
   }
@@ -80,6 +96,8 @@ llvm::Value *bamql::ShortCircuitNode::generateIndex(GenerateState &state,
 bool bamql::ShortCircuitNode::usesIndex() {
   return left->usesIndex() || right->usesIndex();
 }
+bamql::ExprType bamql::ShortCircuitNode::type() { return bamql::BOOL; }
+
 void bamql::ShortCircuitNode::writeDebug(GenerateState &state) {}
 
 bamql::AndNode::AndNode(const std::shared_ptr<AstNode> &left,
@@ -98,20 +116,29 @@ llvm::Value *bamql::OrNode::branchValue(llvm::LLVMContext &context) {
 
 bamql::XOrNode::XOrNode(const std::shared_ptr<AstNode> &left_,
                         const std::shared_ptr<AstNode> &right_)
-    : left(left_), right(right_) {}
+    : left(left_), right(right_) {
+  type_check(left_, bamql::BOOL);
+  type_check(right_, bamql::BOOL);
+}
 llvm::Value *bamql::XOrNode::generate(GenerateState &state,
                                       llvm::Value *read,
-                                      llvm::Value *header) {
-  auto left_value = left->generate(state, read, header);
-  auto right_value = right->generate(state, read, header);
+                                      llvm::Value *header,
+                                      llvm::Value *error_fn,
+                                      llvm::Value *error_ctx) {
+  auto left_value = left->generate(state, read, header, error_fn, error_ctx);
+  auto right_value = right->generate(state, read, header, error_fn, error_ctx);
   return state->CreateICmpNE(left_value, right_value);
 }
 llvm::Value *bamql::XOrNode::generateIndex(GenerateState &state,
                                            llvm::Value *tid,
-                                           llvm::Value *header) {
+                                           llvm::Value *header,
+                                           llvm::Value *error_fn,
+                                           llvm::Value *error_ctx) {
   if (usesIndex()) {
-    auto left_value = left->generateIndex(state, tid, header);
-    auto right_value = right->generateIndex(state, tid, header);
+    auto left_value =
+        left->generateIndex(state, tid, header, error_fn, error_ctx);
+    auto right_value =
+        right->generateIndex(state, tid, header, error_fn, error_ctx);
     return state->CreateICmpNE(left_value, right_value);
   } else {
     return llvm::ConstantInt::getTrue(state.module()->getContext());
@@ -120,40 +147,56 @@ llvm::Value *bamql::XOrNode::generateIndex(GenerateState &state,
 bool bamql::XOrNode::usesIndex() {
   return left->usesIndex() || right->usesIndex();
 }
+bamql::ExprType bamql::XOrNode::type() { return bamql::BOOL; }
 
 void bamql::XOrNode::writeDebug(GenerateState &state) {}
 
-bamql::NotNode::NotNode(const std::shared_ptr<AstNode> &expr_) : expr(expr_) {}
+bamql::NotNode::NotNode(const std::shared_ptr<AstNode> &expr_) : expr(expr_) {
+  type_check(expr, bamql::BOOL);
+}
 llvm::Value *bamql::NotNode::generate(GenerateState &state,
                                       llvm::Value *read,
-                                      llvm::Value *header) {
+                                      llvm::Value *header,
+                                      llvm::Value *error_fn,
+                                      llvm::Value *error_ctx) {
   this->expr->writeDebug(state);
-  llvm::Value *result = this->expr->generate(state, read, header);
+  llvm::Value *result =
+      this->expr->generate(state, read, header, error_fn, error_ctx);
   return state->CreateNot(result);
 }
 
 llvm::Value *bamql::NotNode::generateIndex(GenerateState &state,
                                            llvm::Value *tid,
-                                           llvm::Value *header) {
+                                           llvm::Value *header,
+                                           llvm::Value *error_fn,
+                                           llvm::Value *error_ctx) {
   this->expr->writeDebug(state);
-  llvm::Value *result = this->expr->generateIndex(state, tid, header);
+  llvm::Value *result =
+      this->expr->generateIndex(state, tid, header, error_fn, error_ctx);
   return state->CreateNot(result);
 }
 bool bamql::NotNode::usesIndex() { return expr->usesIndex(); }
+bamql::ExprType bamql::NotNode::type() { return bamql::BOOL; }
 void bamql::NotNode::writeDebug(GenerateState &state) {}
 
 bamql::ConditionalNode::ConditionalNode(
-    const std::shared_ptr<AstNode> &condition,
-    const std::shared_ptr<AstNode> &then_part,
-    const std::shared_ptr<AstNode> &else_part) {
-  this->condition = condition;
-  this->then_part = then_part;
-  this->else_part = else_part;
+    const std::shared_ptr<AstNode> &condition_,
+    const std::shared_ptr<AstNode> &then_part_,
+    const std::shared_ptr<AstNode> &else_part_)
+    : condition(condition_), then_part(then_part_), else_part(else_part_) {
+  type_check(condition_, bamql::BOOL);
+  if (then_part_->type() != else_part_->type()) {
+    std::cerr << "Then and Else parts of conditional do not have the same type."
+              << std::endl;
+    abort();
+  }
 }
 
 llvm::Value *bamql::ConditionalNode::generate(GenerateState &state,
                                               llvm::Value *read,
-                                              llvm::Value *header) {
+                                              llvm::Value *header,
+                                              llvm::Value *error_fn,
+                                              llvm::Value *error_ctx) {
   /* Create three blocks: one for the “then”, one for the “else” and one for the
    * final. */
   auto function = state->GetInsertBlock()->getParent();
@@ -166,13 +209,15 @@ llvm::Value *bamql::ConditionalNode::generate(GenerateState &state,
 
   /* Compute the conditional argument and then decide to which block to jump. */
   this->condition->writeDebug(state);
-  auto conditional_result = condition->generate(state, read, header);
+  auto conditional_result =
+      condition->generate(state, read, header, error_fn, error_ctx);
   state->CreateCondBr(conditional_result, then_block, else_block);
 
   /* Generate the “then” block. */
   state->SetInsertPoint(then_block);
   this->then_part->writeDebug(state);
-  auto then_result = then_part->generate(state, read, header);
+  auto then_result =
+      then_part->generate(state, read, header, error_fn, error_ctx);
   /* Jump to the final block. */
   state->CreateBr(merge_block);
   then_block = state->GetInsertBlock();
@@ -180,7 +225,8 @@ llvm::Value *bamql::ConditionalNode::generate(GenerateState &state,
   /* Generate the “else” block. */
   state->SetInsertPoint(else_block);
   this->else_part->writeDebug(state);
-  auto else_result = else_part->generate(state, read, header);
+  auto else_result =
+      else_part->generate(state, read, header, error_fn, error_ctx);
   /* Jump to the final block. */
   state->CreateBr(merge_block);
   else_block = state->GetInsertBlock();
@@ -200,9 +246,13 @@ bool bamql::ConditionalNode::usesIndex() {
           (then_part->usesIndex() || else_part->usesIndex()));
 }
 
+bamql::ExprType bamql::ConditionalNode::type() { return then_part->type(); }
+
 llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
                                                    llvm::Value *tid,
-                                                   llvm::Value *header) {
+                                                   llvm::Value *header,
+                                                   llvm::Value *error_fn,
+                                                   llvm::Value *error_ctx) {
   if (condition->usesIndex()) {
     /*
      * The logic in this function is twisty, so here is the explanation. Given
@@ -230,13 +280,15 @@ llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
      * If true, try to make a decision based on the “then” block, otherwise,
      * only make a decision based on the “else” block. */
     this->condition->writeDebug(state);
-    auto conditional_result = condition->generateIndex(state, tid, header);
+    auto conditional_result =
+        condition->generateIndex(state, tid, header, error_fn, error_ctx);
     state->CreateCondBr(conditional_result, then_block, else_block);
 
     /* Generate the “then” block. */
     state->SetInsertPoint(then_block);
     this->then_part->writeDebug(state);
-    auto then_result = then_part->generateIndex(state, tid, header);
+    auto then_result =
+        then_part->generateIndex(state, tid, header, error_fn, error_ctx);
     /* If we fail, the “else” block might still be interested. */
     state->CreateCondBr(then_result, merge_block, else_block);
     then_block = state->GetInsertBlock();
@@ -244,7 +296,8 @@ llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
     /* Generate the “else” block. */
     state->SetInsertPoint(else_block);
     this->else_part->writeDebug(state);
-    auto else_result = else_part->generateIndex(state, tid, header);
+    auto else_result =
+        else_part->generateIndex(state, tid, header, error_fn, error_ctx);
     /* Jump to the final block. */
     state->CreateBr(merge_block);
     else_block = state->GetInsertBlock();
@@ -263,12 +316,14 @@ llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
         state.module()->getContext(), "else", function);
     auto merge_block = llvm::BasicBlock::Create(
         state.module()->getContext(), "merge", function);
-    auto then_result = then_part->generateIndex(state, tid, header);
+    auto then_result =
+        then_part->generateIndex(state, tid, header, error_fn, error_ctx);
     state->CreateCondBr(then_result, merge_block, else_block);
     auto original_block = state->GetInsertBlock();
     state->SetInsertPoint(else_block);
     this->else_part->writeDebug(state);
-    auto else_result = else_part->generateIndex(state, tid, header);
+    auto else_result =
+        else_part->generateIndex(state, tid, header, error_fn, error_ctx);
     state->CreateBr(merge_block);
     else_block = state->GetInsertBlock();
     state->SetInsertPoint(merge_block);

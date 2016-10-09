@@ -44,10 +44,42 @@ Is satisfied if either both the \fIantecedent\fR and \fIassertion\fR are statisf
 
 This will reject any reads where position 500 is not \fBG\fR, but keep reads which either have a \fBG\fR at position 500 or do not overlap with position 500.
 
+.SS COMPARISON AND MATCHING
+expr \fB==\fR expr
+.br
+expr \fB!=\fR expr
+.br
+expr \fB<\fR expr
+.br
+expr \fB>\fR expr
+.br
+expr \fB<=\fR expr
+.br
+expr \fB=>\fR expr
+
+Compares values in the usual way. Note that only values of the same type can be compared. For strings, lexicographical order is used for less/greater than comparisons.
+
+expr \fB~ /\fRregex\fB/\fR
+.br
+expr \fB: \fRglob
+
+Does string matching usin a PCRE regular expression or a glob. See
+.BR pcrepattern (3)
+or
+.BR glob (7)
+for details.
+
 .SS NEGATION (NOT)
 \fB!\fR expr
 
 Is satisfied if \fIexpr\fR is not satisfied.
+
+.SS LITERALS
+\fB'\fRx
+
+The integer value of character \fIx\fR.
+
+Numeric floating point and integer values are also supported.
 
 .SH PREDICATES
 The predicates are grouped based on function.
@@ -123,6 +155,10 @@ MT == M == 25
 Also, case is ignored. Additionally, the chromosome is matched using wildcards from 
 .BR glob (7).
 
+\fBchr_name\fR
+
+Returns the chromosome name (stripped of \fIchr\fR) as a string. This can be used with other comparisons, but lacks all the equivalent chromosome magic that \fBchr\fR provides.
+
 \fBmapping_quality(\fRprobability\fB)\fR
 
 Matches the read if the probability of error is less than \fIprobability\fR. The mapping quality is approximated in the SAM format, so this will be imperfect. For clarity, setting the probability to 0 will be so stringent as to reject all reads, while setting it to 1 will be so liberal as to accept all reads.
@@ -131,28 +167,26 @@ Matches the read if the probability of error is less than \fIprobability\fR. The
 
 This works identically to \fBchr\fR, but on the chromosome of the mate pair, if one exists. If the mate is unmapped, this returns false.
 
+\fBmate_chr_name\fR
+
+Returns the chromosome name of the mate pair, if one exists, (stripped of \fIchr\fR) as a string. This can be used with other comparisons, but lacks all the equivalent chromosome magic that \fBmate_chr\fR provides.
+
 \fBsplit_pair?\fR
 
 Checks if both the reads in a mate pair are mapped, but to different chromosomes.
 
 .SS OTHER READ INFORMATION
-\fBread_group(\fRglob\fB)\fR
+\fBread_group\fR
 
-Matches the read group, if specified in the input. The read group may be specified using
-.BR glob (7)
-to match multiple read groups. 
+Returns the read group.
 
-\fBaux_char(\fRcode\fB, \fRvalue\fB)\fR
+\fBaux_dbl(\fRcode\fB)\fR
 .br
-\fBaux_dbl(\fRcode\fB, \fRvalue\fB)\fR
+\fBaux_int(\fRcode\fB)\fR
 .br
-\fBaux_int(\fRcode\fB, \fRvalue\fB)\fR
-.br
-\fBaux_str(\fRcode\fB, \fRvalue\fB)\fR
+\fBaux_str(\fRcode\fB)\fR
 
-Matches a piece of auxiliary data, if specified in the input. The \fIcode\fR is the two symbol identifier for the auxiliary format. The \fIvalue\fR must be a single character, float point number, integral number, or
-.BR glob (7)
-for \fBaux_char\fR, \fBaux_dbl\fR, \fBaux_int\fR, and \fBaux_str\fR, respectively. 
+Gets a piece of auxiliary data, if specified in the input. The \fIcode\fR is the two symbol identifier for the auxiliary format. The result will be a float point number, integral number, or string for \fBaux_dbl\fR, \fBaux_int\fR, and \fBaux_str\fR, respectively. BAM files also have a character type which may be read as an integer.
 
 .SS POSITION
 All of the position operations are inclusive: that means they take any reads with nucleotides in the desired range. This means that the start or end of a read can extend beyond the desired positions. BAM files allow reads to have position information while still being marked as unmapped. This operations ignore the official mapping status, and work solely on the position information. If this is undesirable, combine with \fB& !unmapped?\fR. Occasionally, the aligner produces reads which have a position, but no detailed mapping information (\fIi.e.\fR, no CIGAR string). In this case, the end position of the read is assumed to be mapped with no insertions or deletions.
@@ -180,10 +214,9 @@ Matches a read has nucleotide \fIn\fR at the provided position, relative to the 
 
 .SS MISCELLANEOUS
 
-\fBheader ~ /\RIregex\fB/\fR
+\fBheader\fR
 
-Matches a PERL-compatible regular expression agains the read's header. For details, see
-.BR pcrepattern (3).
+Returns the header string of the read.
 
 .B true
 
@@ -203,7 +236,7 @@ if one is inclined to care about such things.
 
 Match sequences on chromosome 7 which are from the read group labelled \fBRUN3\fR:
 
-.B "chr(7) & read_group(RUN3)"
+.B "chr(7) & read_group : RUN3"
 
 Sub-sample mitochondrial reads and all the reads that have matched to chromosomes starting with \fBug\fR.
 

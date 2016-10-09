@@ -19,18 +19,23 @@
 #include <htslib/sam.h>
 #include <memory>
 
-#define BAMQL_ITERARTOR_API_VERSION 1
+#define BAMQL_ITERARTOR_API_VERSION 2
 namespace bamql {
+
+/**
+ * The error handler type.
+ */
+typedef void (*ErrorHandler)(const char *str, void *context);
 
 /**
  * The run-time type of a filter.
  */
-typedef bool (*FilterFunction)(bam_hdr_t *, bam1_t *);
+typedef bool (*FilterFunction)(bam_hdr_t *, bam1_t *, ErrorHandler, void *);
 
 /**
  * The run-time type of an index checker.
  */
-typedef bool (*IndexFunction)(bam_hdr_t *, uint32_t);
+typedef bool (*IndexFunction)(bam_hdr_t *, uint32_t, ErrorHandler, void *);
 
 /**
  * Iterator over all the reads in a BAM file, using an index if possible.

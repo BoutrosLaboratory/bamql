@@ -34,7 +34,8 @@
  * Functions here can have any signatures, but they must return bool. It is
  * also important that they have no state and no side-effects.
  *
- * A matching definition must be placed in `define_module` and `known` in `misc.cpp` and `jit.cpp`, respectively.
+ * A matching definition must be placed in `define_module` and `known` in
+ * `misc.cpp` and `jit.cpp`, respectively.
  */
 
 static uint32_t compute_mapped_end(bam1_t *read)
@@ -52,47 +53,49 @@ static uint32_t compute_mapped_end(bam1_t *read)
 	}
 }
 
-static bool re_match(const char *pattern, const char *input,
-		     size_t input_length)
+bool bamql_aux_fp(bam1_t *read, char group1, char group2, double *out)
 {
-	return pcre_exec((const pcre *)pattern, NULL, input, input_length, 0, 0,
-			 NULL, 0) >= 0;
+	char const id[] = { group1, group2 };
+	uint8_t const *value = bam_aux_get(read, id);
+	if (value == NULL) {
+		return false;
+	}
+	if (strchr("fd", tolower(*value)) == NULL) {
+		return false;
+	}
+	*out = bam_aux2f(value);
+	return true;
 }
 
-bool bamql_check_aux_str(bam1_t *read, char group1, char group2,
-			 const char *pattern)
+bool bamql_aux_int(bam1_t *read, char group1, char group2, int32_t * out)
+{
+	char const id[] = { group1, group2 };
+	uint8_t const *value = bam_aux_get(read, id);
+	if (value == NULL) {
+		return false;
+	}
+	if (*value == 'A') {
+		*out = bam_aux2A(value);
+		return true;
+	}
+	if (strchr("csi", tolower(*value)) == NULL) {
+		return false;
+	}
+
+	*out = bam_aux2i(value);
+	return true;
+}
+
+const char *bamql_aux_str(bam1_t *read, char group1, char group2)
 {
 	char const id[] = { group1, group2 };
 	uint8_t const *value = bam_aux_get(read, id);
 	const char *str;
 
-	if (value == NULL || (str = bam_aux2Z(value)) == NULL) {
-		return false;
+	if (value == NULL) {
+		return NULL;
 	}
-	return re_match(pattern, str, strlen(str));
-}
-
-bool bamql_check_aux_char(bam1_t *read, char group1, char group2, char pattern)
-{
-	char const id[] = { group1, group2 };
-	uint8_t const *value = bam_aux_get(read, id);
-	return value != NULL && bam_aux2A(value) == pattern;
-}
-
-bool bamql_check_aux_int(bam1_t *read, char group1, char group2,
-			 int32_t pattern)
-{
-	char const id[] = { group1, group2 };
-	uint8_t const *value = bam_aux_get(read, id);
-	return value != NULL && bam_aux2i(value) == pattern;
-}
-
-bool bamql_check_aux_double(bam1_t *read, char group1, char group2,
-			    double pattern)
-{
-	char const id[] = { group1, group2 };
-	uint8_t const *value = bam_aux_get(read, id);
-	return value != NULL && bam_aux2f(value) == (float)pattern;
+	return bam_aux2Z(value);
 }
 
 bool bamql_check_chromosome(bam_hdr_t *header, bam1_t *read,
@@ -108,11 +111,11 @@ bool bamql_check_chromosome_id(bam_hdr_t *header, uint32_t chr_id,
 	if (chr_id >= header->n_targets) {
 		return false;
 	}
-	return re_match(pattern, header->target_name[chr_id],
-			strlen(header->target_name[chr_id]));
+	return bamql_re_match(pattern, header->target_name[chr_id]
+	    );
 }
 
-bool bamql_check_flag(bam1_t *read, uint16_t flag)
+bool bamql_check_flag(bam1_t *read, uint32_t flag)
 {
 	return (flag & read->core.flag) == flag;
 }
@@ -190,12 +193,49 @@ bool bamql_check_split_pair(bam_hdr_t *header, bam1_t *read)
 	return false;
 }
 
-bool bamql_header_regex(bam1_t *read, const char *pattern)
+const char *bamql_chr(bam_hdr_t *header, bam1_t *read, bool mate)
 {
-	return re_match(pattern, bam_get_qname(read), read->core.l_qname - 1);
+	uint32_t chr_id = mate ? read->core.mtid : read->core.tid;
+	const char *value;
+	if (chr_id >= header->n_targets) {
+		return NULL;
+	}
+	value = header->target_name[chr_id];
+	if (strncmp("chr", value, 3) == 0) {
+		value += 3;
+	}
+	return value;
+}
+
+const char *bamql_header(bam1_t *read)
+{
+	return bam_get_qname(read);
 }
 
 bool bamql_randomly(double probability)
 {
 	return probability >= drand48();
+}
+
+bool bamql_re_match(const char *pattern, const char *input)
+{
+	if (input == NULL) {
+		return false;
+	}
+	return pcre_exec((const pcre *)pattern, NULL, input, strlen(input), 0,
+			 0, NULL, 0) >= 0;
+}
+
+int bamql_strcmp(const char *left, const char *right)
+{
+	if (left == right) {
+		return 0;
+	}
+	if (left == NULL) {
+		return -1;
+	}
+	if (right == NULL) {
+		return 1;
+	}
+	return strcmp(left, right);
 }

@@ -27,15 +27,19 @@ public:
   CheckFlag(ParseState &state) : DebuggableNode(state) {}
   virtual llvm::Value *generate(GenerateState &state,
                                 llvm::Value *read,
-                                llvm::Value *header) {
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx) {
     auto function = state.module()->getFunction("bamql_check_flag");
     llvm::Value *args[] = {
       read,
       llvm::ConstantInt::get(
-          llvm::Type::getInt16Ty(state.module()->getContext()), F)
+          llvm::Type::getInt32Ty(state.module()->getContext()), F)
     };
     return state->CreateCall(function, args);
   }
+
+  ExprType type() { return BOOL; }
 
   static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
     static auto result = std::make_shared<CheckFlag<F>>(state);

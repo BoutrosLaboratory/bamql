@@ -14,11 +14,31 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include <cassert>
 #include <cctype>
+#include <iostream>
 #include <sstream>
 #include "bamql-compiler.hpp"
+#include "compiler.hpp"
 
 namespace bamql {
+
+llvm::Value *make_bool(llvm::LLVMContext &context, bool value) {
+  return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
+}
+
+llvm::Value *make_char(llvm::LLVMContext &context, char value) {
+  return llvm::ConstantInt::get(llvm::Type::getInt8Ty(context), value);
+}
+
+llvm::Value *make_int(llvm::LLVMContext &context, int value) {
+  return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), value);
+}
+
+llvm::Value *make_dbl(llvm::LLVMContext &context, double value) {
+  return llvm::ConstantFP::get(llvm::Type::getDoubleTy(context), value);
+}
+
 ParseError::ParseError(size_t index, std::string what)
     : std::runtime_error(what) {
   this->index = index;
@@ -30,6 +50,11 @@ ParseState::ParseState(const std::string &input_)
 unsigned int ParseState::currentLine() const { return line; }
 unsigned int ParseState::currentColumn() const { return column; }
 
+std::string ParseState::createRuntimeError(const std::string &message) {
+  std::stringstream output;
+  output << line << ":" << column << ": " << message;
+  return output.str();
+}
 bool ParseState::empty() const { return index >= input.length(); }
 void ParseState::next() {
   index++;
@@ -52,6 +77,69 @@ int ParseState::parseInt() throw(ParseError) {
   }
   return accumulator;
 }
+std::shared_ptr<AstNode> ParseState::parseLiteral() throw(ParseError) {
+  if (this->empty()) {
+    return nullptr;
+  }
+
+  if (input[index] == '\'') {
+    next();
+    if (this->empty()) {
+      throw ParseError(where(), "Expected character.");
+    }
+    int c = input[index];
+    next();
+    return std::make_shared<
+        bamql::LiteralNode<int, decltype(&make_int), &make_int, INT>>(c);
+  }
+
+  if (!isdigit(input[index]) && input[index] != '-') {
+    return nullptr;
+  }
+
+  size_t start = index;
+  char *dbl_end_ptr = nullptr;
+  char *int_end_ptr = nullptr;
+  auto dbl_value = strtod(input.c_str() + start, &dbl_end_ptr);
+  auto int_value = strtol(input.c_str() + start, &int_end_ptr, 10);
+  auto dbl_length = dbl_end_ptr - (input.c_str() + start);
+  auto int_length = int_end_ptr - (input.c_str() + start);
+  if (dbl_length == 0 && int_length == 0) {
+    return nullptr;
+  }
+  if (dbl_length > int_length) {
+    index += dbl_length;
+    column += dbl_length;
+    return std::make_shared<
+        LiteralNode<double, decltype(&make_dbl), &make_dbl, FP>>(dbl_value);
+  }
+  index += int_length;
+  column += int_length;
+  return std::make_shared<
+      LiteralNode<int, decltype(&make_int), &make_int, INT>>(int_value);
+}
+std::shared_ptr<AstNode> ParseState::parsePredicate() throw(ParseError) {
+  size_t start = where();
+  while (!empty() &&
+         ((**this >= 'a' && **this <= 'z') ||
+          ((where() - start) > 0 && (**this == '_' || **this == '?' ||
+                                     (**this >= '0' && **this <= '9'))))) {
+    next();
+  }
+  if (start == where()) {
+    throw ParseError(where(), "Missing predicate.");
+  }
+
+  std::string name = strFrom(start);
+  for (auto it = predicates.rbegin(); it != predicates.rend(); it++) {
+    if (it->get().count(name)) {
+      return it->get().at(name)(*this);
+    }
+  }
+
+  throw ParseError(start, "Unknown predicate.");
+}
+
 double ParseState::parseDouble() throw(ParseError) {
   size_t start = index;
   char *end_ptr = nullptr;
@@ -157,4 +245,10 @@ std::string ParseState::strFrom(size_t start) const {
 
 size_t ParseState::where() const { return index; }
 char ParseState::operator*() const { return input[index]; }
+
+void ParseState::push(const PredicateMap &map) { predicates.push_back(map); }
+void ParseState::pop(const PredicateMap &map) {
+  assert(predicates.back() == map);
+  predicates.pop_back();
+}
 }
