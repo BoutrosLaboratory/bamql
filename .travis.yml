@@ -15,7 +15,8 @@ env:
 before_script:
   - echo -e "deb http://ppa.launchpad.net/jonathonf/llvm/ubuntu trusty main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.8 main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.9 main" | sudo tee /etc/apt/sources.list.d/llvm.list
   - sudo apt-get update
-  - sudo apt-get install -qq -y --force-yes devscripts equivs
+  - sudo apt-get install -qq -y --force-yes devscripts equivs gcc-4.9 g++-4.9
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
   - sed -i -e 's/, *llvm-[0-9.-]*dev[^,]*,/,/g' debian/control
   - sudo mk-build-deps -i -t "apt-get -qq -y --force-yes --no-install-recommends"
   - sudo apt-get install -qq -y --force-yes llvm-${LLVM_TARGET_VERSION}-dev

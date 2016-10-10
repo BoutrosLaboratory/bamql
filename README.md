@@ -8,7 +8,7 @@ Ubuntu users can install from the PPA by executing:
 
     sudo apt-add-repository ppa:boutroslab/ppa && sudo apt-get update && sudo apt-get install bamql
 
-In order to compile, [LLVM](http://llvm.org/) 3.4 - 4.0, [HTSlib](https://github.com/samtools/htslib/), and libuuid are required.
+In order to compile, [LLVM](http://llvm.org/) 3.4 - 4.0, [HTSlib](https://github.com/samtools/htslib/), and libuuid are required. If compiling using GCC, version 4.9 or later is required.
 
 On Debian/Ubuntu, these can be installed by:
 
