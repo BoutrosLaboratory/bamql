@@ -110,11 +110,12 @@ bamql::BoolFunctionNode::BoolFunctionNode(
     const std::vector<std::shared_ptr<bamql::AstNode>> &&arguments_,
     bamql::ParseState &state)
     : FunctionNode(name_, std::move(arguments_), state) {}
-llvm::Value *bamql::BoolFunctionNode::generateCall(bamql::GenerateState &state,
-                                               llvm::Function *func,
-                                               std::vector<llvm::Value *> &args,
-                                               llvm::Value *error_fun,
-                                               llvm::Value *error_ctx) {
+llvm::Value *bamql::BoolFunctionNode::generateCall(
+    bamql::GenerateState &state,
+    llvm::Function *func,
+    std::vector<llvm::Value *> &args,
+    llvm::Value *error_fun,
+    llvm::Value *error_ctx) {
   return state->CreateCall(func, args);
 }
 bamql::ExprType bamql::BoolFunctionNode::type() { return bamql::BOOL; }
