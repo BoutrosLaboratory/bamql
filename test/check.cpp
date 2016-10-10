@@ -46,7 +46,7 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "aux_str(MD) ~ /51/", { "D" } },
   { "aux_int(XC) == 'b", { "G" } },
   { "aux_dbl(XB) < 3.15", { "C", "D" } },
-  { "aux_dbl(XB) == 3.1", { "C", "D" } },
+  { "aux_dbl(XB) == 2.0", { "C", "D" } },
   { "chr(1)", { "A", "B", "C", "D", "E" } },
   { "chr(*2)", { "F", "G", "H", "I", "J" } },
   { "chr(1*)", { "A", "B", "C", "D", "E", "F", "G", "H", "J" } },
