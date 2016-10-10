@@ -128,7 +128,7 @@ public:
   FunctionNode(const std::string &name_,
                const std::vector<std::shared_ptr<AstNode>> &&arguments_,
                ParseState &state);
-  virtual llvm::Value *generate(GenerateState &state,
+  virtual llvm::Value *generateCall(GenerateState &state,
                                 llvm::Function *func,
                                 std::vector<llvm::Value *> &args,
                                 llvm::Value *error_fun,
@@ -149,7 +149,7 @@ public:
   BoolFunctionNode(const std::string &name_,
                    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
                    ParseState &state);
-  llvm::Value *generate(GenerateState &state,
+  llvm::Value *generateCall(GenerateState &state,
                         llvm::Function *func,
                         std::vector<llvm::Value *> &args,
                         llvm::Value *error_fun,
@@ -169,7 +169,7 @@ public:
                             std::vector<llvm::Value *> &args,
                             llvm::Value *&out_success,
                             llvm::Value *&out_result) = 0;
-  llvm::Value *generate(GenerateState &state,
+  llvm::Value *generateCall(GenerateState &state,
                         llvm::Function *func,
                         std::vector<llvm::Value *> &args,
                         llvm::Value *error_fun,

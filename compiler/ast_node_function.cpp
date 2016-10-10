@@ -103,14 +103,14 @@ llvm::Value *bamql::FunctionNode::generate(GenerateState &state,
       abort();
     }
   }
-  return generate(state, function, arg_values, error_fn, error_ctx);
+  return generateCall(state, function, arg_values, error_fn, error_ctx);
 }
 bamql::BoolFunctionNode::BoolFunctionNode(
     const std::string &name_,
     const std::vector<std::shared_ptr<bamql::AstNode>> &&arguments_,
     bamql::ParseState &state)
     : FunctionNode(name_, std::move(arguments_), state) {}
-llvm::Value *bamql::BoolFunctionNode::generate(bamql::GenerateState &state,
+llvm::Value *bamql::BoolFunctionNode::generateCall(bamql::GenerateState &state,
                                                llvm::Function *func,
                                                std::vector<llvm::Value *> &args,
                                                llvm::Value *error_fun,
@@ -126,7 +126,7 @@ bamql::ErrorFunctionNode::ErrorFunctionNode(
     const std::string &error_message_)
     : FunctionNode(name_, std::move(arguments_), state),
       error_message(state.createRuntimeError(error_message_)) {}
-llvm::Value *bamql::ErrorFunctionNode::generate(
+llvm::Value *bamql::ErrorFunctionNode::generateCall(
     GenerateState &state,
     llvm::Function *func,
     std::vector<llvm::Value *> &args,
