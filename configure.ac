@@ -6,6 +6,16 @@ m4_pattern_allow([AM_PROG_AR])
 AM_PROG_AR
 AC_PROG_CXX_C_O
 AC_PROG_LIBTOOL
+AC_LANG_PUSH([C++])
+
+# Parameter pack bug in GCC 4.8
+SAVED_CPPFLAGS="${CPPFLAGS}"
+CPPFLAGS="${SAVED_CPPFLAGS} -std=c++11"
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[struct S { int foo() const{ return 0; } }; template<class... Args> void evaluate(Args...){} template <class... Args> void bar(Args... args) { auto lmb = [=](){ evaluate(args.foo()...); }; } ]], [[S s{}; bar(s); ]])],
+	[], [AC_MSG_ERROR([There is a bug in your C++ compiler. You probably have an older GCC.])])
+AC_LANG_POP([C++])
+CPPFLAGS="${SAVED_CPPFLAGS}"
 
 AX_LLVM(LLVM_CORE, [core])
 AX_LLVM(LLVM_WRITE, [core nativecodegen])
