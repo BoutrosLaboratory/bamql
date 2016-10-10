@@ -285,10 +285,10 @@ llvm::Type *getBamHeaderType(llvm::Module *module) {
 llvm::Type *getErrorHandlerType(llvm::Module *module) {
   auto base_str = llvm::PointerType::get(
       llvm::IntegerType::get(module->getContext(), 8), 0);
+  std::vector<llvm::Type *> args{ base_str, base_str };
   return llvm::PointerType::get(
-      llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()),
-                              { base_str, base_str },
-                              false),
+      llvm::FunctionType::get(
+          llvm::Type::getVoidTy(module->getContext()), args, false),
       0);
 }
 
