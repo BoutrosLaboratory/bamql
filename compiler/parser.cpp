@@ -109,7 +109,7 @@ std::vector<EquivalenceCheck> equivalence_checks = {
   { ">=",
     &llvm::IRBuilder<>::CreateICmpSGE,
     &llvm::IRBuilder<>::CreateFCmpOGE },
-  { "<", &llvm::IRBuilder<>::CreateICmpSLE, &llvm::IRBuilder<>::CreateFCmpOLT },
+  { "<", &llvm::IRBuilder<>::CreateICmpSLT, &llvm::IRBuilder<>::CreateFCmpOLT },
   { ">", &llvm::IRBuilder<>::CreateICmpSGT, &llvm::IRBuilder<>::CreateFCmpOGT },
 };
 
