@@ -60,6 +60,10 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "chr(1*) ^ chr(*2)", { "A", "B", "C", "D", "E", "I" } },
   { "chr(1) -> read_group : C3BUK.*", { "A", "E", "F", "G", "H", "I", "J" } },
   { "end < begin", {} },
+  { "!(any x = 3, 4 in x == 3)", {} },
+  { "all x = 3, 4 in x == 3", {} },
+  { "any x = 3, 4 in x < 3", {} },
+  { "!(all x = 3, 4 in x > 1)", {} },
 };
 
 class Checker : public bamql::CompileIterator {

@@ -17,6 +17,7 @@
 #include <iostream>
 #include <vector>
 #include "bamql-compiler.hpp"
+#include "compiler.hpp"
 
 namespace bamql {
 
@@ -235,6 +236,35 @@ static std::shared_ptr<AstNode> parseConditional(ParseState &state) throw(
   return std::make_shared<ConditionalNode>(cond_part, then_part, else_part);
 }
 
+static std::shared_ptr<AstNode> parseLoop(ParseState &state) throw(ParseError) {
+  state.parseSpace();
+  bool all;
+  if ((all = state.parseKeyword("all")) || state.parseKeyword("any")) {
+    if (!state.parseSpace()) {
+      throw ParseError(state.where(), "Expected space.");
+    }
+    auto name = state.parseStr(
+        "ABCDEFGHIJLKLMNOPQRSTUVWXYZabcdefghijlklmnopqrstuvwxyz0123456789_");
+    state.parseCharInSpace('=');
+    std::vector<std::shared_ptr<AstNode>> values;
+    do {
+      values.push_back(parseConditional(state));
+      if (values.back()->type() != values.front()->type()) {
+        throw ParseError(state.where(), "All values must be of the same type.");
+      }
+      state.parseSpace();
+    } while (state.parseKeyword(","));
+    state.parseSpace();
+    if (!state.parseKeyword("in")) {
+      throw ParseError(state.where(), "Expected `in' or `,' in loop.");
+    }
+    return std::make_shared<bamql::LoopNode>(
+        state, name, all, std::move(values));
+  } else {
+    return parseConditional(state);
+  }
+}
+
 /**
  * Handle let operators (first step in the recursive descent)
  */
@@ -246,7 +276,7 @@ std::shared_ptr<AstNode> AstNode::parse(ParseState &state) throw(ParseError) {
     let->parse(state);
     node = let;
   } else {
-    node = parseConditional(state);
+    node = parseLoop(state);
   }
   return node;
 }

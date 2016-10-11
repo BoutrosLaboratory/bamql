@@ -239,4 +239,37 @@ Predicate parseFunction(
         name, std::move(arguments), state, extra_config...);
   };
 }
+
+class LoopVar;
+class LoopNode : public AstNode {
+  friend class LoopVar;
+
+public:
+  LoopNode(ParseState &state,
+           const std::string &var_name,
+           bool all_,
+           std::vector<std::shared_ptr<AstNode>> &&values_) throw(ParseError);
+  LoopNode(bool all,
+           std::shared_ptr<AstNode> &body,
+           std::vector<std::shared_ptr<AstNode>> &values);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *chromosome,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx);
+  bool usesIndex();
+  ExprType type();
+  void writeDebug(GenerateState &state);
+
+private:
+  bool all;
+  std::shared_ptr<AstNode> body;
+  std::vector<std::shared_ptr<AstNode>> values;
+  std::shared_ptr<LoopVar> var;
+};
 }

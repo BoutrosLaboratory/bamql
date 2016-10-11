@@ -15,6 +15,15 @@ The logical connectives are presented in order from lowest precedence to highest
 
 Computes the value of \fIexprN\fR and assigns it to \fInameN\fR which can then be used in \fIbody_expr\fR. The name may contain only alphanumeric characters or underscore.
 
+.SS LOOPS
+\fBall\fR name \fB=\fR expr1 \fB,\fR expr3 [ \fB,\fR expr3 ...] \fBin\fR body_expr
+
+Evaluates \fIbody_expr\fR with \fIname\fR set to each of \fIexpr1\fR, \fIexpr2\fR, and so on, and is satisfied if it is satisfied for every value.
+
+\fBany\fR name \fB=\fR expr1 \fB,\fR expr3 [ \fB,\fR expr3 ...] \fBin\fR body_expr
+
+Evaluates \fIbody_expr\fR with \fIname\fR set to each of \fIexpr1\fR, \fIexpr2\fR, and so on, and is satisfied if it is satisfied for some value.
+
 .SS TERNARY IF
 cond \fBthen\fR then_expression \fBelse\fR else_expression
 
