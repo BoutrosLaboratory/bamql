@@ -90,7 +90,9 @@ void bamql::BindingNode::parse(ParseState &state) throw(ParseError) {
     if (definitions.size() > 0) {
       state.next();
     }
-    state.parseSpace();
+    if (!state.parseSpace()) {
+      throw ParseError(state.where(), "Expected space.");
+    }
     auto name = state.parseStr(
         "ABCDEFGHIJLKLMNOPQRSTUVWXYZabcdefghijlklmnopqrstuvwxyz0123456789_");
     state.parseCharInSpace('=');
