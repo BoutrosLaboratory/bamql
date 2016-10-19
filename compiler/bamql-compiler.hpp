@@ -107,6 +107,7 @@ public:
 
   llvm::Module *module() const;
   llvm::DIScope *debugScope() const;
+  void setDebugScope(llvm::DIScope *);
   llvm::Constant *createString(const std::string &str);
 
 private:

@@ -297,6 +297,7 @@ Generator::Generator(llvm::Module *module, llvm::DIScope *debug_scope_)
 
 llvm::Module *Generator::module() const { return mod; }
 llvm::DIScope *Generator::debugScope() const { return debug_scope; }
+void Generator::setDebugScope(llvm::DIScope *scope) { debug_scope = scope; }
 
 llvm::Constant *Generator::createString(const std::string &str) {
   auto iterator = constant_pool.find(str);

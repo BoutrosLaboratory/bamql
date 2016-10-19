@@ -312,6 +312,7 @@ int main(int argc, char *const *argv) {
 
   bamql::ParseState state(queries);
   state.push(predicates);
+  auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
   try {
     state.parseSpace();
     while (state.parseKeyword("extern")) {
@@ -328,8 +329,6 @@ int main(int argc, char *const *argv) {
       if (checkBadName(predicates, state, argv[optind], name)) {
         return 1;
       }
-      auto generator =
-          std::make_shared<bamql::Generator>(module.get(), nullptr);
       auto index_name = name + "_index";
       auto node = std::make_shared<ExistingFunction>(
           createExternFunction(generator,
@@ -416,23 +415,6 @@ int main(int argc, char *const *argv) {
                                                     true,
                                                     startLine);
       }
-      auto filter_generator = std::make_shared<bamql::Generator>(module.get(),
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-
-                                                                 &filter_scope
-#else
-                                                                 filter_scope
-#endif
-                                                                 );
-      auto index_generator = std::make_shared<bamql::Generator>(module.get(),
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-
-                                                                &index_scope
-#else
-                                                                index_scope
-#endif
-
-                                                                );
       if (debug) {
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
         debug_builder->createLocalVariable(
@@ -517,9 +499,28 @@ int main(int argc, char *const *argv) {
             index_scope, "error_context", 3, diFile, startLine, diVoidP, true);
 #endif
       }
-      auto node = std::make_shared<ExistingFunction>(
-          ast->createFilterFunction(filter_generator, name),
-          ast->createIndexFunction(index_generator, index_name.str()));
+
+      generator->setDebugScope(
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+
+          &filter_scope
+#else
+          filter_scope
+#endif
+          );
+      auto filter_func = ast->createFilterFunction(generator, name);
+      generator->setDebugScope(
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
+
+          &index_scope
+#else
+          index_scope
+#endif
+
+          );
+
+      auto index_func = ast->createIndexFunction(generator, index_name.str());
+      auto node = std::make_shared<ExistingFunction>(filter_func, index_func);
       predicates[name] = [=](bamql::ParseState &state) { return node; };
     } while (!state.empty());
   } catch (bamql::ParseError e) {
