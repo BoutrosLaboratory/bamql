@@ -50,6 +50,8 @@ extern "C" {
 	bool bamql_position_end(bam_hdr_t *header, bam1_t *read,
 				uint32_t * out);
 	bool bamql_randomly(double probability);
+	const char *bamql_re_compile(const char *pattern, uint32_t flags,
+				     uint32_t count);
 	bool bamql_re_match(const char *pattern, const char *input);
 	int bamql_strcmp(const char *left, const char *right);
 #ifdef __cplusplus

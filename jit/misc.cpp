@@ -15,6 +15,7 @@
  */
 
 #include <iostream>
+#include <pcre.h>
 #include <llvm/Support/DynamicLibrary.h>
 #include "bamql-runtime.h"
 #include "bamql-jit.hpp"
@@ -37,6 +38,8 @@ std::map<std::string, void (*)()> known = {
   { "bamql_randomly", (void (*)())bamql_randomly },
   { "bamql_re_match", (void (*)())bamql_re_match },
   { "bamql_strcmp", (void (*)())bamql_strcmp },
+  { "bamql_re_compile", (void (*)())bamql_re_compile },
+  { "pcre_free", (void (*)())pcre_free },
 };
 
 std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(

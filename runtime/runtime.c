@@ -237,6 +237,31 @@ bool bamql_randomly(double probability)
 	return probability >= drand48();
 }
 
+const char *bamql_re_compile(const char *pattern, uint32_t flags,
+			     uint32_t count)
+{
+	const char *errptr;
+	int erroffset;
+	int name_count;
+	pcre *result = pcre_compile(pattern, flags, &errptr, &erroffset, NULL);
+	if (result == NULL) {
+		fprintf(stderr, "Failed to compile regex: %s\n", pattern);
+		abort();
+	}
+	if (errptr != NULL) {
+		fprintf(stderr, "%s: %s\n", errptr, pattern);
+		abort();
+	}
+	if (pcre_fullinfo(result, NULL, PCRE_INFO_NAMECOUNT, &name_count) <
+	    0 || name_count != count) {
+		fprintf(stderr,
+			"There should be %d captures but there are %d: %s\n",
+			count, name_count, pattern);
+		abort();
+	}
+	return (const char *)result;
+}
+
 bool bamql_re_match(const char *pattern, const char *input)
 {
 	if (input == NULL) {

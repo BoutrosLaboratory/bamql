@@ -547,6 +547,11 @@ public:
   RegularExpression parseRegEx() throw(ParseError);
 
   /**
+   * Match a PCRE regular expression putting named captures in the provided map.
+   */
+  RegularExpression parseRegEx(std::map<std::string, int> &) throw(ParseError);
+
+  /**
   * Return the substring starting from the position to provided to the current
   * position in the input string.
   */

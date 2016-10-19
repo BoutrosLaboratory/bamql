@@ -269,6 +269,20 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
                    PureReadArg,
                    base_uint32,
                    { base_str, base_str });
+    createFunction(module,
+                   "bamql_re_compile",
+                   PureReadArg,
+                   base_str,
+                   { base_str, base_uint32, base_uint32 });
+
+    llvm::Type *pcre_free_args[] = { base_str };
+    llvm::Function::Create(
+        llvm::FunctionType::get(
+            llvm::Type::getVoidTy(module->getContext()), pcre_free_args, false),
+        llvm::GlobalValue::ExternalLinkage,
+        "pcre_free",
+        module);
+
     struct_ty = module->getTypeByName(name);
   }
   return struct_ty;

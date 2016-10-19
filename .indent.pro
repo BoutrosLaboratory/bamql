@@ -1,2 +1,5 @@
--linux -T bam1_t
--linux -T bam_hdr_t
+-linux
+-T bam1_t
+-T bam_hdr_t
+-T bamql_error_handler
+-T pcre
