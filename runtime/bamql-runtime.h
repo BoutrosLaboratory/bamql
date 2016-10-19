@@ -50,6 +50,9 @@ extern "C" {
 	bool bamql_position_end(bam_hdr_t *header, bam1_t *read,
 				uint32_t * out);
 	bool bamql_randomly(double probability);
+	bool bamql_re_bind(const char *pattern, uint32_t count,
+			   bamql_error_handler error_fn, void *error_ctx,
+			   const char *input, ...);
 	const char *bamql_re_compile(const char *pattern, uint32_t flags,
 				     uint32_t count);
 	bool bamql_re_match(const char *pattern, const char *input);

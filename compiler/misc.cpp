@@ -280,7 +280,21 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
         llvm::FunctionType::get(
             llvm::Type::getVoidTy(module->getContext()), pcre_free_args, false),
         llvm::GlobalValue::ExternalLinkage,
+        "pcre_free_substring",
+        module);
+    llvm::Function::Create(
+        llvm::FunctionType::get(
+            llvm::Type::getVoidTy(module->getContext()), pcre_free_args, false),
+        llvm::GlobalValue::ExternalLinkage,
         "pcre_free",
+        module);
+    llvm::Type *re_bind_args[] = {
+      base_str, base_uint32, getErrorHandlerType(module), base_str, base_str
+    };
+    llvm::Function::Create(
+        llvm::FunctionType::get(base_bool, re_bind_args, true),
+        llvm::GlobalValue::ExternalLinkage,
+        "bamql_re_bind",
         module);
 
     struct_ty = module->getTypeByName(name);

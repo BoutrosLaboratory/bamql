@@ -15,6 +15,8 @@
  */
 #define _XOPEN_SOURCE
 
+#include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -235,6 +237,86 @@ bool bamql_position_end(bam_hdr_t *header, bam1_t *read, uint32_t * out)
 bool bamql_randomly(double probability)
 {
 	return probability >= drand48();
+}
+
+bool bamql_re_bind(const char *pattern, uint32_t count,
+		   bamql_error_handler error_fn, void *error_ctx,
+		   const char *input, ...)
+{
+	int vect[3 * (count + 1)];
+	int strnum;
+	va_list args;
+	if (input == NULL) {
+		return false;
+	}
+
+	if ((strnum = pcre_exec
+	     ((const pcre *)pattern, NULL, input, strlen(input), 0, 0, vect,
+	      3 * (count + 1))) < 0) {
+		return false;
+	}
+	va_start(args, input);
+	while (count-- > 0) {
+		int number = va_arg(args, uint32_t);
+		const char *error_text = va_arg(args, const char *);
+		const char *result = NULL;
+		const char **out_str;
+		double *out_fp;
+		int32_t *out_int;
+		char *end;
+
+		if (pcre_get_substring
+		    (input, vect, strnum, number, &result) < 0
+		    || result == NULL) {
+			error_fn(error_text, error_ctx);
+		}
+		switch (va_arg(args, uint32_t)) {
+		case 0:
+			out_str = va_arg(args, const char **);
+			*out_str = result;
+			break;
+
+		case 1:
+			out_fp = va_arg(args, double *);
+			if (result == NULL) {
+				*out_fp = NAN;
+			} else {
+				*out_fp = strtod(result, &end);
+				pcre_free_substring(result);
+				if (*end != '\0') {
+					*out_fp = NAN;
+					error_fn(error_text, error_ctx);
+				}
+			}
+			break;
+
+		case 2:
+			out_int = va_arg(args, int32_t *);
+			if (result == NULL) {
+				*out_int = 0;
+			} else {
+				*out_int = strtol(result, &end, 10);
+				pcre_free_substring(result);
+				if (*end != '\0') {
+					*out_int = 0;
+					error_fn(error_text, error_ctx);
+				}
+			}
+			break;
+
+		case 3:
+			out_int = va_arg(args, int32_t *);
+			*out_int = result == NULL ? 0 : *result;
+			if (result != NULL) {
+				pcre_free_substring(result);
+			}
+			break;
+		default:
+			abort();
+		}
+	}
+	va_end(args);
+	return true;
 }
 
 const char *bamql_re_compile(const char *pattern, uint32_t flags,

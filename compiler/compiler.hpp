@@ -272,4 +272,27 @@ private:
   std::vector<std::shared_ptr<AstNode>> values;
   std::shared_ptr<LoopVar> var;
 };
+
+class BoundMatchNode;
+class MatchBindingNode : public DebuggableNode {
+public:
+  MatchBindingNode(ParseState &state) throw(ParseError);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *read,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx);
+  ExprType type();
+
+private:
+  std::vector<std::shared_ptr<BoundMatchNode>> definitions;
+  RegularExpression regex;
+  std::shared_ptr<AstNode> input;
+  std::shared_ptr<AstNode> body;
+};
 }

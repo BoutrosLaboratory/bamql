@@ -36,10 +36,12 @@ std::map<std::string, void (*)()> known = {
   { "bamql_position_begin", (void (*)())bamql_position_begin },
   { "bamql_position_end", (void (*)())bamql_position_end },
   { "bamql_randomly", (void (*)())bamql_randomly },
+  { "bamql_re_bind", (void (*)())bamql_re_bind },
   { "bamql_re_match", (void (*)())bamql_re_match },
   { "bamql_strcmp", (void (*)())bamql_strcmp },
   { "bamql_re_compile", (void (*)())bamql_re_compile },
   { "pcre_free", (void (*)())pcre_free },
+  { "pcre_free_substring", (void (*)())pcre_free_substring },
 };
 
 std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(

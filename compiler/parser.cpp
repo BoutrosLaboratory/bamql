@@ -270,15 +270,15 @@ static std::shared_ptr<AstNode> parseLoop(ParseState &state) throw(ParseError) {
  */
 std::shared_ptr<AstNode> AstNode::parse(ParseState &state) throw(ParseError) {
   state.parseSpace();
-  std::shared_ptr<AstNode> node;
   if (state.parseKeyword("let")) {
     auto let = std::make_shared<BindingNode>(state);
     let->parse(state);
-    node = let;
+    return let;
+  } else if (state.parseKeyword("bind")) {
+    return std::make_shared<MatchBindingNode>(state);
   } else {
-    node = parseLoop(state);
+    return parseLoop(state);
   }
-  return node;
 }
 
 /**
