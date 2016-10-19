@@ -125,7 +125,9 @@ int main(int argc, char *const *argv) {
     checkers.push_back(
         std::move(Checker(engine, generator, ast, name.str(), index)));
   }
+  generator = nullptr;
   engine->finalizeObject();
+  engine->runStaticConstructorsDestructors(false);
 
   for (size_t index = 0; index < queries.size(); index++) {
     checkers[index].prepareExecution();
@@ -137,5 +139,6 @@ int main(int argc, char *const *argv) {
               << std::endl;
     success &= test_success;
   }
+  engine->runStaticConstructorsDestructors(true);
   return success ? 0 : 1;
 }

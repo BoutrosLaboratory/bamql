@@ -272,8 +272,10 @@ int main(int argc, char *const *argv) {
                                               output,
                                               errors);
   }
+  generator = nullptr;
   engine->finalizeObject();
   output->prepareExecution();
+  engine->runStaticConstructorsDestructors(false);
 
   // Run the chain.
   int exitcode;
@@ -288,5 +290,6 @@ int main(int argc, char *const *argv) {
               << std::endl;
   }
 
+  engine->runStaticConstructorsDestructors(true);
   return exitcode;
 }

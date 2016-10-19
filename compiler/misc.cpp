@@ -293,11 +293,68 @@ llvm::Type *getErrorHandlerType(llvm::Module *module) {
 }
 
 Generator::Generator(llvm::Module *module, llvm::DIScope *debug_scope_)
-    : mod(module), debug_scope(debug_scope_) {}
+    : mod(module), debug_scope(debug_scope_) {
+  std::map<std::string, llvm::IRBuilder<> **> tors = { { "__ctor", &ctor },
+                                                       { "__dtor", &dtor } };
+  for (auto it = tors.begin(); it != tors.end(); it++) {
+    auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
+        it->first, llvm::Type::getVoidTy(module->getContext()), nullptr));
+    func->setLinkage(llvm::GlobalValue::InternalLinkage);
+    *it->second = new llvm::IRBuilder<>(
+        llvm::BasicBlock::Create(module->getContext(), "entry", func));
+  }
+}
+Generator::~Generator() {
+  std::map<std::string, llvm::IRBuilder<> *> tors = {
+    { "llvm.global_ctors", ctor }, { "llvm.global_dtors", dtor }
+  };
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
+#else
+  auto base_str =
+      llvm::PointerType::get(llvm::Type::getInt8Ty(mod->getContext()), 0);
+#endif
+  auto int32_ty = llvm::Type::getInt32Ty(mod->getContext());
+  llvm::Type *struct_elements[] = {
+    int32_ty,
+    llvm::PointerType::get(llvm::FunctionType::get(
+                               llvm::Type::getVoidTy(mod->getContext()), false),
+                           0),
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
+#else
+    base_str
+#endif
+  };
+  auto struct_ty = llvm::StructType::create(struct_elements);
+  auto array_ty = llvm::ArrayType::get(struct_ty, 1);
+  for (auto it = tors.begin(); it != tors.end(); it++) {
+    it->second->CreateRetVoid();
+    auto link = new llvm::GlobalVariable(*mod,
+                                         array_ty,
+                                         false,
+                                         llvm::GlobalVariable::AppendingLinkage,
+                                         0,
+                                         it->first);
+    llvm::Constant *constants[] = {
+      llvm::ConstantStruct::get(struct_ty,
+                                llvm::ConstantInt::get(int32_ty, 65535),
+                                it->second->GetInsertBlock()->getParent(),
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
+#else
+                                llvm::ConstantPointerNull::get(base_str),
+#endif
+
+                                nullptr)
+    };
+    link->setInitializer(llvm::ConstantArray::get(array_ty, constants));
+    delete it->second;
+  }
+}
 
 llvm::Module *Generator::module() const { return mod; }
 llvm::DIScope *Generator::debugScope() const { return debug_scope; }
 void Generator::setDebugScope(llvm::DIScope *scope) { debug_scope = scope; }
+llvm::IRBuilder<> *Generator::constructor() const { return ctor; }
+llvm::IRBuilder<> *Generator::destructor() const { return dtor; }
 
 llvm::Constant *Generator::createString(const std::string &str) {
   auto iterator = constant_pool.find(str);
@@ -337,6 +394,7 @@ GenerateState::GenerateState(std::shared_ptr<Generator> &generator_,
 
 llvm::IRBuilder<> *GenerateState::operator->() { return &builder; }
 llvm::IRBuilder<> *GenerateState::operator*() { return &builder; }
+Generator &GenerateState::getGenerator() const { return *generator; }
 llvm::Module *GenerateState::module() const { return generator->module(); }
 llvm::DIScope *GenerateState::debugScope() const {
   return generator->debugScope();

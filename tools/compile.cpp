@@ -534,6 +534,7 @@ int main(int argc, char *const *argv) {
   header_file << "}" << std::endl;
   header_file << "#endif" << std::endl;
 
+  generator = nullptr;
   if (debug) {
     debug_builder->finalize();
   }

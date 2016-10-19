@@ -104,16 +104,21 @@ RegularExpression setToRegEx(const std::string &prefix,
 class Generator {
 public:
   Generator(llvm::Module *module, llvm::DIScope *debug_scope);
+  ~Generator();
 
   llvm::Module *module() const;
   llvm::DIScope *debugScope() const;
   void setDebugScope(llvm::DIScope *);
   llvm::Constant *createString(const std::string &str);
+  llvm::IRBuilder<> *constructor() const;
+  llvm::IRBuilder<> *destructor() const;
 
 private:
   llvm::Module *mod;
   llvm::DIScope *debug_scope;
   std::map<std::string, llvm::Constant *> constant_pool;
+  llvm::IRBuilder<> *ctor;
+  llvm::IRBuilder<> *dtor;
 };
 class GenerateState {
 public:
@@ -121,6 +126,7 @@ public:
 
   llvm::IRBuilder<> *operator*();
   llvm::IRBuilder<> *operator->();
+  Generator &getGenerator() const;
   llvm::Module *module() const;
   llvm::DIScope *debugScope() const;
   /**

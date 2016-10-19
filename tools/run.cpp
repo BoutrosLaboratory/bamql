@@ -249,13 +249,17 @@ int main(int argc, char *const *argv) {
   // Process the input file.
   DataCollector stats(
       engine, generator, query_content, ast, verbose, accept, reject);
+  generator = nullptr;
   engine->finalizeObject();
+  engine->runStaticConstructorsDestructors(false);
   stats.prepareExecution();
 
   if (stats.processFile(bam_filename, binary, ignore_index)) {
     stats.writeSummary();
+    engine->runStaticConstructorsDestructors(true);
     return 0;
   } else {
+    engine->runStaticConstructorsDestructors(true);
     return 1;
   }
 }
