@@ -15,9 +15,9 @@ The logical connectives are presented in order from lowest precedence to highest
 
 Computes the value of \fIexprN\fR and assigns it to \fInameN\fR which can then be used in \fIbody_expr\fR. The name may contain only alphanumeric characters or underscore.
 
-\fBbind\fR str_expr \fBusing /\fRregex\fB/ in\fR body_expr
+\fBbind\fR str_expr \fBusing /\fRregex\fB/\fR[\fBi\fR]\fB in\fR body_expr
 
-Compute the value of \fIstr_expr\fR, which must be a string, and then matches it against \fIregex\fR. If the expression matches, \fIbody_expr\fR, which must be Boolean, will be evaluated. Any named subpatterns, as per
+Compute the value of \fIstr_expr\fR, which must be a string, and then matches it against \fIregex\fR. If \fBi\fR is included, the match will be case-insensitive. If the expression matches, \fIbody_expr\fR, which must be Boolean, will be evaluated. Any named subpatterns, as per
 .BR pcrepattern (3),
 are available as variables. If the patterns name ends in \fB_d\fR, \fB_i\fR, \fB_c\fR, it will be converted to a floating point value, an integer value, or the first character as an integer.
 
@@ -76,7 +76,7 @@ expr \fB=>\fR expr
 
 Compares values in the usual way. Note that only values of the same type can be compared. For strings, lexicographical order is used for less/greater than comparisons.
 
-expr \fB~ /\fRregex\fB/\fR
+expr \fB~ /\fRregex\fB/\fR[\fBi\fR]
 .br
 expr \fB: \fRglob
 
@@ -84,7 +84,7 @@ Does string matching usin a PCRE regular expression or a glob. See
 .BR pcrepattern (3)
 or
 .BR glob (7)
-for details.
+for details. If \fBi\fR is included, the match will be case-insensitive.
 
 .SS NEGATION (NOT)
 \fB!\fR expr

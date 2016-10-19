@@ -91,10 +91,12 @@ bamql::RegularExpression bamql::ParseState::parseRegEx(
   if (index == input.length()) {
     throw bamql::ParseError(start, "Unterminated regular expression.");
   }
-  index++;
+  auto stop = index++;
 
-  return createPCRE(
-      input.substr(start + 1, index - start - 2), false, start, names);
+  return createPCRE(input.substr(start + 1, stop - start - 1),
+                    parseKeyword("i"),
+                    start,
+                    names);
 }
 
 bamql::RegularExpression bamql::ParseState::parseRegEx() throw(
