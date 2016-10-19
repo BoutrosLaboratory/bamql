@@ -298,7 +298,7 @@ Generator::Generator(llvm::Module *module, llvm::DIScope *debug_scope_)
 llvm::Module *Generator::module() const { return mod; }
 llvm::DIScope *Generator::debugScope() const { return debug_scope; }
 
-llvm::Value *Generator::createString(std::string &str) {
+llvm::Constant *Generator::createString(const std::string &str) {
   auto iterator = constant_pool.find(str);
   if (iterator != constant_pool.end()) {
     return iterator->second;
@@ -340,7 +340,7 @@ llvm::Module *GenerateState::module() const { return generator->module(); }
 llvm::DIScope *GenerateState::debugScope() const {
   return generator->debugScope();
 }
-llvm::Value *GenerateState::createString(std::string &str) {
+llvm::Constant *GenerateState::createString(const std::string &str) {
   return generator->createString(str);
 }
 llvm::Type *getReifiedType(ExprType type, llvm::LLVMContext &context) {

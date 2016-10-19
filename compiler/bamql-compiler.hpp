@@ -107,12 +107,12 @@ public:
 
   llvm::Module *module() const;
   llvm::DIScope *debugScope() const;
-  llvm::Value *createString(std::string &str);
+  llvm::Constant *createString(const std::string &str);
 
 private:
   llvm::Module *mod;
   llvm::DIScope *debug_scope;
-  std::map<std::string, llvm::Value *> constant_pool;
+  std::map<std::string, llvm::Constant *> constant_pool;
 };
 class GenerateState {
 public:
@@ -128,7 +128,7 @@ public:
    *
    * One would think this is trivial, but it isn't.
    */
-  llvm::Value *createString(std::string &str);
+  llvm::Constant *createString(const std::string &str);
   std::map<void *, llvm::Value *> definitions;
   std::map<void *, llvm::Value *> definitionsIndex;
 
