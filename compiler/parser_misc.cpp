@@ -248,7 +248,7 @@ char ParseState::operator*() const { return input[index]; }
 
 void ParseState::push(const PredicateMap &map) { predicates.push_back(map); }
 void ParseState::pop(const PredicateMap &map) {
-  assert(predicates.back() == map);
+  assert(&predicates.back().get() == &map);
   predicates.pop_back();
 }
 }
