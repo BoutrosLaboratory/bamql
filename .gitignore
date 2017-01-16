@@ -18,6 +18,7 @@ autom4te.cache
 bamql
 bamql-chain
 bamql-compile
+bamql-pairs
 bamql-script
 check_bamql*
 compile

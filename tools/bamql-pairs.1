@@ -1,22 +1,18 @@
 .\" Authors: Paul Boutros and Lab Members
-.TH bamql 1 "Dec 2014" "1.0" "USER COMMANDS"
+.TH bamql-pairs 1 "Jan 2017" "1.2" "USER COMMANDS"
 .SH NAME 
-bamql \- Filter SAM/BAM files easily
+bamql-pairs \- Filter SAM/BAM read pairs easily
 .SH SYNOPSIS
 .B bamql
 [
 .B \-b
 ] [
 .B \-I
-] [
-.B \-o 
-.I accepted_output.bam
-] [
-.B \-O
-.I rejected_output.bam
 ]
 .B -f
 .I input.bam
+.B \-o 
+.I output.bam
 {
 .B -q
 .I query.bamql
@@ -42,25 +38,19 @@ The input BAM file.
 \-I
 Ignore the index, if present. BAM files can be indexed, allowing more efficient searching of the file. If an index is found, it will be automatically used. This switch ignore the index even if it is present; it makes no difference if it is not.
 .TP
-\-o accepted_output.bam
-Any reads which are accepted by the query, that is, for which the query is true, will be placed in this file. If omitted, the number of queries will be tallied, but discarded
-.TP
-\-O rejected_output.bam
-Any reads which are rejected by the query, that is, for which the query is false, will be placed in this file. If omitted, the number of queries will be tallied, but discarded
+\-o output.bam
+Any read pairs which are accepted by the query, that is, for which the query is true, will be placed in this file. Unlike
+.BR bamql (1)
+if either member of a read pair is accepted, both are accepted. This requires reading the file twice, so it will be slower.
 .TP
 \-q query.bamql
 Read the query from a file. To run this query from the command line, as a script, set the first line of the file to be \fB#!/usr/bin/env bamql-script\fR. See
 .BR bamql-script (1).
 
-.SH EXAMPLE
-This extracts all the reads on chromosome 7:
-
-.B bamql -o chromo7.bam -b -f genome.bam 'chr(7)'
-
 .SH SEE ALSO
+.BR bamql (1),
 .BR bamql-chain (1),
 .BR bamql-compile (1),
-.BR bamql-pairs (1),
 .BR bamql-script (1),
 .BR bamql_queries (7),
 .BR samtools (1).

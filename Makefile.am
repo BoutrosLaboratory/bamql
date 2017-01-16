@@ -4,6 +4,7 @@ bin_PROGRAMS = \
 	bamql \
 	bamql-chain \
 	bamql-compile \
+	bamql-pairs \
 	bamql-script \
 	$(NULL)
 lib_LTLIBRARIES = \
@@ -30,6 +31,7 @@ man1_MANS = \
 	tools/bamql.1 \
 	tools/bamql-chain.1 \
 	tools/bamql-compile.1 \
+	tools/bamql-pairs.1 \
 	tools/bamql-script.1 \
 	$(NULL)
 man7_MANS = \
@@ -138,6 +140,31 @@ libbamql_jit_la_LDFLAGS = \
 libbamql_jit_la_SOURCES = \
 	jit/misc.cpp \
 	jit/reader.cpp \
+	$(NULL)
+
+bamql_pairs_SOURCES = \
+	tools/pairs.cpp \
+	$(NULL)
+bamql_pairs_CPPFLAGS = \
+	-std=c++11 \
+	$(HTS_CFLAGS) -g -O2 \
+	$(LLVM_RUN_CPPFLAGS) \
+	$(UUID_CFLAGS) \
+	-Icompiler \
+	-Iiterator \
+	-Ijit \
+	-Iruntime \
+	$(NULL)
+bamql_pairs_LDFLAGS =\
+	$(LLVM_RUN_LDFLAGS) \
+	$(NULL)
+bamql_pairs_LDADD = \
+	libbamql-cpl.la \
+	libbamql-itr.la \
+	libbamql-jit.la \
+	$(HTS_LIBS) \
+	$(LLVM_RUN_LIBS) \
+	$(UUID_LIBS) \
 	$(NULL)
 
 bamql_SOURCES = \

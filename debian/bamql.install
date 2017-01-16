@@ -1,5 +1,8 @@
 usr/bin/bamql
 usr/bin/bamql-chain
+usr/bin/bamql-pairs
 usr/bin/bamql-script
 usr/share/man/man1/bamql.1
 usr/share/man/man1/bamql-chain.1
+usr/share/man/man1/bamql-pairs.1
+usr/share/man/man1/bamql-script.1
