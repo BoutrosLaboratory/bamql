@@ -251,6 +251,7 @@ int main(int argc, char *const *argv) {
 #endif
   if (debug) {
     debug_builder = std::make_shared<llvm::DIBuilder>(*module);
+#if LLVM_VERSION_MAJOR < 4
     debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C,
                                      base_name,
                                      dir_name,
@@ -258,9 +259,19 @@ int main(int argc, char *const *argv) {
                                      false,
                                      "",
                                      0);
+#else
+    debug_builder->createCompileUnit(
+        llvm::dwarf::DW_LANG_C, diFile, PACKAGE_STRING, false, "", 0);
+#endif
     diFile = debug_builder->createFile(base_name, dir_name);
-    diInt32 = debug_builder->createBasicType(
-        "uint32", 32, 32, llvm::dwarf::DW_ATE_unsigned);
+    diInt32 = debug_builder->createBasicType("uint32",
+                                             32,
+                                             32
+#if LLVM_VERSION_MAJOR < 4
+                                             ,
+                                             llvm::dwarf::DW_ATE_unsigned
+#endif
+                                             );
     diBamHdr = debug_builder->createUnspecifiedType("bam_hdr_t");
     diBam1 = debug_builder->createUnspecifiedType("bam1_t");
     diErrorFunc = debug_builder->createUnspecifiedType("bamql_error_handler");
