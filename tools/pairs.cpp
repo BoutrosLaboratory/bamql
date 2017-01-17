@@ -34,16 +34,19 @@ public:
   PairCollector(std::shared_ptr<llvm::ExecutionEngine> &engine,
                 std::shared_ptr<bamql::Generator> &generator,
                 std::shared_ptr<bamql::AstNode> &node,
-                std::set<std::string> &matched_)
+                std::set<std::string> &matched_,
+                std::set<uint32_t> &matched_tids_)
       : bamql::CompileIterator::CompileIterator(
             engine, generator, node, "filter"),
-        matched(matched_) {}
+        matched(matched_), matched_tids(matched_tids_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {}
   void readMatch(bool matches,
                  std::shared_ptr<bam_hdr_t> &header,
                  std::shared_ptr<bam1_t> &read) {
     if (matches) {
       matched.insert(bam_get_qname(read.get()));
+      matched_tids.insert(read->core.tid);
+      matched_tids.insert(read->core.mtid);
     }
   }
   void handleError(const char *message) {
@@ -63,15 +66,18 @@ public:
 private:
   std::map<const char *, size_t> errors;
   std::set<std::string> &matched;
+  std::set<uint32_t> &matched_tids;
 };
 class OutputPairs : public bamql::ReadIterator {
 public:
   OutputPairs(
 
       std::set<std::string> &matched_,
+      std::set<uint32_t> &matched_tids_,
       std::string &query_,
       std::shared_ptr<htsFile> &output_)
-      : matched(matched_), query(query_), output(output_) {}
+      : matched(matched_), matched_tids(matched_tids_), query(query_),
+        output(output_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
     auto version = bamql::version();
     uuid_t uuid;
@@ -89,7 +95,7 @@ public:
     }
   }
   bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid) {
-    return true;
+    return matched_tids.find(tid) != matched_tids.end();
   }
   void processRead(std::shared_ptr<bam_hdr_t> &header,
                    std::shared_ptr<bam1_t> &read) {
@@ -103,6 +109,7 @@ public:
 
 private:
   std::set<std::string> &matched;
+  std::set<uint32_t> &matched_tids;
   std::string query;
   std::shared_ptr<htsFile> output;
 };
@@ -229,8 +236,9 @@ int main(int argc, char *const *argv) {
 
   // Process the input file.
   std::set<std::string> matched;
+  std::set<uint32_t> matched_tids;
 
-  PairCollector collectNames(engine, generator, ast, matched);
+  PairCollector collectNames(engine, generator, ast, matched, matched_tids);
   generator = nullptr;
   engine->finalizeObject();
   engine->runStaticConstructorsDestructors(false);
@@ -241,7 +249,7 @@ int main(int argc, char *const *argv) {
     return 1;
   }
   collectNames.writeSummary();
-  OutputPairs matchNames(matched, query_content, output);
+  OutputPairs matchNames(matched, matched_tids, query_content, output);
   if (!matchNames.processFile(bam_filename, binary, ignore_index)) {
     engine->runStaticConstructorsDestructors(true);
     return 1;
