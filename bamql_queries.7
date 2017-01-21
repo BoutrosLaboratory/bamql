@@ -158,6 +158,11 @@ The read is either a PCR or an optical duplicate. That is, another read with the
 The alignment is supplementary.
 
 .SS MAPPING INFORMATION
+
+\fBbegin\fR
+
+Returns the start position of the read on the chromosome, if it is mapped.
+
 \fBchr(\fRglob\fB)\fR
 
 Matches the chromosome name to which the read is mapped. Chromosome names should not start with \fBchr\fR, as that will be automatically checked. Moreover, some human chromosome have differing names, so both are checked. The known rules are:
@@ -179,6 +184,10 @@ Returns the chromosome name (stripped of \fIchr\fR) as a string. This can be use
 \fBmapping_quality(\fRprobability\fB)\fR
 
 Matches the read if the probability of error is less than \fIprobability\fR. The mapping quality is approximated in the SAM format, so this will be imperfect. For clarity, setting the probability to 0 will be so stringent as to reject all reads, while setting it to 1 will be so liberal as to accept all reads.
+
+\fBend\fR
+
+Returns the final position of the read on the chromosome, if it is mapped.
 
 \fBmate_chr(\fRglob\fB)\fR
 
