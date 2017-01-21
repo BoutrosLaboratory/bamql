@@ -188,6 +188,7 @@ PredicateMap getDefaultPredicates() {
           "bamql_position_end", {}, "Read is not mapped.") },
 
     // Miscellaneous
+    { "bed", parseBED },
     { "mapping_quality", MappingQualityNode::parse },
     { "header",
       parseFunction<StrFunctionNode, const std::string &>(

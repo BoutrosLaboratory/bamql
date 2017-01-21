@@ -231,6 +231,10 @@ Matches a read has nucleotide \fIn\fR at the provided position, relative to the 
 
 .SS MISCELLANEOUS
 
+\fBbed(\fRfile\fB)\fR
+
+Reads a BED-formatted file and creates an expression that is satisfied if the read interesects any of the segments in the file. Note that this must load the BED file into memory, so do not use large BED files.
+
 \fBheader\fR
 
 Returns the header string of the read.

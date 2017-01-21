@@ -76,7 +76,11 @@ public:
     }
 
     state.parseCharInSpace(')');
+    return fromName(str, state);
+  }
 
+  static std::shared_ptr<AstNode> fromName(
+      const std::string &str, ParseState &state) throw(ParseError) {
     // If we are dealing with a chromosome that goes by many names, match all of
     // them.
     for (auto set = equivalence_sets.begin(); set != equivalence_sets.end();

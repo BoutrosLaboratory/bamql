@@ -295,4 +295,6 @@ private:
   std::shared_ptr<AstNode> input;
   std::shared_ptr<AstNode> body;
 };
+
+std::shared_ptr<AstNode> parseBED(ParseState &state) throw(ParseError);
 }
