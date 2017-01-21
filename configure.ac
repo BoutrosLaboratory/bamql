@@ -1,4 +1,4 @@
-AC_INIT([bamql], [1.2], [paul.boutros@oicr.on.ca])
+AC_INIT([bamql], [1.3], [paul.boutros@oicr.on.ca])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS(config.h)
