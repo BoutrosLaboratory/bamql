@@ -25,3 +25,12 @@ script: "./.travis.sh"
 notifications:
   on_success: never
   on_failure: change
+deploy:
+  provider: s3
+  access_key_id: AKIAJY7JELRUQJ6ESEWA
+  secret_access_key:
+    secure: TPcW3NIOHVrMZDmzXs22ZucjlM2+TASAG7LEitAtoZSvLyce08JgC0R00mK+PCRBfXiRspxvh0rmaJGAecZXSaazth5IV9Np2xGPeQ6G/6s3KzfdoFNlAs/MlZVNVNbq3l3R5ZF3DUwy6DThDvSjMLDwSEBWSlOLgz7tA3moxK0=
+  bucket: artefacts.masella.name
+  skip_cleanup: true
+  local_dir: www
+  acl: public_read

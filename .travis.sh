@@ -14,3 +14,6 @@ else
 	cat config.log
 	exit 1
 fi
+
+mkdir www
+man -Thtml ./bamql_queries.7 > www/bamql_queries.html
