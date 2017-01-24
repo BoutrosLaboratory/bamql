@@ -2,25 +2,29 @@ sudo: required
 dist: trusty
 language: c
 env:
-  - LLVM_TARGET_VERSION=3.4 LLVM_STATIC=no LIBS="-lncurses -ldl -lpthread"
-  - LLVM_TARGET_VERSION=3.5 LLVM_STATIC=no
-  - LLVM_TARGET_VERSION=3.6 LLVM_STATIC=no
-  - LLVM_TARGET_VERSION=3.4 LLVM_STATIC=yes LIBS="-lncurses -ldl -lpthread"
-  - LLVM_TARGET_VERSION=3.5 LLVM_STATIC=yes
-  - LLVM_TARGET_VERSION=3.6 LLVM_STATIC=yes
-  - LLVM_TARGET_VERSION=3.7 LLVM_STATIC=yes
-  - LLVM_TARGET_VERSION=3.8 LLVM_STATIC=yes
-  - LLVM_TARGET_VERSION=3.9 LLVM_STATIC=yes
-  - LLVM_TARGET_VERSION=4.0 LLVM_STATIC=yes
+- LLVM_TARGET_VERSION=3.4 LLVM_STATIC=no LIBS="-lncurses -ldl -lpthread"
+- LLVM_TARGET_VERSION=3.5 LLVM_STATIC=no
+- LLVM_TARGET_VERSION=3.6 LLVM_STATIC=no
+- LLVM_TARGET_VERSION=3.4 LLVM_STATIC=yes LIBS="-lncurses -ldl -lpthread"
+- LLVM_TARGET_VERSION=3.5 LLVM_STATIC=yes
+- LLVM_TARGET_VERSION=3.6 LLVM_STATIC=yes
+- LLVM_TARGET_VERSION=3.7 LLVM_STATIC=yes
+- LLVM_TARGET_VERSION=3.8 LLVM_STATIC=yes
+- LLVM_TARGET_VERSION=3.9 LLVM_STATIC=yes
+- LLVM_TARGET_VERSION=4.0 LLVM_STATIC=yes
 before_script:
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-  - echo -e "deb http://ppa.launchpad.net/jonathonf/llvm/ubuntu trusty main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.8 main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.9 main" | sudo tee /etc/apt/sources.list.d/llvm.list
-  - sudo apt-get update
-  - sudo apt-get install -qq -y --force-yes devscripts equivs gcc-4.9 g++-4.9 groff
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.9
-  - sed -i -e 's/, *llvm-[0-9.-]*dev[^,]*,/,/g' debian/control
-  - sudo mk-build-deps -i -t "apt-get -qq -y --force-yes --no-install-recommends"
-  - sudo apt-get install -qq -y --force-yes llvm-${LLVM_TARGET_VERSION}-dev
+- sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+- echo -e "deb http://ppa.launchpad.net/jonathonf/llvm/ubuntu trusty main\ndeb http://apt.llvm.org/trusty/
+  llvm-toolchain-trusty main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.8
+  main\ndeb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-3.9 main" | sudo tee
+  /etc/apt/sources.list.d/llvm.list
+- sudo apt-get update
+- sudo apt-get install -qq -y --force-yes devscripts equivs gcc-4.9 g++-4.9 groff
+- sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 60 --slave
+  /usr/bin/g++ g++ /usr/bin/g++-4.9
+- sed -i -e 's/, *llvm-[0-9.-]*dev[^,]*,/,/g' debian/control
+- sudo mk-build-deps -i -t "apt-get -qq -y --force-yes --no-install-recommends"
+- sudo apt-get install -qq -y --force-yes llvm-${LLVM_TARGET_VERSION}-dev
 script: "./.travis.sh"
 notifications:
   on_success: never
@@ -29,7 +33,7 @@ deploy:
   provider: s3
   access_key_id: AKIAJY7JELRUQJ6ESEWA
   secret_access_key:
-    secure: TPcW3NIOHVrMZDmzXs22ZucjlM2+TASAG7LEitAtoZSvLyce08JgC0R00mK+PCRBfXiRspxvh0rmaJGAecZXSaazth5IV9Np2xGPeQ6G/6s3KzfdoFNlAs/MlZVNVNbq3l3R5ZF3DUwy6DThDvSjMLDwSEBWSlOLgz7tA3moxK0=
+    secure: g7JfZI3RWyDNbv2PunUYfD37AqNTk9hIvKYvyyHCd5Nm2ALTSIlJVdewZAoEzampJVIME4Gd0/obp6rU787NwxDf9CHZ1t86SB+eh15Yj9CuCwQgXyC0Vfznh/3oGAehkI35jLS5FOdFVEEHGDuJXAJZuOeJjq8/CrGkZBG2LedwmsrvqVAaq9aibdWZrJiXxD0PM06gKtH4kUZdIqh5wCipovx8P/PzRUZC8i8XYx9C4AqqiWhw+7alqnfseJ2WtiHfRP+49bbQRXHLzoQSyqFnvFpq6CV7ivcAtW2KWje8H1kWqpL0pKvE+AJNnhz24jzprObQx4vbzjRH0xvfak/cKoJrqeIXuSOOh1y9eU01NpXypg6FcUAOearyA0fpw70GPNZVOgr9hTcb8VlDB4icKnE+KaRZGh4R9WR2J7e6nQpIKcr2bNvB/ue0FXiYS7KjksVZor8OqorXmjHCYzAWeercUSSdscWof0T+2q/POyHK5FzndF/LJNLrAlj83L+7Syl4oOSMTTQHjlVzTiT13tml+6TR/aOGArTpngiDqpGORc+F4rixSIUxoUrMiiaP6ElipmewiABoHpuW/NNTiWJi/Sdq3H/q28horCpBl1RGfMTMofcCefUnZeoEGQ6QDj07ymj6bg3bptQQoWSauVGrVcNVh8/90EeJMQc=
   bucket: artefacts.masella.name
   skip_cleanup: true
   local_dir: www
