@@ -6,3 +6,4 @@ usr/share/man/man1/bamql.1
 usr/share/man/man1/bamql-chain.1
 usr/share/man/man1/bamql-pairs.1
 usr/share/man/man1/bamql-script.1
+usr/share/man/man7/*.1
