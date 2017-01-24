@@ -29,12 +29,20 @@ In the source directory,
 
 The language consists of a number of predicates, things which match sequences, and connectives, which compose predicates.
 
-For example, the following will match sequences on chromosome 7 which are from the read group labelled “RUN3”:
+For example, the following query will match sequences on chromosome 7 which are from the read group labelled “RUN3”:
 
     chr(7) & read_group : RUN3
+
+To filter read, use `bamql` like this:
+
+    bamql -i input.bam -o reads_i_live.bam -O reads_i_loathe.bam 'chr(7) & read_group : RUN3'
 
 The following will take a sub-sample for mitochondrial sequences and all the sequences that have matched to chromosomes starting with “ug”:
 
     chr(M) & random(0.2) | chr(ug*)
 
-The details can be found in the manual page, which can be viewed by typing `man bamql_queries` at the command prompt.
+Again, to filter, use `bamql` like this:
+
+    bamql -i input.bam -o mitochondrial_subsample_with_traps.bam 'chr(M) & random(0.2) | chr(ug*)'
+
+The details can be found in the manual page, which can be viewed by typing `man bamql_queries` at the command prompt or [view the manual online](http://artefacts.masella.name/bamql_queries.html).
