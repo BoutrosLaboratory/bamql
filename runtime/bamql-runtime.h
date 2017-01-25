@@ -55,6 +55,7 @@ extern "C" {
 			   const char *input, ...);
 	const char *bamql_re_compile(const char *pattern, uint32_t flags,
 				     uint32_t count);
+	void bamql_re_free(char **pattern);
 	bool bamql_re_match(const char *pattern, const char *input);
 	int bamql_strcmp(const char *left, const char *right);
 #ifdef __cplusplus

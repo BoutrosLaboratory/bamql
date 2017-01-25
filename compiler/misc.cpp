@@ -282,11 +282,13 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
         llvm::GlobalValue::ExternalLinkage,
         "pcre_free_substring",
         module);
+    llvm::Type *bamql_re_free_args[] = { llvm::PointerType::get(base_str, 0) };
     llvm::Function::Create(
-        llvm::FunctionType::get(
-            llvm::Type::getVoidTy(module->getContext()), pcre_free_args, false),
+        llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()),
+                                bamql_re_free_args,
+                                false),
         llvm::GlobalValue::ExternalLinkage,
-        "pcre_free",
+        "bamql_re_free",
         module);
     llvm::Type *re_bind_args[] = {
       base_str, base_uint32, getErrorHandlerType(module), base_str, base_str

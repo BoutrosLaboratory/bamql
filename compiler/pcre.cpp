@@ -42,7 +42,7 @@ static bamql::RegularExpression createPCRE(
         llvm::Type::getInt8Ty(state.module()->getContext()), 0);
     auto null_value = llvm::ConstantPointerNull::get(base_str);
     auto compile_func = state.module()->getFunction("bamql_re_compile");
-    auto free_func = state.module()->getFunction("pcre_free");
+    auto free_func = state.module()->getFunction("bamql_re_free");
     auto var = new llvm::GlobalVariable(*state.module(),
                                         base_str,
                                         false,
@@ -58,24 +58,8 @@ static bamql::RegularExpression createPCRE(
         state.getGenerator().constructor()->CreateCall(compile_func,
                                                        construct_args),
         var);
-    auto dtor_loaded = state.getGenerator().destructor()->CreateLoad(var);
-    auto was_initialised = state.getGenerator().destructor()->CreateICmpEQ(
-        dtor_loaded, null_value);
-    auto free_block = llvm::BasicBlock::Create(
-        state.module()->getContext(),
-        "free",
-        state.getGenerator().destructor()->GetInsertBlock()->getParent());
-    auto merge_block = llvm::BasicBlock::Create(
-        state.module()->getContext(),
-        "merge",
-        state.getGenerator().destructor()->GetInsertBlock()->getParent());
-    state.getGenerator().destructor()->CreateCondBr(
-        was_initialised, merge_block, free_block);
-    state.getGenerator().destructor()->SetInsertPoint(free_block);
-    llvm::Value *free_args[] = { dtor_loaded };
+    llvm::Value *free_args[] = { var };
     state.getGenerator().destructor()->CreateCall(free_func, free_args);
-    state.getGenerator().destructor()->CreateBr(merge_block);
-    state.getGenerator().destructor()->SetInsertPoint(merge_block);
 
     return state->CreateLoad(var);
   };

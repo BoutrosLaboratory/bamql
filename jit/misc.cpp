@@ -40,7 +40,7 @@ std::map<std::string, void (*)()> known = {
   { "bamql_re_match", (void (*)())bamql_re_match },
   { "bamql_strcmp", (void (*)())bamql_strcmp },
   { "bamql_re_compile", (void (*)())bamql_re_compile },
-  { "pcre_free", (void (*)())pcre_free },
+  { "bamql_re_free", (void (*)())bamql_re_free },
   { "pcre_free_substring", (void (*)())pcre_free_substring },
 };
 

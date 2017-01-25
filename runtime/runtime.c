@@ -344,6 +344,14 @@ const char *bamql_re_compile(const char *pattern, uint32_t flags,
 	return (const char *)result;
 }
 
+void bamql_re_free(char **pattern)
+{
+	if (*pattern != NULL) {
+		pcre_free(*pattern);
+		*pattern = NULL;
+	}
+}
+
 bool bamql_re_match(const char *pattern, const char *input)
 {
 	if (input == NULL) {
