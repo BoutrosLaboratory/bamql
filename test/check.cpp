@@ -126,8 +126,7 @@ int main(int argc, char *const *argv) {
     }
     std::stringstream name;
     name << "test" << index;
-    checkers.push_back(
-        Checker(engine, generator, ast, name.str(), index));
+    checkers.push_back(Checker(engine, generator, ast, name.str(), index));
   }
   generator = nullptr;
   engine->finalizeObject();
