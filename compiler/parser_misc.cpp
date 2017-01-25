@@ -204,7 +204,7 @@ bool ParseState::parseKeyword(const std::string &keyword) {
   return false;
 }
 
-unsigned int degen_nt[32] = {
+const unsigned int degen_nt[32] = {
   /*A*/ 1,
   /*B*/ 2 | 4 | 8,
   /*C*/ 2,
