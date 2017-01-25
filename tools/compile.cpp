@@ -251,6 +251,7 @@ int main(int argc, char *const *argv) {
 #endif
   if (debug) {
     debug_builder = std::make_shared<llvm::DIBuilder>(*module);
+    diFile = debug_builder->createFile(base_name, dir_name);
 #if LLVM_VERSION_MAJOR < 4
     debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C,
                                      base_name,
@@ -263,7 +264,6 @@ int main(int argc, char *const *argv) {
     debug_builder->createCompileUnit(
         llvm::dwarf::DW_LANG_C, diFile, PACKAGE_STRING, false, "", 0);
 #endif
-    diFile = debug_builder->createFile(base_name, dir_name);
     diInt32 = debug_builder->createBasicType("uint32",
                                              32,
                                              32
