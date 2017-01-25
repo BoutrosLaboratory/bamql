@@ -24,11 +24,11 @@ are available as variables. If the patterns name ends in \fB_d\fR, \fB_i\fR, \fB
 For example, \fBbind read_group using /C3BUK\\.(?<x_i>\\d+)/ in x_i > 2\fR will match any read group that starts with \fBC3BUK.\fR followed by a number greater than 2.
 
 .SS LOOPS
-\fBall\fR name \fB=\fR expr1 \fB,\fR expr3 [ \fB,\fR expr3 ...] \fBin\fR body_expr
+\fBall\fR name \fB=\fR expr1 \fB,\fR expr2 [ \fB,\fR expr3 ...] \fBin\fR body_expr
 
 Evaluates \fIbody_expr\fR with \fIname\fR set to each of \fIexpr1\fR, \fIexpr2\fR, and so on, and is satisfied if it is satisfied for every value.
 
-\fBany\fR name \fB=\fR expr1 \fB,\fR expr3 [ \fB,\fR expr3 ...] \fBin\fR body_expr
+\fBany\fR name \fB=\fR expr1 \fB,\fR expr2 [ \fB,\fR expr3 ...] \fBin\fR body_expr
 
 Evaluates \fIbody_expr\fR with \fIname\fR set to each of \fIexpr1\fR, \fIexpr2\fR, and so on, and is satisfied if it is satisfied for some value.
 
