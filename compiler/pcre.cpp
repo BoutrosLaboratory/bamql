@@ -70,7 +70,7 @@ static bamql::RegularExpression createPCRE(
         "merge",
         state.getGenerator().destructor()->GetInsertBlock()->getParent());
     state.getGenerator().destructor()->CreateCondBr(
-        was_initialised, free_block, merge_block);
+        was_initialised, merge_block, free_block);
     state.getGenerator().destructor()->SetInsertPoint(free_block);
     llvm::Value *free_args[] = { dtor_loaded };
     state.getGenerator().destructor()->CreateCall(free_func, free_args);
