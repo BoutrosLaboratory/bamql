@@ -87,6 +87,7 @@ private:
 
 class AuxArg : public FunctionArg {
 public:
+  AuxArg() {}
   void nextArg(ParseState &state,
                size_t &pos,
                std::vector<std::shared_ptr<AstNode>> &args) const
@@ -94,6 +95,7 @@ public:
 };
 class NucleotideArg : public FunctionArg {
 public:
+  NucleotideArg() {}
   void nextArg(ParseState &state,
                size_t &pos,
                std::vector<std::shared_ptr<AstNode>> &args) const
