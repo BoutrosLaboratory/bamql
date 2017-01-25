@@ -64,6 +64,7 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "all x = 3, 4 in x == 3", {} },
   { "any x = 3, 4 in x < 3", {} },
   { "!(all x = 3, 4 in x > 1)", {} },
+  { "bind read_group using /C3BUK(?<x_d>\\.\\d)/ in x_d < 0.15", { "A", "J" } },
   { "bind read_group using /C3BUK\\.(?<x_i>\\d)/ in x_i == 1", { "A", "J" } },
   { "bind header using /(?<x_c>.)/ in x_c == 'A", { "A" } },
   { "header ~ /a/i", { "A" } },

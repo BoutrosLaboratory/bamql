@@ -282,11 +282,11 @@ bool bamql_re_bind(const char *pattern, uint32_t count,
 				*out_fp = NAN;
 			} else {
 				*out_fp = strtod(result, &end);
-				pcre_free_substring(result);
 				if (*end != '\0') {
 					*out_fp = NAN;
 					error_fn(error_text, error_ctx);
 				}
+				pcre_free_substring(result);
 			}
 			break;
 
@@ -296,11 +296,11 @@ bool bamql_re_bind(const char *pattern, uint32_t count,
 				*out_int = 0;
 			} else {
 				*out_int = strtol(result, &end, 10);
-				pcre_free_substring(result);
 				if (*end != '\0') {
 					*out_int = 0;
 					error_fn(error_text, error_ctx);
 				}
+				pcre_free_substring(result);
 			}
 			break;
 
