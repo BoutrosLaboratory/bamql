@@ -150,8 +150,6 @@ private:
   size_t count = 0;
   std::shared_ptr<std::map<const char *, size_t>> errors;
   std::string file_name;
-  bamql::FilterFunction filter;
-  bamql::IndexFunction index;
   std::shared_ptr<htsFile> output_file;
   std::shared_ptr<OutputWrangler> next;
   std::string query;
