@@ -248,6 +248,14 @@ Reads a BED-formatted file and creates an expression that is satisfied if the re
 
 Returns the header string of the read.
 
+\fBmax(\fRexpr1\fB, \fRexpr2\fB, \fR...\fB)\fR
+
+Returns the largest value among the supplied arguments, which must be of the same type. If strings, this is the last string, lexicographically.
+
+\fBmin(\fRexpr1\fB, \fRexpr2\fB, \fR...\fB)\fR
+
+Returns the smallest value among the supplied arguments, which must be of the same type. If strings, this is the first string, lexicographically.
+
 .B true
 
 Always satisfied.

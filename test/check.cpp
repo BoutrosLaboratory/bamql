@@ -68,6 +68,10 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "bind read_group using /C3BUK\\.(?<x_i>\\d)/ in x_i == 1", { "A", "J" } },
   { "bind header using /(?<x_c>.)/ in x_c == 'A", { "A" } },
   { "header ~ /a/i", { "A" } },
+  { "max(3,4,5) == 5", { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" } },
+  { "min (3.1 , 4.0 , 5.2 ) < 3.5",
+    { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" } },
+  { "min(read_group, header) == header", { "A", "B", "C" } },
 };
 
 class Checker : public bamql::CompileIterator {

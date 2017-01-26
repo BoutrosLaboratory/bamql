@@ -190,6 +190,8 @@ PredicateMap getDefaultPredicates() {
     // Miscellaneous
     { "bed", parseBED },
     { "mapping_quality", MappingQualityNode::parse },
+    { "max", parseMax },
+    { "min", parseMin },
     { "header",
       parseFunction<StrFunctionNode, const std::string &>(
           "bamql_header", {}, "Header not available.") },
