@@ -113,7 +113,7 @@ llvm::Value *bamql::CompareStrNode::generate(GenerateState &state,
   left->writeDebug(state);
   auto left_value = left->generate(state, read, header, error_fn, error_ctx);
   right->writeDebug(state);
-  auto right_value = left->generate(state, read, header, error_fn, error_ctx);
+  auto right_value = right->generate(state, read, header, error_fn, error_ctx);
   this->writeDebug(state);
   auto function = state.module()->getFunction("bamql_strcmp");
   llvm::Value *args[] = { left_value, right_value };
