@@ -30,81 +30,47 @@ namespace bamql {
 const std::set<std::set<std::string>> equivalence_sets = {
   { "23", "x" }, { "24", "y" }, { "25", "m", "mt" }
 };
-/**
- * A predicate that is true if the mapping quality is sufficiently good.
- */
-class MappingQualityNode : public DebuggableNode {
+
+class ProbabilityArg : public FunctionArg {
 public:
-  MappingQualityNode(double probability_, ParseState &state)
-      : DebuggableNode(state), probability(probability_) {}
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::Value *error_fn,
-                                llvm::Value *error_ctx) {
-    auto function = state.module()->getFunction("bamql_check_mapping_quality");
-    llvm::Value *args[] = { read,
-                            llvm::ConstantInt::get(
-                                llvm::Type::getInt8Ty(
-                                    state.module()->getContext()),
-                                -10 * log(probability)) };
-    return state->CreateCall(function, args);
-  }
-
-  ExprType type() { return BOOL; }
-  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
-    state.parseCharInSpace('(');
-
+  void nextArg(ParseState &state,
+               size_t &pos,
+               std::vector<std::shared_ptr<AstNode>> &args) const
+      throw(ParseError) {
+    state.parseCharInSpace(pos == 0 ? '(' : ',');
+    pos++;
     auto probability = state.parseDouble();
     if (probability <= 0 || probability >= 1) {
       throw ParseError(state.where(),
                        "The provided probability is not probable.");
     }
-
-    state.parseCharInSpace(')');
-
-    return std::make_shared<MappingQualityNode>(probability, state);
+    args.push_back(makeAst(probability));
   }
 
-private:
-  double probability;
+protected:
+  virtual std::shared_ptr<AstNode> makeAst(double probability) const = 0;
 };
 
-/**
- * A predicate that randomly is true.
- */
-class RandomlyNode : public DebuggableNode {
+class FixedProbabilityArg : public ProbabilityArg {
 public:
-  RandomlyNode(double probability_, ParseState &state)
-      : DebuggableNode(state), probability(probability_) {}
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::Value *error_fn,
-                                llvm::Value *error_ctx) {
-    auto function = state.module()->getFunction("bamql_randomly");
-    llvm::Value *args[] = { llvm::ConstantFP::get(
-        llvm::Type::getDoubleTy(state.module()->getContext()), probability) };
-    return state->CreateCall(function, args);
+  FixedProbabilityArg() {}
+
+protected:
+  std::shared_ptr<AstNode> makeAst(double probability) const {
+    return std::make_shared<
+        LiteralNode<double, decltype(&make_dbl), &make_dbl, FP>>(probability);
   }
+};
+class MappingQualityArg : public ProbabilityArg {
+public:
+  MappingQualityArg() {}
 
-  ExprType type() { return BOOL; }
-  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError) {
-    state.parseCharInSpace('(');
-
-    auto probability = state.parseDouble();
-    if (probability < 0 || probability > 1) {
-      throw ParseError(state.where(),
-                       "The provided probability is not probable.");
-    }
-
-    state.parseCharInSpace(')');
-
-    return std::make_shared<RandomlyNode>(probability, state);
+protected:
+  std::shared_ptr<AstNode> makeAst(double probability) const {
+    return std::make_shared<
+        LiteralNode<char, decltype(&make_char), &make_char, INT>>(
+        -10 * log(probability));
   }
-
-private:
-  double probability;
 };
 
 static const UserArg bool_arg(BOOL);
@@ -118,6 +84,8 @@ static const CharArg char_r('R');
 static const CharArg char_g('G');
 static const IntArg int_max_arg(INT32_MAX);
 static const IntArg int_zero_arg(0);
+static const FixedProbabilityArg fixed_probability_arg;
+static const MappingQualityArg mapping_quality_arg;
 
 /**
  * All the predicates known to the system.
@@ -189,7 +157,9 @@ PredicateMap getDefaultPredicates() {
 
     // Miscellaneous
     { "bed", parseBED },
-    { "mapping_quality", MappingQualityNode::parse },
+    { "mapping_quality",
+      parseFunction<BoolFunctionNode>("bamql_check_mapping_quality",
+                                      { mapping_quality_arg }) },
     { "max", parseMax },
     { "min", parseMin },
     { "header",
@@ -203,7 +173,9 @@ PredicateMap getDefaultPredicates() {
                                       { int_arg, nucleotide_arg, true_arg }) },
     { "split_pair?",
       parseFunction<BoolFunctionNode>("bamql_check_split_pair", {}) },
-    { "random", RandomlyNode::parse },
+    { "random",
+      parseFunction<BoolFunctionNode>("bamql_randomly",
+                                      { fixed_probability_arg }) },
   };
 }
 }
