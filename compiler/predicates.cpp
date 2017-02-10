@@ -20,7 +20,6 @@
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
 #include "check_chromosome.hpp"
-#include "check_flag.hpp"
 #include "constant.hpp"
 
 // Please keep the predicates in alphabetical order.
@@ -84,6 +83,19 @@ static const CharArg char_r('R');
 static const CharArg char_g('G');
 static const IntArg int_max_arg(INT32_MAX);
 static const IntArg int_zero_arg(0);
+static const IntArg int_flag_duplicate(BAM_FDUP);
+static const IntArg int_flag_failed_qc(BAM_FQCFAIL);
+static const IntArg int_flag_mapped_to_reverse(BAM_FREVERSE);
+static const IntArg int_flag_mate_mapped_to_reverse(BAM_FPAIRED |
+                                                    BAM_FMREVERSE);
+static const IntArg int_flag_mate_unmapped(BAM_FPAIRED | BAM_FMUNMAP);
+static const IntArg int_flag_paired(BAM_FPAIRED);
+static const IntArg int_flag_proper_pair(BAM_FPAIRED | BAM_FPROPER_PAIR);
+static const IntArg int_flag_read1(BAM_FPAIRED | BAM_FREAD1);
+static const IntArg int_flag_read2(BAM_FPAIRED | BAM_FREAD2);
+static const IntArg int_flag_secondary(BAM_FSECONDARY);
+static const IntArg int_flag_supplementary(BAM_FSUPPLEMENTARY);
+static const IntArg int_flag_unmapped(BAM_FUNMAP);
 static const FixedProbabilityArg fixed_probability_arg;
 static const MappingQualityArg mapping_quality_arg;
 
@@ -118,20 +130,42 @@ PredicateMap getDefaultPredicates() {
           "bamql_chr", { true_arg }, "Read's mate not mapped.") },
 
     // Flags
-    { "duplicate?", CheckFlag<BAM_FDUP>::parse },
-    { "failed_qc?", CheckFlag<BAM_FQCFAIL>::parse },
-    { "mapped_to_reverse?", CheckFlag<BAM_FREVERSE>::parse },
+    { "duplicate?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_duplicate }) },
+    { "failed_qc?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_failed_qc }) },
+    { "mapped_to_reverse?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_mapped_to_reverse }) },
     { "mate_mapped_to_reverse?",
-      CheckFlag<BAM_FPAIRED | BAM_FMREVERSE>::parse },
-    { "mate_unmapped?", CheckFlag<BAM_FPAIRED | BAM_FMUNMAP>::parse },
-    { "paired?", CheckFlag<BAM_FPAIRED>::parse },
-    { "proper_pair?", CheckFlag<BAM_FPAIRED | BAM_FPROPER_PAIR>::parse },
-    { "raw_flag", parseFunction<BoolFunctionNode>("check_flag", { int_arg }) },
-    { "read1?", CheckFlag<BAM_FPAIRED | BAM_FREAD1>::parse },
-    { "read2?", CheckFlag<BAM_FPAIRED | BAM_FREAD2>::parse },
-    { "secondary?", CheckFlag<BAM_FSECONDARY>::parse },
-    { "supplementary?", CheckFlag<BAM_FSUPPLEMENTARY>::parse },
-    { "unmapped?", CheckFlag<BAM_FUNMAP>::parse },
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_mate_mapped_to_reverse }) },
+    { "mate_unmapped?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_unmapped }) },
+    { "paired?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_paired }) },
+    { "proper_pair?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_proper_pair }) },
+    { "raw_flag",
+      parseFunction<BoolFunctionNode>("bamql_check_flag", { int_arg }) },
+    { "read1?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag", { int_flag_read1 }) },
+    { "read2?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag", { int_flag_read2 }) },
+    { "secondary?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_secondary }) },
+    { "supplementary?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_supplementary }) },
+    { "unmapped?",
+      parseFunction<BoolFunctionNode>("bamql_check_flag",
+                                      { int_flag_unmapped }) },
 
     // Constants
     { "false", FalseNode::parse },
