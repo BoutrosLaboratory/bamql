@@ -126,6 +126,7 @@ int main(int argc, char *const *argv) {
     if (!ast) {
       std::cerr << "Could not compile test: " << queries[index].first
                 << std::endl;
+      generator = nullptr;
       return 1;
     }
     std::stringstream name;
