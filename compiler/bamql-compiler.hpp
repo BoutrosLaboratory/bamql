@@ -149,20 +149,6 @@ typedef llvm::Value *(bamql::AstNode::*GenerateMember)(GenerateState &state,
                                                        llvm::Value *error_fn,
                                                        llvm::Value *error_ctx);
 
-typedef llvm::Value *(llvm::IRBuilder<>::*CreateICmp)(llvm::Value *lhs,
-                                                      llvm::Value *rhs,
-                                                      const llvm::Twine &name);
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR < 7
-typedef llvm::Value *(llvm::IRBuilder<>::*CreateFCmp)(llvm::Value *lhs,
-                                                      llvm::Value *rhs,
-                                                      const llvm::Twine &name);
-#else
-typedef llvm::Value *(llvm::IRBuilder<>::*CreateFCmp)(llvm::Value *lhs,
-                                                      llvm::Value *rhs,
-                                                      const llvm::Twine &name,
-                                                      llvm::MDNode *fpmathtag);
-#endif
-
 /**
  * An abstract syntax node representing a predicate or logical operation.
  */
@@ -231,6 +217,7 @@ private:
                                  llvm::Type *param_type,
                                  bamql::GenerateMember member);
 };
+
 /**
  * This subclass is meant for making predicates, as it automatically fills out
  * debugging information during code generation.
@@ -243,249 +230,6 @@ public:
 private:
   unsigned int line;
   unsigned int column;
-};
-
-/**
- * An abstract syntax node encompassing logical ANDs and ORs that can
- * short-circuit.
- */
-class ShortCircuitNode : public AstNode {
-public:
-  ShortCircuitNode(const std::shared_ptr<AstNode> &left,
-                   const std::shared_ptr<AstNode> &right);
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::Value *error_fn,
-                                llvm::Value *error_ctx);
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::Value *error_fn,
-                                     llvm::Value *error_ctx);
-  bool usesIndex();
-  ExprType type();
-  /**
-   * The value that causes short circuting.
-   */
-  virtual llvm::Value *branchValue(llvm::LLVMContext &context) = 0;
-
-  void writeDebug(GenerateState &state);
-
-private:
-  llvm::Value *generateGeneric(GenerateMember member,
-                               GenerateState &state,
-                               llvm::Value *param,
-                               llvm::Value *header,
-                               llvm::Value *error_fn,
-                               llvm::Value *error_ctx);
-  std::shared_ptr<AstNode> left;
-  std::shared_ptr<AstNode> right;
-};
-/**
- * A syntax node for logical conjunction (AND).
- */
-class AndNode : public ShortCircuitNode {
-public:
-  AndNode(const std::shared_ptr<AstNode> &left,
-          const std::shared_ptr<AstNode> &right);
-  virtual llvm::Value *branchValue(llvm::LLVMContext &context);
-};
-/**
- * A syntax node for logical disjunction (OR).
- */
-class OrNode : public ShortCircuitNode {
-public:
-  OrNode(const std::shared_ptr<AstNode> &left,
-         const std::shared_ptr<AstNode> &right);
-  virtual llvm::Value *branchValue(llvm::LLVMContext &context);
-};
-/**
- * A syntax node for exclusive disjunction (XOR).
- */
-class XOrNode : public AstNode {
-public:
-  XOrNode(const std::shared_ptr<AstNode> &left,
-          const std::shared_ptr<AstNode> &right);
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::Value *error_fn,
-                                llvm::Value *error_ctx);
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::Value *error_fn,
-                                     llvm::Value *error_ctx);
-  bool usesIndex();
-  ExprType type();
-
-  void writeDebug(GenerateState &state);
-
-private:
-  std::shared_ptr<AstNode> left;
-  std::shared_ptr<AstNode> right;
-};
-/**
- * A syntax node for logical complement (NOT).
- */
-class NotNode : public AstNode {
-public:
-  NotNode(const std::shared_ptr<AstNode> &expr);
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::Value *error_fn,
-                                llvm::Value *error_ctx);
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::Value *error_fn,
-                                     llvm::Value *error_ctx);
-  bool usesIndex();
-  ExprType type();
-
-  void writeDebug(GenerateState &state);
-
-private:
-  std::shared_ptr<AstNode> expr;
-};
-/**
- * A syntax node for ternary if.
- */
-class ConditionalNode : public AstNode {
-public:
-  ConditionalNode(const std::shared_ptr<AstNode> &condition,
-                  const std::shared_ptr<AstNode> &then_part,
-                  const std::shared_ptr<AstNode> &else_part);
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::Value *error_fn,
-                                llvm::Value *error_ctx);
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::Value *error_fn,
-                                     llvm::Value *error_ctx);
-  bool usesIndex();
-  ExprType type();
-  void writeDebug(GenerateState &state);
-
-private:
-  std::shared_ptr<AstNode> condition;
-  std::shared_ptr<AstNode> then_part;
-  std::shared_ptr<AstNode> else_part;
-};
-
-class UseNode;
-class BindingNode : public DebuggableNode {
-public:
-  BindingNode(ParseState &state);
-  llvm::Value *generate(GenerateState &state,
-                        llvm::Value *read,
-                        llvm::Value *header,
-                        llvm::Value *error_fn,
-                        llvm::Value *error_ctx);
-  llvm::Value *generateIndex(GenerateState &state,
-                             llvm::Value *read,
-                             llvm::Value *header,
-                             llvm::Value *error_fn,
-                             llvm::Value *error_ctx);
-
-  void parse(ParseState &state) throw(ParseError);
-
-  ExprType type();
-
-private:
-  std::vector<std::shared_ptr<UseNode>> definitions;
-  std::shared_ptr<AstNode> body;
-};
-
-class RegexNode : public DebuggableNode {
-public:
-  RegexNode(std::shared_ptr<AstNode> &operand,
-            RegularExpression &&pattern,
-            ParseState &state);
-  llvm::Value *generateGeneric(GenerateMember member,
-                               GenerateState &state,
-                               llvm::Value *read,
-                               llvm::Value *header,
-                               llvm::Value *error_fn,
-                               llvm::Value *error_ctx);
-  llvm::Value *generate(GenerateState &state,
-                        llvm::Value *read,
-                        llvm::Value *header,
-                        llvm::Value *error_fn,
-                        llvm::Value *error_ctx);
-  llvm::Value *generateIndex(GenerateState &state,
-                             llvm::Value *read,
-                             llvm::Value *header,
-                             llvm::Value *error_fn,
-                             llvm::Value *error_ctx);
-  bool usesIndex();
-  ExprType type();
-
-private:
-  std::shared_ptr<AstNode> operand;
-  RegularExpression pattern;
-};
-
-class CompareFPNode : public DebuggableNode {
-public:
-  CompareFPNode(CreateFCmp comparator,
-                std::shared_ptr<AstNode> &left,
-                std::shared_ptr<AstNode> &right,
-                ParseState &state);
-  llvm::Value *generate(GenerateState &state,
-                        llvm::Value *read,
-                        llvm::Value *header,
-                        llvm::Value *error_fn,
-                        llvm::Value *error_ctx);
-  ExprType type();
-
-private:
-  CreateFCmp comparator;
-  std::shared_ptr<AstNode> left;
-  std::shared_ptr<AstNode> right;
-};
-
-class CompareIntNode : public DebuggableNode {
-public:
-  CompareIntNode(CreateICmp comparator,
-                 std::shared_ptr<AstNode> &left,
-                 std::shared_ptr<AstNode> &right,
-                 ParseState &state);
-  llvm::Value *generate(GenerateState &state,
-                        llvm::Value *read,
-                        llvm::Value *header,
-                        llvm::Value *error_fn,
-                        llvm::Value *error_ctx);
-  ExprType type();
-
-private:
-  CreateICmp comparator;
-  std::shared_ptr<AstNode> left;
-  std::shared_ptr<AstNode> right;
-};
-
-class CompareStrNode : public DebuggableNode {
-public:
-  CompareStrNode(CreateICmp comparator,
-                 std::shared_ptr<AstNode> &left,
-                 std::shared_ptr<AstNode> &right,
-                 ParseState &state);
-  llvm::Value *generate(GenerateState &state,
-                        llvm::Value *read,
-                        llvm::Value *header,
-                        llvm::Value *error_fn,
-                        llvm::Value *error_ctx);
-  ExprType type();
-
-private:
-  CreateICmp comparator;
-  std::shared_ptr<AstNode> left;
-  std::shared_ptr<AstNode> right;
 };
 
 class ParseState {
@@ -587,4 +331,13 @@ private:
  * The current version of the library.
  */
 std::string version();
+}
+namespace std {
+std::shared_ptr<bamql::AstNode> operator&(std::shared_ptr<bamql::AstNode>,
+                                          std::shared_ptr<bamql::AstNode>);
+std::shared_ptr<bamql::AstNode> operator|(std::shared_ptr<bamql::AstNode>,
+                                          std::shared_ptr<bamql::AstNode>);
+std::shared_ptr<bamql::AstNode> operator^(std::shared_ptr<bamql::AstNode>,
+                                          std::shared_ptr<bamql::AstNode>);
+std::shared_ptr<bamql::AstNode> operator~(std::shared_ptr<bamql::AstNode>);
 }

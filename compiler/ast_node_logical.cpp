@@ -17,6 +17,113 @@
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
 
+namespace bamql {
+/**
+ * An abstract syntax node encompassing logical ANDs and ORs that can
+ * short-circuit.
+ */
+class ShortCircuitNode : public AstNode {
+public:
+  ShortCircuitNode(const std::shared_ptr<AstNode> &left,
+                   const std::shared_ptr<AstNode> &right);
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx);
+  virtual llvm::Value *generateIndex(GenerateState &state,
+                                     llvm::Value *tid,
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx);
+  bool usesIndex();
+  ExprType type();
+  /**
+   * The value that causes short circuting.
+   */
+  virtual llvm::Value *branchValue(llvm::LLVMContext &context) = 0;
+
+  void writeDebug(GenerateState &state);
+
+private:
+  llvm::Value *generateGeneric(GenerateMember member,
+                               GenerateState &state,
+                               llvm::Value *param,
+                               llvm::Value *header,
+                               llvm::Value *error_fn,
+                               llvm::Value *error_ctx);
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
+};
+/**
+ * A syntax node for logical conjunction (AND).
+ */
+class AndNode : public ShortCircuitNode {
+public:
+  AndNode(const std::shared_ptr<AstNode> &left,
+          const std::shared_ptr<AstNode> &right);
+  virtual llvm::Value *branchValue(llvm::LLVMContext &context);
+};
+/**
+ * A syntax node for logical disjunction (OR).
+ */
+class OrNode : public ShortCircuitNode {
+public:
+  OrNode(const std::shared_ptr<AstNode> &left,
+         const std::shared_ptr<AstNode> &right);
+  virtual llvm::Value *branchValue(llvm::LLVMContext &context);
+};
+/**
+ * A syntax node for exclusive disjunction (XOR).
+ */
+class XOrNode : public AstNode {
+public:
+  XOrNode(const std::shared_ptr<AstNode> &left,
+          const std::shared_ptr<AstNode> &right);
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx);
+  virtual llvm::Value *generateIndex(GenerateState &state,
+                                     llvm::Value *tid,
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx);
+  bool usesIndex();
+  ExprType type();
+
+  void writeDebug(GenerateState &state);
+
+private:
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
+};
+/**
+ * A syntax node for logical complement (NOT).
+ */
+class NotNode : public AstNode {
+public:
+  NotNode(const std::shared_ptr<AstNode> &expr);
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx);
+  virtual llvm::Value *generateIndex(GenerateState &state,
+                                     llvm::Value *tid,
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx);
+  bool usesIndex();
+  ExprType type();
+
+  void writeDebug(GenerateState &state);
+
+private:
+  std::shared_ptr<AstNode> expr;
+};
+
 bamql::ShortCircuitNode::ShortCircuitNode(
     const std::shared_ptr<AstNode> &left_,
     const std::shared_ptr<AstNode> &right_)
@@ -336,3 +443,29 @@ llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
   return llvm::ConstantInt::getTrue(state.module()->getContext());
 }
 void bamql::ConditionalNode::writeDebug(GenerateState &) {}
+}
+
+namespace std {
+std::shared_ptr<bamql::AstNode> operator&(
+    std::shared_ptr<bamql::AstNode> left,
+    std::shared_ptr<bamql::AstNode> right) {
+  auto result = std::make_shared<bamql::AndNode>(left, right);
+  return result;
+}
+std::shared_ptr<bamql::AstNode> operator|(
+    std::shared_ptr<bamql::AstNode> left,
+    std::shared_ptr<bamql::AstNode> right) {
+  auto result = std::make_shared<bamql::OrNode>(left, right);
+  return result;
+}
+std::shared_ptr<bamql::AstNode> operator^(
+    std::shared_ptr<bamql::AstNode> left,
+    std::shared_ptr<bamql::AstNode> right) {
+  auto result = std::make_shared<bamql::XOrNode>(left, right);
+  return result;
+} std::shared_ptr<bamql::AstNode>
+operator~(std::shared_ptr<bamql::AstNode> expr) {
+  auto result = std::make_shared<bamql::NotNode>(expr);
+  return result;
+}
+}

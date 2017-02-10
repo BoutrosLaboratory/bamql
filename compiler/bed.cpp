@@ -63,13 +63,14 @@ std::shared_ptr<bamql::AstNode> bamql::parseBED(bamql::ParseState &state) throw(
       std::make_shared<bamql::IntConst>(start + 1),
       std::make_shared<bamql::IntConst>(end + 1)
     };
-    auto check = std::make_shared<bamql::BoolFunctionNode>(
-        "bamql_check_position", std::move(args), state);
+    std::shared_ptr<bamql::AstNode> check =
+        std::make_shared<bamql::BoolFunctionNode>(
+            "bamql_check_position", std::move(args), state);
 
     CheckMap::iterator lb = chromosomes.lower_bound(chr);
 
     if (lb != chromosomes.end() && !(chromosomes.key_comp()(chr, lb->first))) {
-      lb->second = std::make_shared<bamql::OrNode>(lb->second, check);
+      lb->second = lb->second | check;
     } else {
       chromosomes.insert(lb, CheckMap::value_type(chr, check));
     }
@@ -77,11 +78,9 @@ std::shared_ptr<bamql::AstNode> bamql::parseBED(bamql::ParseState &state) throw(
   file.close();
   std::shared_ptr<bamql::AstNode> result = std::make_shared<FalseNode>();
   for (auto it = chromosomes.begin(); it != chromosomes.end(); it++) {
-    result = std::make_shared<bamql::OrNode>(
-        std::make_shared<bamql::AndNode>(
-            bamql::CheckChromosomeNode<false>::fromName(it->first, state),
-            it->second),
-        result);
+    result = bamql::CheckChromosomeNode<false>::fromName(it->first, state) &
+                 it->second |
+             result;
   }
   return result;
 }

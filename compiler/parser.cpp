@@ -14,6 +14,7 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include <functional>
 #include <iostream>
 #include <vector>
 #include "bamql-compiler.hpp"
@@ -36,7 +37,7 @@ static std::shared_ptr<AstNode> parseTerminal(ParseState &state) throw(
   }
   if (*state == '!') {
     state.next();
-    return std::make_shared<NotNode>(parseTerminal(state));
+    return ~parseTerminal(state);
   }
   if (*state == '(') {
     state.next();
@@ -160,8 +161,7 @@ static std::shared_ptr<AstNode> parseImplication(ParseState &state) throw(
   state.parseSpace();
   while (state.parseKeyword("->")) {
     auto assertion = parseComparison(state);
-    antecedent = std::make_shared<OrNode>(std::make_shared<NotNode>(antecedent),
-                                          assertion);
+    antecedent = ~antecedent | assertion;
     state.parseSpace();
   }
   return antecedent;
@@ -171,7 +171,7 @@ static std::shared_ptr<AstNode> parseImplication(ParseState &state) throw(
  * Handle binary operators operators (the intermediate steps in recursive
  * descent)
  */
-template <char S, class T, ParseFunc N>
+template <char S, typename Op, ParseFunc N>
 static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
     ParseError) {
   std::vector<std::shared_ptr<AstNode>> items;
@@ -194,7 +194,7 @@ static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
     state.parseSpace();
   }
   while (items.size() > 0) {
-    node = std::make_shared<T>(items.back(), node);
+    node = Op()(items.back(), node);
     items.pop_back();
   }
   return node;
@@ -204,9 +204,12 @@ static std::shared_ptr<AstNode> parseIntermediate(ParseState &state) throw(
     ParseError) {
   return parseBinary<
       '|',
-      OrNode,
-      parseBinary<'^', XOrNode, parseBinary<'&', AndNode, parseImplication>>>(
-      state);
+      std::bit_or<std::shared_ptr<AstNode>>,
+      parseBinary<'^',
+                  std::bit_xor<std::shared_ptr<AstNode>>,
+                  parseBinary<'&',
+                              std::bit_and<std::shared_ptr<AstNode>>,
+                              parseImplication>>>(state);
 }
 
 /**

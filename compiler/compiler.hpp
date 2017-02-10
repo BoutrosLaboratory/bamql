@@ -29,6 +29,157 @@
 
 namespace bamql {
 
+typedef llvm::Value *(llvm::IRBuilder<>::*CreateICmp)(llvm::Value *lhs,
+                                                      llvm::Value *rhs,
+                                                      const llvm::Twine &name);
+#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR < 7
+typedef llvm::Value *(llvm::IRBuilder<>::*CreateFCmp)(llvm::Value *lhs,
+                                                      llvm::Value *rhs,
+                                                      const llvm::Twine &name);
+#else
+typedef llvm::Value *(llvm::IRBuilder<>::*CreateFCmp)(llvm::Value *lhs,
+                                                      llvm::Value *rhs,
+                                                      const llvm::Twine &name,
+                                                      llvm::MDNode *fpmathtag);
+#endif
+/**
+ * A syntax node for ternary if.
+ */
+class ConditionalNode : public AstNode {
+public:
+  ConditionalNode(const std::shared_ptr<AstNode> &condition,
+                  const std::shared_ptr<AstNode> &then_part,
+                  const std::shared_ptr<AstNode> &else_part);
+  virtual llvm::Value *generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx);
+  virtual llvm::Value *generateIndex(GenerateState &state,
+                                     llvm::Value *tid,
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx);
+  bool usesIndex();
+  ExprType type();
+  void writeDebug(GenerateState &state);
+
+private:
+  std::shared_ptr<AstNode> condition;
+  std::shared_ptr<AstNode> then_part;
+  std::shared_ptr<AstNode> else_part;
+};
+
+class CompareFPNode : public DebuggableNode {
+public:
+  CompareFPNode(CreateFCmp comparator,
+                std::shared_ptr<AstNode> &left,
+                std::shared_ptr<AstNode> &right,
+                ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  ExprType type();
+
+private:
+  CreateFCmp comparator;
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
+};
+
+class CompareIntNode : public DebuggableNode {
+public:
+  CompareIntNode(CreateICmp comparator,
+                 std::shared_ptr<AstNode> &left,
+                 std::shared_ptr<AstNode> &right,
+                 ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  ExprType type();
+
+private:
+  CreateICmp comparator;
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
+};
+
+class CompareStrNode : public DebuggableNode {
+public:
+  CompareStrNode(CreateICmp comparator,
+                 std::shared_ptr<AstNode> &left,
+                 std::shared_ptr<AstNode> &right,
+                 ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  ExprType type();
+
+private:
+  CreateICmp comparator;
+  std::shared_ptr<AstNode> left;
+  std::shared_ptr<AstNode> right;
+};
+
+class UseNode;
+class BindingNode : public DebuggableNode {
+public:
+  BindingNode(ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *read,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx);
+
+  void parse(ParseState &state) throw(ParseError);
+
+  ExprType type();
+
+private:
+  std::vector<std::shared_ptr<UseNode>> definitions;
+  std::shared_ptr<AstNode> body;
+};
+
+class RegexNode : public DebuggableNode {
+public:
+  RegexNode(std::shared_ptr<AstNode> &operand,
+            RegularExpression &&pattern,
+            ParseState &state);
+  llvm::Value *generateGeneric(GenerateMember member,
+                               GenerateState &state,
+                               llvm::Value *read,
+                               llvm::Value *header,
+                               llvm::Value *error_fn,
+                               llvm::Value *error_ctx);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *read,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx);
+  bool usesIndex();
+  ExprType type();
+
+private:
+  std::shared_ptr<AstNode> operand;
+  RegularExpression pattern;
+};
+
 llvm::Value *make_bool(llvm::LLVMContext &context, bool value);
 
 llvm::Value *make_char(llvm::LLVMContext &context, char value);
