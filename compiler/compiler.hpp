@@ -127,30 +127,6 @@ private:
   std::shared_ptr<AstNode> right;
 };
 
-class UseNode;
-class BindingNode : public DebuggableNode {
-public:
-  BindingNode(ParseState &state);
-  llvm::Value *generate(GenerateState &state,
-                        llvm::Value *read,
-                        llvm::Value *header,
-                        llvm::Value *error_fn,
-                        llvm::Value *error_ctx);
-  llvm::Value *generateIndex(GenerateState &state,
-                             llvm::Value *read,
-                             llvm::Value *header,
-                             llvm::Value *error_fn,
-                             llvm::Value *error_ctx);
-
-  void parse(ParseState &state) throw(ParseError);
-
-  ExprType type();
-
-private:
-  std::vector<std::shared_ptr<UseNode>> definitions;
-  std::shared_ptr<AstNode> body;
-};
-
 class RegexNode : public DebuggableNode {
 public:
   RegexNode(std::shared_ptr<AstNode> &operand,
@@ -213,6 +189,7 @@ private:
   T value;
 };
 
+typedef LiteralNode<bool, decltype(&make_bool), &make_bool, BOOL> BoolConst;
 typedef LiteralNode<char, decltype(&make_char), &make_char, INT> CharConst;
 typedef LiteralNode<double, decltype(&make_dbl), &make_dbl, FP> DblConst;
 typedef LiteralNode<int, decltype(&make_int), &make_int, INT> IntConst;
@@ -426,30 +403,9 @@ private:
   std::shared_ptr<LoopVar> var;
 };
 
-class BoundMatchNode;
-class MatchBindingNode : public DebuggableNode {
-public:
-  MatchBindingNode(ParseState &state) throw(ParseError);
-  llvm::Value *generate(GenerateState &state,
-                        llvm::Value *read,
-                        llvm::Value *header,
-                        llvm::Value *error_fn,
-                        llvm::Value *error_ctx);
-  llvm::Value *generateIndex(GenerateState &state,
-                             llvm::Value *read,
-                             llvm::Value *header,
-                             llvm::Value *error_fn,
-                             llvm::Value *error_ctx);
-  ExprType type();
-
-private:
-  std::vector<std::shared_ptr<BoundMatchNode>> definitions;
-  RegularExpression regex;
-  std::shared_ptr<AstNode> input;
-  std::shared_ptr<AstNode> body;
-};
-
 std::shared_ptr<AstNode> parseBED(ParseState &state) throw(ParseError);
-std::shared_ptr<AstNode> parseMin(ParseState &state) throw(ParseError);
+std::shared_ptr<AstNode> parseBinding(ParseState &state) throw(ParseError);
+std::shared_ptr<AstNode> parseMatchBinding(ParseState &state) throw(ParseError);
 std::shared_ptr<AstNode> parseMax(ParseState &state) throw(ParseError);
+std::shared_ptr<AstNode> parseMin(ParseState &state) throw(ParseError);
 }

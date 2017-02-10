@@ -73,6 +73,7 @@ libbamql_cpl_la_SOURCES = \
 	compiler/ast_node_function.cpp \
 	compiler/ast_node_logical.cpp \
 	compiler/ast_node_loop.cpp \
+	compiler/ast_node_match_binding.cpp \
 	compiler/ast_node_matching.cpp \
 	compiler/ast_node_optima.cpp \
 	compiler/bed.cpp \

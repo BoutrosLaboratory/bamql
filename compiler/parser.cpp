@@ -67,8 +67,8 @@ public:
       : float_compare(float_compare_), integer_compare(integer_compare_),
         symbol(symbol_) {}
 
-  bool parse(ParseState &state,
-             std::shared_ptr<AstNode> &left) throw(ParseError) {
+  bool parse(ParseState &state, std::shared_ptr<AstNode> &left) const
+      throw(ParseError) {
     auto where = state.where();
     if (!state.parseKeyword(symbol)) {
       return false;
@@ -102,7 +102,7 @@ private:
   const std::string symbol;
 };
 
-std::vector<EquivalenceCheck> equivalence_checks = {
+const std::vector<EquivalenceCheck> equivalence_checks = {
   { "==", &llvm::IRBuilder<>::CreateICmpEQ, &llvm::IRBuilder<>::CreateFCmpOEQ },
   { "!=", &llvm::IRBuilder<>::CreateICmpNE, &llvm::IRBuilder<>::CreateFCmpONE },
   { "<=",
@@ -274,11 +274,9 @@ static std::shared_ptr<AstNode> parseLoop(ParseState &state) throw(ParseError) {
 std::shared_ptr<AstNode> AstNode::parse(ParseState &state) throw(ParseError) {
   state.parseSpace();
   if (state.parseKeyword("let")) {
-    auto let = std::make_shared<BindingNode>(state);
-    let->parse(state);
-    return let;
+    return parseBinding(state);
   } else if (state.parseKeyword("bind")) {
-    return std::make_shared<MatchBindingNode>(state);
+    return parseMatchBinding(state);
   } else {
     return parseLoop(state);
   }

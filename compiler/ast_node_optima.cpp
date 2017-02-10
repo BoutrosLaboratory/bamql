@@ -22,7 +22,6 @@
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
 #include "check_chromosome.hpp"
-#include "constant.hpp"
 
 namespace bamql {
 

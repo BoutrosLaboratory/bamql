@@ -20,7 +20,6 @@
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
 #include "check_chromosome.hpp"
-#include "constant.hpp"
 
 // Please keep the predicates in alphabetical order.
 namespace bamql {
@@ -71,6 +70,9 @@ protected:
         -10 * log(probability));
   }
 };
+
+static std::shared_ptr<BoolConst> falseNode(new BoolConst(false));
+static std::shared_ptr<BoolConst> trueNode(new BoolConst(true));
 
 static const UserArg bool_arg(BOOL);
 static const UserArg fp_arg(FP);
@@ -168,8 +170,8 @@ PredicateMap getDefaultPredicates() {
                                       { int_flag_unmapped }) },
 
     // Constants
-    { "false", FalseNode::parse },
-    { "true", TrueNode::parse },
+    { "false", [](ParseState &state) { return falseNode; } },
+    { "true", [](ParseState &state) { return trueNode; } },
 
     // Position
     { "after",

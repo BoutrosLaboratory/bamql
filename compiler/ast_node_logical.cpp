@@ -24,26 +24,45 @@ namespace bamql {
  */
 class ShortCircuitNode : public AstNode {
 public:
-  ShortCircuitNode(const std::shared_ptr<AstNode> &left,
-                   const std::shared_ptr<AstNode> &right);
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::Value *error_fn,
-                                llvm::Value *error_ctx);
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::Value *error_fn,
-                                     llvm::Value *error_ctx);
-  bool usesIndex();
-  ExprType type();
+  ShortCircuitNode(const std::shared_ptr<AstNode> &left_,
+                   const std::shared_ptr<AstNode> &right_)
+      : left(left_), right(right_) {
+    type_check(left, bamql::BOOL);
+    type_check(right, bamql::BOOL);
+  }
+
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx) {
+    return generateGeneric(
+        &bamql::AstNode::generate, state, read, header, error_fn, error_ctx);
+  }
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *tid,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx) {
+    if (usesIndex()) {
+      return generateGeneric(&bamql::AstNode::generateIndex,
+                             state,
+                             tid,
+                             header,
+                             error_fn,
+                             error_ctx);
+    } else {
+      return llvm::ConstantInt::getTrue(state.module()->getContext());
+    }
+  }
+  bool usesIndex() { return left->usesIndex() || right->usesIndex(); }
+  ExprType type() { return bamql::BOOL; }
   /**
    * The value that causes short circuting.
    */
   virtual llvm::Value *branchValue(llvm::LLVMContext &context) = 0;
 
-  void writeDebug(GenerateState &state);
+  void writeDebug(GenerateState &state) {}
 
 private:
   llvm::Value *generateGeneric(GenerateMember member,
@@ -51,7 +70,46 @@ private:
                                llvm::Value *param,
                                llvm::Value *header,
                                llvm::Value *error_fn,
-                               llvm::Value *error_ctx);
+                               llvm::Value *error_ctx) {
+    /* Create two basic blocks for the possibly executed right-hand expression
+     * and
+     * the final block. */
+    auto function = state->GetInsertBlock()->getParent();
+    auto next_block = llvm::BasicBlock::Create(
+        state.module()->getContext(), "next", function);
+    auto merge_block = llvm::BasicBlock::Create(
+        state.module()->getContext(), "merge", function);
+
+    /* Generate the left expression in the current block. */
+    this->left->writeDebug(state);
+    auto left_value =
+        ((*this->left).*member)(state, param, header, error_fn, error_ctx);
+    auto short_circuit_value = state->CreateICmpEQ(
+        left_value, this->branchValue(state.module()->getContext()));
+    /* If short circuiting, jump to the final block, otherwise, do the
+     * right-hand
+     * expression. */
+    state->CreateCondBr(short_circuit_value, merge_block, next_block);
+    auto original_block = state->GetInsertBlock();
+
+    /* Generate the right-hand expression, then jump to the final block.*/
+    state->SetInsertPoint(next_block);
+    this->right->writeDebug(state);
+    auto right_value =
+        ((*this->right).*member)(state, param, header, error_fn, error_ctx);
+    state->CreateBr(merge_block);
+    next_block = state->GetInsertBlock();
+
+    /* Merge from the above paths, selecting the correct value through a PHI
+     * node.
+     */
+    state->SetInsertPoint(merge_block);
+    auto phi = state->CreatePHI(
+        llvm::Type::getInt1Ty(state.module()->getContext()), 2);
+    phi->addIncoming(left_value, original_block);
+    phi->addIncoming(right_value, next_block);
+    return phi;
+  }
   std::shared_ptr<AstNode> left;
   std::shared_ptr<AstNode> right;
 };
@@ -60,40 +118,66 @@ private:
  */
 class AndNode : public ShortCircuitNode {
 public:
-  AndNode(const std::shared_ptr<AstNode> &left,
-          const std::shared_ptr<AstNode> &right);
-  virtual llvm::Value *branchValue(llvm::LLVMContext &context);
+  AndNode(const std::shared_ptr<AstNode> &left_,
+          const std::shared_ptr<AstNode> &right_)
+      : ShortCircuitNode(left_, right_) {}
+  llvm::Value *branchValue(llvm::LLVMContext &context) {
+    return llvm::ConstantInt::getFalse(context);
+  }
 };
 /**
  * A syntax node for logical disjunction (OR).
  */
 class OrNode : public ShortCircuitNode {
 public:
-  OrNode(const std::shared_ptr<AstNode> &left,
-         const std::shared_ptr<AstNode> &right);
-  virtual llvm::Value *branchValue(llvm::LLVMContext &context);
+  OrNode(const std::shared_ptr<AstNode> &left_,
+         const std::shared_ptr<AstNode> &right_)
+      : ShortCircuitNode(left_, right_) {}
+  llvm::Value *branchValue(llvm::LLVMContext &context) {
+    return llvm::ConstantInt::getTrue(context);
+  }
 };
 /**
  * A syntax node for exclusive disjunction (XOR).
  */
 class XOrNode : public AstNode {
 public:
-  XOrNode(const std::shared_ptr<AstNode> &left,
-          const std::shared_ptr<AstNode> &right);
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::Value *error_fn,
-                                llvm::Value *error_ctx);
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::Value *error_fn,
-                                     llvm::Value *error_ctx);
-  bool usesIndex();
-  ExprType type();
+  XOrNode(const std::shared_ptr<AstNode> &left_,
+          const std::shared_ptr<AstNode> &right_)
+      : left(left_), right(right_) {
+    type_check(left_, bamql::BOOL);
+    type_check(right_, bamql::BOOL);
+  }
 
-  void writeDebug(GenerateState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx) {
+    auto left_value = left->generate(state, read, header, error_fn, error_ctx);
+    auto right_value =
+        right->generate(state, read, header, error_fn, error_ctx);
+    return state->CreateICmpNE(left_value, right_value);
+  }
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *tid,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx) {
+    if (usesIndex()) {
+      auto left_value =
+          left->generateIndex(state, tid, header, error_fn, error_ctx);
+      auto right_value =
+          right->generateIndex(state, tid, header, error_fn, error_ctx);
+      return state->CreateICmpNE(left_value, right_value);
+    } else {
+      return llvm::ConstantInt::getTrue(state.module()->getContext());
+    }
+  }
+  bool usesIndex() { return left->usesIndex() || right->usesIndex(); }
+  ExprType type() { return bamql::BOOL; }
+
+  void writeDebug(GenerateState &state) {}
 
 private:
   std::shared_ptr<AstNode> left;
@@ -104,187 +188,37 @@ private:
  */
 class NotNode : public AstNode {
 public:
-  NotNode(const std::shared_ptr<AstNode> &expr);
-  virtual llvm::Value *generate(GenerateState &state,
-                                llvm::Value *read,
-                                llvm::Value *header,
-                                llvm::Value *error_fn,
-                                llvm::Value *error_ctx);
-  virtual llvm::Value *generateIndex(GenerateState &state,
-                                     llvm::Value *tid,
-                                     llvm::Value *header,
-                                     llvm::Value *error_fn,
-                                     llvm::Value *error_ctx);
-  bool usesIndex();
-  ExprType type();
+  NotNode(const std::shared_ptr<AstNode> &expr_) : expr(expr_) {
+    type_check(expr, bamql::BOOL);
+  }
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx) {
+    this->expr->writeDebug(state);
+    llvm::Value *result =
+        this->expr->generate(state, read, header, error_fn, error_ctx);
+    return state->CreateNot(result);
+  }
+  llvm::Value *generateIndex(GenerateState &state,
+                             llvm::Value *tid,
+                             llvm::Value *header,
+                             llvm::Value *error_fn,
+                             llvm::Value *error_ctx) {
+    this->expr->writeDebug(state);
+    llvm::Value *result =
+        this->expr->generateIndex(state, tid, header, error_fn, error_ctx);
+    return state->CreateNot(result);
+  }
+  bool usesIndex() { return expr->usesIndex(); }
+  ExprType type() { return bamql::BOOL; }
 
-  void writeDebug(GenerateState &state);
+  void writeDebug(GenerateState &state) {}
 
 private:
   std::shared_ptr<AstNode> expr;
 };
-
-bamql::ShortCircuitNode::ShortCircuitNode(
-    const std::shared_ptr<AstNode> &left_,
-    const std::shared_ptr<AstNode> &right_)
-    : left(left_), right(right_) {
-  type_check(left, bamql::BOOL);
-  type_check(right, bamql::BOOL);
-}
-
-llvm::Value *bamql::ShortCircuitNode::generateGeneric(GenerateMember member,
-                                                      GenerateState &state,
-                                                      llvm::Value *param,
-                                                      llvm::Value *header,
-                                                      llvm::Value *error_fn,
-                                                      llvm::Value *error_ctx) {
-  /* Create two basic blocks for the possibly executed right-hand expression and
-   * the final block. */
-  auto function = state->GetInsertBlock()->getParent();
-  auto next_block =
-      llvm::BasicBlock::Create(state.module()->getContext(), "next", function);
-  auto merge_block =
-      llvm::BasicBlock::Create(state.module()->getContext(), "merge", function);
-
-  /* Generate the left expression in the current block. */
-  this->left->writeDebug(state);
-  auto left_value =
-      ((*this->left).*member)(state, param, header, error_fn, error_ctx);
-  auto short_circuit_value = state->CreateICmpEQ(
-      left_value, this->branchValue(state.module()->getContext()));
-  /* If short circuiting, jump to the final block, otherwise, do the right-hand
-   * expression. */
-  state->CreateCondBr(short_circuit_value, merge_block, next_block);
-  auto original_block = state->GetInsertBlock();
-
-  /* Generate the right-hand expression, then jump to the final block.*/
-  state->SetInsertPoint(next_block);
-  this->right->writeDebug(state);
-  auto right_value =
-      ((*this->right).*member)(state, param, header, error_fn, error_ctx);
-  state->CreateBr(merge_block);
-  next_block = state->GetInsertBlock();
-
-  /* Merge from the above paths, selecting the correct value through a PHI node.
-   */
-  state->SetInsertPoint(merge_block);
-  auto phi =
-      state->CreatePHI(llvm::Type::getInt1Ty(state.module()->getContext()), 2);
-  phi->addIncoming(left_value, original_block);
-  phi->addIncoming(right_value, next_block);
-  return phi;
-}
-
-llvm::Value *bamql::ShortCircuitNode::generate(GenerateState &state,
-                                               llvm::Value *read,
-                                               llvm::Value *header,
-                                               llvm::Value *error_fn,
-                                               llvm::Value *error_ctx) {
-  return generateGeneric(
-      &bamql::AstNode::generate, state, read, header, error_fn, error_ctx);
-}
-
-llvm::Value *bamql::ShortCircuitNode::generateIndex(GenerateState &state,
-                                                    llvm::Value *tid,
-                                                    llvm::Value *header,
-                                                    llvm::Value *error_fn,
-                                                    llvm::Value *error_ctx) {
-  if (usesIndex()) {
-    return generateGeneric(&bamql::AstNode::generateIndex,
-                           state,
-                           tid,
-                           header,
-                           error_fn,
-                           error_ctx);
-  } else {
-    return llvm::ConstantInt::getTrue(state.module()->getContext());
-  }
-}
-bool bamql::ShortCircuitNode::usesIndex() {
-  return left->usesIndex() || right->usesIndex();
-}
-bamql::ExprType bamql::ShortCircuitNode::type() { return bamql::BOOL; }
-
-void bamql::ShortCircuitNode::writeDebug(GenerateState &state) {}
-
-bamql::AndNode::AndNode(const std::shared_ptr<AstNode> &left,
-                        const std::shared_ptr<AstNode> &right)
-    : ShortCircuitNode(left, right) {}
-llvm::Value *bamql::AndNode::branchValue(llvm::LLVMContext &context) {
-  return llvm::ConstantInt::getFalse(context);
-}
-
-bamql::OrNode::OrNode(const std::shared_ptr<AstNode> &left,
-                      const std::shared_ptr<AstNode> &right)
-    : ShortCircuitNode(left, right) {}
-llvm::Value *bamql::OrNode::branchValue(llvm::LLVMContext &context) {
-  return llvm::ConstantInt::getTrue(context);
-}
-
-bamql::XOrNode::XOrNode(const std::shared_ptr<AstNode> &left_,
-                        const std::shared_ptr<AstNode> &right_)
-    : left(left_), right(right_) {
-  type_check(left_, bamql::BOOL);
-  type_check(right_, bamql::BOOL);
-}
-llvm::Value *bamql::XOrNode::generate(GenerateState &state,
-                                      llvm::Value *read,
-                                      llvm::Value *header,
-                                      llvm::Value *error_fn,
-                                      llvm::Value *error_ctx) {
-  auto left_value = left->generate(state, read, header, error_fn, error_ctx);
-  auto right_value = right->generate(state, read, header, error_fn, error_ctx);
-  return state->CreateICmpNE(left_value, right_value);
-}
-llvm::Value *bamql::XOrNode::generateIndex(GenerateState &state,
-                                           llvm::Value *tid,
-                                           llvm::Value *header,
-                                           llvm::Value *error_fn,
-                                           llvm::Value *error_ctx) {
-  if (usesIndex()) {
-    auto left_value =
-        left->generateIndex(state, tid, header, error_fn, error_ctx);
-    auto right_value =
-        right->generateIndex(state, tid, header, error_fn, error_ctx);
-    return state->CreateICmpNE(left_value, right_value);
-  } else {
-    return llvm::ConstantInt::getTrue(state.module()->getContext());
-  }
-}
-bool bamql::XOrNode::usesIndex() {
-  return left->usesIndex() || right->usesIndex();
-}
-bamql::ExprType bamql::XOrNode::type() { return bamql::BOOL; }
-
-void bamql::XOrNode::writeDebug(GenerateState &state) {}
-
-bamql::NotNode::NotNode(const std::shared_ptr<AstNode> &expr_) : expr(expr_) {
-  type_check(expr, bamql::BOOL);
-}
-llvm::Value *bamql::NotNode::generate(GenerateState &state,
-                                      llvm::Value *read,
-                                      llvm::Value *header,
-                                      llvm::Value *error_fn,
-                                      llvm::Value *error_ctx) {
-  this->expr->writeDebug(state);
-  llvm::Value *result =
-      this->expr->generate(state, read, header, error_fn, error_ctx);
-  return state->CreateNot(result);
-}
-
-llvm::Value *bamql::NotNode::generateIndex(GenerateState &state,
-                                           llvm::Value *tid,
-                                           llvm::Value *header,
-                                           llvm::Value *error_fn,
-                                           llvm::Value *error_ctx) {
-  this->expr->writeDebug(state);
-  llvm::Value *result =
-      this->expr->generateIndex(state, tid, header, error_fn, error_ctx);
-  return state->CreateNot(result);
-}
-bool bamql::NotNode::usesIndex() { return expr->usesIndex(); }
-bamql::ExprType bamql::NotNode::type() { return bamql::BOOL; }
-void bamql::NotNode::writeDebug(GenerateState &state) {}
 
 bamql::ConditionalNode::ConditionalNode(
     const std::shared_ptr<AstNode> &condition_,
