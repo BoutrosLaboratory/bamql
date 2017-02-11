@@ -36,7 +36,6 @@ extern "C" {
 				    const char *pattern, bool mate);
 	bool bamql_check_chromosome_id(bam_hdr_t *header, uint32_t chr_id,
 				       const char *pattern);
-	bool bamql_check_flag(bam1_t *read, uint32_t flag);
 	bool bamql_check_mapping_quality(bam1_t *read, uint8_t quality);
 	bool bamql_check_nt(bam1_t *read, int32_t position, unsigned char nt,
 			    bool exact);
@@ -44,6 +43,7 @@ extern "C" {
 				  uint32_t start, uint32_t end);
 	bool bamql_check_split_pair(bam_hdr_t *header, bam1_t *read);
 	const char *bamql_chr(bam_hdr_t *header, bam1_t *read, bool mate);
+	uint32_t bamql_flags(bam1_t *read);
 	const char *bamql_header(bam1_t *read);
 	bool bamql_position_begin(bam_hdr_t *header, bam1_t *read,
 				  uint32_t * out);

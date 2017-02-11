@@ -117,11 +117,6 @@ bool bamql_check_chromosome_id(bam_hdr_t *header, uint32_t chr_id,
 	    );
 }
 
-bool bamql_check_flag(bam1_t *read, uint32_t flag)
-{
-	return (flag & read->core.flag) == flag;
-}
-
 bool bamql_check_mapping_quality(bam1_t *read, uint8_t quality)
 {
 	return read->core.qual != 255 && read->core.qual >= quality;
@@ -207,6 +202,11 @@ const char *bamql_chr(bam_hdr_t *header, bam1_t *read, bool mate)
 		value += 3;
 	}
 	return value;
+}
+
+uint32_t bamql_flags(bam1_t *read)
+{
+	return read->core.flag;
 }
 
 const char *bamql_header(bam1_t *read)

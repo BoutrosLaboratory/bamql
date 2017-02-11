@@ -125,3 +125,25 @@ llvm::Value *bamql::CompareStrNode::generate(GenerateState &state,
       "");
 }
 bamql::ExprType bamql::CompareStrNode::type() { return bamql::BOOL; }
+
+bamql::BitwiseContainsNode::BitwiseContainsNode(
+    std::shared_ptr<AstNode> &haystack_,
+    std::shared_ptr<AstNode> &needle_,
+    ParseState &state)
+    : DebuggableNode(state), haystack(haystack_), needle(needle_) {}
+llvm::Value *bamql::BitwiseContainsNode::generate(GenerateState &state,
+                                                  llvm::Value *read,
+                                                  llvm::Value *header,
+                                                  llvm::Value *error_fn,
+                                                  llvm::Value *error_ctx) {
+  haystack->writeDebug(state);
+  auto haystack_value =
+      haystack->generate(state, read, header, error_fn, error_ctx);
+  needle->writeDebug(state);
+  auto needle_value =
+      needle->generate(state, read, header, error_fn, error_ctx);
+  this->writeDebug(state);
+  return state->CreateICmpEQ(state->CreateAnd(haystack_value, needle_value),
+                             needle_value);
+}
+bamql::ExprType bamql::BitwiseContainsNode::type() { return bamql::BOOL; }

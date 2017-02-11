@@ -85,21 +85,38 @@ static const CharArg char_r('R');
 static const CharArg char_g('G');
 static const IntArg int_max_arg(INT32_MAX);
 static const IntArg int_zero_arg(0);
-static const IntArg int_flag_duplicate(BAM_FDUP);
-static const IntArg int_flag_failed_qc(BAM_FQCFAIL);
-static const IntArg int_flag_mapped_to_reverse(BAM_FREVERSE);
-static const IntArg int_flag_mate_mapped_to_reverse(BAM_FPAIRED |
-                                                    BAM_FMREVERSE);
-static const IntArg int_flag_mate_unmapped(BAM_FPAIRED | BAM_FMUNMAP);
-static const IntArg int_flag_paired(BAM_FPAIRED);
-static const IntArg int_flag_proper_pair(BAM_FPAIRED | BAM_FPROPER_PAIR);
-static const IntArg int_flag_read1(BAM_FPAIRED | BAM_FREAD1);
-static const IntArg int_flag_read2(BAM_FPAIRED | BAM_FREAD2);
-static const IntArg int_flag_secondary(BAM_FSECONDARY);
-static const IntArg int_flag_supplementary(BAM_FSUPPLEMENTARY);
-static const IntArg int_flag_unmapped(BAM_FUNMAP);
 static const FixedProbabilityArg fixed_probability_arg;
 static const MappingQualityArg mapping_quality_arg;
+
+static std::shared_ptr<AstNode> parseFlag(ParseState &state,
+                                          uint32_t flag) throw(ParseError) {
+  std::vector<std::shared_ptr<AstNode>> args;
+  auto haystack =
+      std::static_pointer_cast<AstNode>(std::make_shared<ConstIntFunctionNode>(
+          "bamql_flags", std::move(args), state));
+  auto needle =
+      std::static_pointer_cast<AstNode>(std::make_shared<IntConst>(flag));
+  auto result = std::static_pointer_cast<AstNode>(
+      std::make_shared<BitwiseContainsNode>(haystack, needle, state));
+  return result;
+}
+
+static std::shared_ptr<AstNode> parseRawFlag(ParseState &state) throw(
+    ParseError) {
+  state.parseCharInSpace('(');
+  auto needle = AstNode::parse(state);
+  if (needle->type() != INT) {
+    throw ParseError(state.where(), "Type mismatch.");
+  }
+  state.parseCharInSpace(')');
+  std::vector<std::shared_ptr<AstNode>> args;
+  auto haystack =
+      std::static_pointer_cast<AstNode>(std::make_shared<ConstIntFunctionNode>(
+          "bamql_flags", std::move(args), state));
+  auto result = std::static_pointer_cast<AstNode>(
+      std::make_shared<BitwiseContainsNode>(haystack, needle, state));
+  return result;
+}
 
 /**
  * All the predicates known to the system.
@@ -132,42 +149,29 @@ PredicateMap getDefaultPredicates() {
           "bamql_chr", { true_arg }, "Read's mate not mapped.") },
 
     // Flags
-    { "duplicate?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_duplicate }) },
-    { "failed_qc?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_failed_qc }) },
+    { "duplicate?", std::bind(parseFlag, std::placeholders::_1, BAM_FDUP) },
+    { "failed_qc?", std::bind(parseFlag, std::placeholders::_1, BAM_FQCFAIL) },
     { "mapped_to_reverse?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_mapped_to_reverse }) },
+      std::bind(parseFlag, std::placeholders::_1, BAM_FREVERSE) },
     { "mate_mapped_to_reverse?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_mate_mapped_to_reverse }) },
+      std::bind(
+          parseFlag, std::placeholders::_1, BAM_FPAIRED | BAM_FMREVERSE) },
     { "mate_unmapped?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_unmapped }) },
-    { "paired?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_paired }) },
+      std::bind(parseFlag, std::placeholders::_1, BAM_FPAIRED | BAM_FMUNMAP) },
+    { "paired?", std::bind(parseFlag, std::placeholders::_1, BAM_FPAIRED) },
     { "proper_pair?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_proper_pair }) },
-    { "raw_flag",
-      parseFunction<BoolFunctionNode>("bamql_check_flag", { int_arg }) },
+      std::bind(
+          parseFlag, std::placeholders::_1, BAM_FPAIRED | BAM_FPROPER_PAIR) },
+    { "raw_flag", parseRawFlag },
     { "read1?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag", { int_flag_read1 }) },
+      std::bind(parseFlag, std::placeholders::_1, BAM_FPAIRED | BAM_FREAD1) },
     { "read2?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag", { int_flag_read2 }) },
+      std::bind(parseFlag, std::placeholders::_1, BAM_FPAIRED | BAM_FREAD2) },
     { "secondary?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_secondary }) },
+      std::bind(parseFlag, std::placeholders::_1, BAM_FSECONDARY) },
     { "supplementary?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_supplementary }) },
-    { "unmapped?",
-      parseFunction<BoolFunctionNode>("bamql_check_flag",
-                                      { int_flag_unmapped }) },
+      std::bind(parseFlag, std::placeholders::_1, BAM_FSUPPLEMENTARY) },
+    { "unmapped?", std::bind(parseFlag, std::placeholders::_1, BAM_FUNMAP) },
 
     // Constants
     { "false", [](ParseState &state) { return falseNode; } },

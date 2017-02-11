@@ -216,11 +216,6 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
                    base_bool,
                    { ptr_bam_hdr_t, base_uint32, base_str });
     createFunction(module,
-                   "bamql_check_flag",
-                   PureReadArgNoRecurse,
-                   base_bool,
-                   { ptr_bam1_t, base_uint32 });
-    createFunction(module,
                    "bamql_check_mapping_quality",
                    PureReadArgNoRecurse,
                    base_bool,
@@ -245,6 +240,11 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
                    PureReadArg,
                    base_str,
                    { ptr_bam_hdr_t, ptr_bam1_t, base_bool });
+    createFunction(module,
+                   "bamql_flags",
+                   PureReadArgNoRecurse,
+                   base_uint32,
+                   { ptr_bam1_t });
     createFunction(
         module, "bamql_header", PureReadArg, base_str, { ptr_bam1_t });
     createFunction(module,

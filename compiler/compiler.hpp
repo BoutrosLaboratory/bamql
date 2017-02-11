@@ -108,6 +108,23 @@ private:
   std::shared_ptr<AstNode> right;
 };
 
+class BitwiseContainsNode : public DebuggableNode {
+public:
+  BitwiseContainsNode(std::shared_ptr<AstNode> &haystack,
+                      std::shared_ptr<AstNode> &needle,
+                      ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  ExprType type();
+
+private:
+  std::shared_ptr<AstNode> haystack;
+  std::shared_ptr<AstNode> needle;
+};
+
 class CompareStrNode : public DebuggableNode {
 public:
   CompareStrNode(CreateICmp comparator,
@@ -279,6 +296,18 @@ public:
   BoolFunctionNode(const std::string &name_,
                    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
                    ParseState &state);
+  llvm::Value *generateCall(GenerateState &state,
+                            llvm::Function *func,
+                            std::vector<llvm::Value *> &args,
+                            llvm::Value *error_fun,
+                            llvm::Value *error_ctx);
+  ExprType type();
+};
+class ConstIntFunctionNode : public FunctionNode {
+public:
+  ConstIntFunctionNode(const std::string &name_,
+                       const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+                       ParseState &state);
   llvm::Value *generateCall(GenerateState &state,
                             llvm::Function *func,
                             std::vector<llvm::Value *> &args,
