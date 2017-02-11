@@ -44,6 +44,7 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
           llvm::PointerType::get(
               llvm::Type::getInt8Ty(generator->module()->getContext()), 0),
           nullptr));
+  func->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
 
   auto entry = llvm::BasicBlock::Create(
       generator->module()->getContext(), "entry", func);
@@ -89,7 +90,6 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
                                                        header_value,
                                                        error_fn_value,
                                                        error_ctx_value));
-
   return func;
 }
 
@@ -167,6 +167,9 @@ static void createFunction(llvm::Module *module,
                                      name,
                                      module);
   func->setCallingConv(llvm::CallingConv::C);
+  if (ret->isIntegerTy() && ret->getIntegerBitWidth() == 1) {
+    func->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+  }
   policy(func);
 }
 

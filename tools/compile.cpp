@@ -60,7 +60,9 @@ public:
                         llvm::Value *error_fn,
                         llvm::Value *error_context) {
     llvm::Value *args[] = { header, read, error_fn, error_context };
-    return state->CreateCall(main, args);
+    auto call = state->CreateCall(main, args);
+    call->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+    return call;
   }
 
   llvm::Value *generateIndex(bamql::GenerateState &state,
@@ -69,7 +71,9 @@ public:
                              llvm::Value *error_fn,
                              llvm::Value *error_context) {
     llvm::Value *args[] = { header, chromosome, error_fn, error_context };
-    return state->CreateCall(index, args);
+    auto call = state->CreateCall(index, args);
+    call->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+    return call;
   }
   bool usesIndex() { return true; }
   bamql::ExprType type() { return bamql::BOOL; }
@@ -130,14 +134,13 @@ llvm::Function *createExternFunction(
           llvm::Type::getInt8Ty(generator->module()->getContext()), 0)
     };
     auto func_type = llvm::FunctionType::get(
-        llvm::IntegerType::get(generator->module()->getContext(), 1),
-        args,
-        false);
+        llvm::Type::getInt1Ty(generator->module()->getContext()), args, false);
     func = llvm::Function::Create(func_type,
                                   llvm::GlobalValue::ExternalLinkage,
                                   name,
                                   generator->module());
     func->setCallingConv(llvm::CallingConv::C);
+    func->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
   }
   return func;
 }

@@ -116,7 +116,9 @@ llvm::Value *bamql::BoolFunctionNode::generateCall(
     std::vector<llvm::Value *> &args,
     llvm::Value *error_fun,
     llvm::Value *error_ctx) {
-  return state->CreateCall(func, args);
+  auto call = state->CreateCall(func, args);
+  call->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+  return call;
 }
 bamql::ExprType bamql::BoolFunctionNode::type() { return bamql::BOOL; }
 
