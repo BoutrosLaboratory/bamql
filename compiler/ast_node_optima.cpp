@@ -98,10 +98,10 @@ public:
     return node;
   }
 };
-std::shared_ptr<bamql::AstNode> parseMin(ParseState &state) throw(ParseError) {
+std::shared_ptr<AstNode> parseMin(ParseState &state) throw(ParseError) {
   return ChooseBetter::parse(state, true);
 }
-std::shared_ptr<bamql::AstNode> parseMax(ParseState &state) throw(ParseError) {
+std::shared_ptr<AstNode> parseMax(ParseState &state) throw(ParseError) {
   return ChooseBetter::parse(state, false);
 }
 }

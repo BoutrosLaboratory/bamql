@@ -18,20 +18,21 @@
 #include "compiler.hpp"
 #include "ast_node_compare.hpp"
 
-bamql::CompareFPNode::CompareFPNode(bamql::CreateFCmp comparator_,
-                                    std::shared_ptr<AstNode> &left_,
-                                    std::shared_ptr<AstNode> &right_,
-                                    ParseState &state)
+namespace bamql {
+CompareFPNode::CompareFPNode(CreateFCmp comparator_,
+                             std::shared_ptr<AstNode> &left_,
+                             std::shared_ptr<AstNode> &right_,
+                             ParseState &state)
     : DebuggableNode(state), comparator(comparator_), left(left_),
       right(right_) {
-  type_check(left_, bamql::FP);
-  type_check(right_, bamql::FP);
+  type_check(left, FP);
+  type_check(right, FP);
 }
-llvm::Value *bamql::CompareFPNode::generate(GenerateState &state,
-                                            llvm::Value *read,
-                                            llvm::Value *header,
-                                            llvm::Value *error_fn,
-                                            llvm::Value *error_ctx) {
+llvm::Value *CompareFPNode::generate(GenerateState &state,
+                                     llvm::Value *read,
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx) {
   left->writeDebug(state);
   auto left_value = left->generate(state, read, header, error_fn, error_ctx);
   right->writeDebug(state);
@@ -43,22 +44,22 @@ llvm::Value *bamql::CompareFPNode::generate(GenerateState &state,
   return ((*state)->*comparator)(left_value, right_value, "", nullptr);
 #endif
 }
-bamql::ExprType bamql::CompareFPNode::type() { return bamql::BOOL; }
+ExprType CompareFPNode::type() { return BOOL; }
 
-bamql::CompareIntNode::CompareIntNode(bamql::CreateICmp comparator_,
-                                      std::shared_ptr<AstNode> &left_,
-                                      std::shared_ptr<AstNode> &right_,
-                                      ParseState &state)
+CompareIntNode::CompareIntNode(CreateICmp comparator_,
+                               std::shared_ptr<AstNode> &left_,
+                               std::shared_ptr<AstNode> &right_,
+                               ParseState &state)
     : DebuggableNode(state), comparator(comparator_), left(left_),
       right(right_) {
-  type_check(left_, bamql::INT);
-  type_check(right_, bamql::INT);
+  type_check(left, INT);
+  type_check(right, INT);
 }
-llvm::Value *bamql::CompareIntNode::generate(GenerateState &state,
-                                             llvm::Value *read,
-                                             llvm::Value *header,
-                                             llvm::Value *error_fn,
-                                             llvm::Value *error_ctx) {
+llvm::Value *CompareIntNode::generate(GenerateState &state,
+                                      llvm::Value *read,
+                                      llvm::Value *header,
+                                      llvm::Value *error_fn,
+                                      llvm::Value *error_ctx) {
   left->writeDebug(state);
   auto left_value = left->generate(state, read, header, error_fn, error_ctx);
   right->writeDebug(state);
@@ -66,22 +67,22 @@ llvm::Value *bamql::CompareIntNode::generate(GenerateState &state,
   this->writeDebug(state);
   return ((*state)->*comparator)(left_value, right_value, "");
 }
-bamql::ExprType bamql::CompareIntNode::type() { return bamql::BOOL; }
+ExprType CompareIntNode::type() { return BOOL; }
 
-bamql::CompareStrNode::CompareStrNode(bamql::CreateICmp comparator_,
-                                      std::shared_ptr<AstNode> &left_,
-                                      std::shared_ptr<AstNode> &right_,
-                                      ParseState &state)
+CompareStrNode::CompareStrNode(CreateICmp comparator_,
+                               std::shared_ptr<AstNode> &left_,
+                               std::shared_ptr<AstNode> &right_,
+                               ParseState &state)
     : DebuggableNode(state), comparator(comparator_), left(left_),
       right(right_) {
-  type_check(left_, bamql::STR);
-  type_check(right_, bamql::STR);
+  type_check(left, STR);
+  type_check(right, STR);
 }
-llvm::Value *bamql::CompareStrNode::generate(GenerateState &state,
-                                             llvm::Value *read,
-                                             llvm::Value *header,
-                                             llvm::Value *error_fn,
-                                             llvm::Value *error_ctx) {
+llvm::Value *CompareStrNode::generate(GenerateState &state,
+                                      llvm::Value *read,
+                                      llvm::Value *header,
+                                      llvm::Value *error_fn,
+                                      llvm::Value *error_ctx) {
   left->writeDebug(state);
   auto left_value = left->generate(state, read, header, error_fn, error_ctx);
   right->writeDebug(state);
@@ -96,4 +97,5 @@ llvm::Value *bamql::CompareStrNode::generate(GenerateState &state,
           llvm::Type::getInt32Ty(state.module()->getContext()), 0),
       "");
 }
-bamql::ExprType bamql::CompareStrNode::type() { return bamql::BOOL; }
+ExprType CompareStrNode::type() { return BOOL; }
+}

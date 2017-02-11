@@ -124,7 +124,7 @@ static std::shared_ptr<AstNode> parseComparison(ParseState &state) throw(
   auto left = parseTerminal(state);
   state.parseSpace();
   if (state.parseKeyword("~")) {
-    if (left->type() != bamql::STR) {
+    if (left->type() != STR) {
       throw ParseError(state.where(),
                        "Regular expression may only be used on strings.");
     }
@@ -133,7 +133,7 @@ static std::shared_ptr<AstNode> parseComparison(ParseState &state) throw(
     return std::make_shared<RegexNode>(left, std::move(pattern), state);
   }
   if (state.parseKeyword(":")) {
-    if (left->type() != bamql::STR) {
+    if (left->type() != STR) {
       throw ParseError(state.where(),
                        "Regular expression may only be used on strings.");
     }
@@ -184,7 +184,7 @@ static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
   std::shared_ptr<AstNode> node = N(state);
   state.parseSpace();
   while (!state.empty() && *state == S) {
-    if (node->type() != bamql::BOOL) {
+    if (node->type() != BOOL) {
       throw ParseError(prev_where, "Expression must be Boolean.");
     }
     state.next();
@@ -192,7 +192,7 @@ static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
 
     prev_where = state.where();
     node = N(state);
-    if (node->type() != bamql::BOOL) {
+    if (node->type() != BOOL) {
       throw ParseError(prev_where, "Expression must be Boolean.");
     }
     state.parseSpace();
@@ -227,7 +227,7 @@ static std::shared_ptr<AstNode> parseConditional(ParseState &state) throw(
   if (!state.parseKeyword("then")) {
     return cond_part;
   }
-  if (cond_part->type() != bamql::BOOL) {
+  if (cond_part->type() != BOOL) {
     throw ParseError(prev_where, "Condition expression must be Boolean.");
   }
   auto then_part = parseIntermediate(state);
@@ -265,8 +265,7 @@ static std::shared_ptr<AstNode> parseLoop(ParseState &state) throw(ParseError) {
     if (!state.parseKeyword("in")) {
       throw ParseError(state.where(), "Expected `in' or `,' in loop.");
     }
-    return std::make_shared<bamql::LoopNode>(
-        state, name, all, std::move(values));
+    return std::make_shared<LoopNode>(state, name, all, std::move(values));
   } else {
     return parseConditional(state);
   }
@@ -302,14 +301,14 @@ std::shared_ptr<AstNode> AstNode::parse(
   if (!state.empty()) {
     throw ParseError(state.where(), "Junk at end of input.");
   }
-  if (node->type() != bamql::BOOL) {
+  if (node->type() != BOOL) {
     throw ParseError(state.where(), "Whole expression must be Boolean.");
   }
   return node;
 }
 
-std::shared_ptr<AstNode> bamql::AstNode::parseWithLogging(
-    const std::string &input, PredicateMap &predicates) {
+std::shared_ptr<AstNode> AstNode::parseWithLogging(const std::string &input,
+                                                   PredicateMap &predicates) {
   std::shared_ptr<AstNode> ast;
   try {
     ast = AstNode::parse(input, predicates);

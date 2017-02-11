@@ -82,15 +82,17 @@ static bamql::RegularExpression createPCRE(
   };
 }
 
-bamql::RegularExpression bamql::ParseState::parseRegEx(
-    std::map<std::string, int> &names) throw(bamql::ParseError) {
+namespace bamql {
+
+RegularExpression ParseState::parseRegEx(
+    std::map<std::string, int> &names) throw(ParseError) {
   auto start = index;
   index++;
   while (index < input.length() && input[index] != input[start]) {
     index++;
   }
   if (index == input.length()) {
-    throw bamql::ParseError(start, "Unterminated regular expression.");
+    throw ParseError(start, "Unterminated regular expression.");
   }
   auto stop = index++;
 
@@ -100,8 +102,7 @@ bamql::RegularExpression bamql::ParseState::parseRegEx(
                     names);
 }
 
-bamql::RegularExpression bamql::ParseState::parseRegEx() throw(
-    bamql::ParseError) {
+RegularExpression ParseState::parseRegEx() throw(ParseError) {
   std::map<std::string, int> names;
   auto result = parseRegEx(names);
   if (names.size() > 0) {
@@ -110,10 +111,9 @@ bamql::RegularExpression bamql::ParseState::parseRegEx() throw(
   return result;
 }
 
-bamql::RegularExpression bamql::globToRegEx(
-    const std::string &prefix,
-    const std::string &glob_str,
-    const std::string &suffix) throw(bamql::ParseError) {
+RegularExpression globToRegEx(const std::string &prefix,
+                              const std::string &glob_str,
+                              const std::string &suffix) throw(ParseError) {
   std::map<std::string, int> names;
 
   std::stringstream regex;
@@ -140,10 +140,9 @@ bamql::RegularExpression bamql::globToRegEx(
   return createPCRE(regex.str().c_str(), true, 0, names);
 }
 
-bamql::RegularExpression bamql::setToRegEx(
-    const std::string &prefix,
-    const std::set<std::string> &names,
-    const std::string &suffix) throw(bamql::ParseError) {
+RegularExpression setToRegEx(const std::string &prefix,
+                             const std::set<std::string> &names,
+                             const std::string &suffix) throw(ParseError) {
   std::map<std::string, int> captures;
   std::stringstream all;
   all << prefix << "(";
@@ -158,4 +157,5 @@ bamql::RegularExpression bamql::setToRegEx(
   }
   all << ")" << suffix;
   return createPCRE(all.str().c_str(), true, 0, captures);
+}
 }

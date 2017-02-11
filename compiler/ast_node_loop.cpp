@@ -17,9 +17,10 @@
 #include "bamql-compiler.hpp"
 #include "ast_node_loop.hpp"
 
-class bamql::LoopVar : public bamql::AstNode {
+namespace bamql {
+class LoopVar : public AstNode {
 public:
-  LoopVar(bamql::LoopNode *owner_) : owner(owner_) {}
+  LoopVar(LoopNode *owner_) : owner(owner_) {}
   llvm::Value *generate(GenerateState &state,
                         llvm::Value *read,
                         llvm::Value *header,
@@ -34,36 +35,36 @@ public:
                              llvm::Value *error_ctx) {
     return llvm::ConstantInt::getTrue(state.module()->getContext());
   }
-  bamql::ExprType type() { return owner->values.front()->type(); }
+  ExprType type() { return owner->values.front()->type(); }
   void writeDebug(GenerateState &state) {}
 
 private:
-  bamql::LoopNode *owner;
+  LoopNode *owner;
 };
 
-bamql::LoopNode::LoopNode(
+LoopNode::LoopNode(
     ParseState &state,
     const std::string &var_name,
     bool all_,
     std::vector<std::shared_ptr<AstNode>> &&values_) throw(ParseError)
     : all(all_), values(std::move(values_)),
       var(std::make_shared<LoopVar>(this)) {
-  PredicateMap loopmap{ { var_name, [&](bamql::ParseState &state) {
+  PredicateMap loopmap{ { var_name, [&](ParseState &state) {
     return std::static_pointer_cast<AstNode>(var);
   } } };
   state.push(loopmap);
   body = AstNode::parse(state);
-  if (body->type() != bamql::BOOL) {
+  if (body->type() != BOOL) {
     throw ParseError(state.where(), "Loop body expression must be Boolean.");
   }
   state.pop(loopmap);
 }
 
-llvm::Value *bamql::LoopNode::generate(bamql::GenerateState &state,
-                                       llvm::Value *read,
-                                       llvm::Value *header,
-                                       llvm::Value *error_fn,
-                                       llvm::Value *error_ctx) {
+llvm::Value *LoopNode::generate(GenerateState &state,
+                                llvm::Value *read,
+                                llvm::Value *header,
+                                llvm::Value *error_fn,
+                                llvm::Value *error_ctx) {
 
   auto type = llvm::Type::getInt32Ty(state.module()->getContext());
   auto index = state->CreateAlloca(type);
@@ -116,13 +117,14 @@ llvm::Value *bamql::LoopNode::generate(bamql::GenerateState &state,
   final_result->addIncoming(all ? true_val : false_val, body_block);
   return final_result;
 }
-llvm::Value *bamql::LoopNode::generateIndex(bamql::GenerateState &state,
-                                            llvm::Value *chromosome,
-                                            llvm::Value *header,
-                                            llvm::Value *error_fn,
-                                            llvm::Value *error_ctx) {
+llvm::Value *LoopNode::generateIndex(GenerateState &state,
+                                     llvm::Value *chromosome,
+                                     llvm::Value *header,
+                                     llvm::Value *error_fn,
+                                     llvm::Value *error_ctx) {
   return llvm::ConstantInt::getTrue(state.module()->getContext());
 }
-bool bamql::LoopNode::usesIndex() { return false; }
-bamql::ExprType bamql::LoopNode::type() { return bamql::BOOL; }
-void bamql::LoopNode::writeDebug(GenerateState &state) {}
+bool LoopNode::usesIndex() { return false; }
+ExprType LoopNode::type() { return BOOL; }
+void LoopNode::writeDebug(GenerateState &state) {}
+}

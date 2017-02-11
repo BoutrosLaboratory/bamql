@@ -18,17 +18,18 @@
 #include "compiler.hpp"
 #include "ast_node_regex.hpp"
 
-bamql::RegexNode::RegexNode(std::shared_ptr<AstNode> &operand_,
-                            RegularExpression &&pattern_,
-                            ParseState &state)
+namespace bamql {
+RegexNode::RegexNode(std::shared_ptr<AstNode> &operand_,
+                     RegularExpression &&pattern_,
+                     ParseState &state)
     : DebuggableNode(state), operand(operand_), pattern(std::move(pattern_)) {
-  type_check(operand, bamql::STR);
+  type_check(operand, STR);
 }
-llvm::Value *bamql::RegexNode::generate(GenerateState &state,
-                                        llvm::Value *read,
-                                        llvm::Value *header,
-                                        llvm::Value *error_fn,
-                                        llvm::Value *error_ctx) {
+llvm::Value *RegexNode::generate(GenerateState &state,
+                                 llvm::Value *read,
+                                 llvm::Value *header,
+                                 llvm::Value *error_fn,
+                                 llvm::Value *error_ctx) {
   operand->writeDebug(state);
   auto operand_value =
       operand->generate(state, read, header, error_fn, error_ctx);
@@ -37,12 +38,13 @@ llvm::Value *bamql::RegexNode::generate(GenerateState &state,
   llvm::Value *args[] = { pattern(state), operand_value };
   return state->CreateCall(function, args);
 }
-llvm::Value *bamql::RegexNode::generateIndex(GenerateState &state,
-                                             llvm::Value *param,
-                                             llvm::Value *header,
-                                             llvm::Value *error_fn,
-                                             llvm::Value *error_ctx) {
+llvm::Value *RegexNode::generateIndex(GenerateState &state,
+                                      llvm::Value *param,
+                                      llvm::Value *header,
+                                      llvm::Value *error_fn,
+                                      llvm::Value *error_ctx) {
   return llvm::ConstantInt::getTrue(state.module()->getContext());
 }
-bool bamql::RegexNode::usesIndex() { return false; }
-bamql::ExprType bamql::RegexNode::type() { return bamql::BOOL; }
+bool RegexNode::usesIndex() { return false; }
+ExprType RegexNode::type() { return BOOL; }
+}

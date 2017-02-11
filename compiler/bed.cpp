@@ -25,11 +25,11 @@
 #include "ast_node_function.hpp"
 #include "ast_node_literal.hpp"
 
-const std::string CHR_PREFIX("chr");
-typedef std::map<std::string, std::shared_ptr<bamql::AstNode>> CheckMap;
+static const std::string CHR_PREFIX("chr");
+namespace bamql {
+typedef std::map<std::string, std::shared_ptr<AstNode>> CheckMap;
 
-std::shared_ptr<bamql::AstNode> bamql::parseBED(bamql::ParseState &state) throw(
-    ParseError) {
+std::shared_ptr<AstNode> parseBED(ParseState &state) throw(ParseError) {
   state.parseCharInSpace('(');
   std::ifstream file(state.parseStr(")", true));
   state.parseCharInSpace(')');
@@ -60,13 +60,11 @@ std::shared_ptr<bamql::AstNode> bamql::parseBED(bamql::ParseState &state) throw(
         std::equal(CHR_PREFIX.begin(), CHR_PREFIX.end(), chr.begin())) {
       chr.erase(0, CHR_PREFIX.length());
     }
-    std::vector<std::shared_ptr<bamql::AstNode>> args{
-      std::make_shared<bamql::IntConst>(start + 1),
-      std::make_shared<bamql::IntConst>(end + 1)
+    std::vector<std::shared_ptr<AstNode>> args{
+      std::make_shared<IntConst>(start + 1), std::make_shared<IntConst>(end + 1)
     };
-    std::shared_ptr<bamql::AstNode> check =
-        std::make_shared<bamql::BoolFunctionNode>(
-            "bamql_check_position", std::move(args), state);
+    std::shared_ptr<AstNode> check = std::make_shared<BoolFunctionNode>(
+        "bamql_check_position", std::move(args), state);
 
     CheckMap::iterator lb = chromosomes.lower_bound(chr);
 
@@ -77,12 +75,12 @@ std::shared_ptr<bamql::AstNode> bamql::parseBED(bamql::ParseState &state) throw(
     }
   }
   file.close();
-  std::shared_ptr<bamql::AstNode> result = std::make_shared<BoolConst>(false);
+  std::shared_ptr<AstNode> result = std::make_shared<BoolConst>(false);
   for (auto it = chromosomes.begin(); it != chromosomes.end(); it++) {
-    result =
-        std::make_shared<bamql::CheckChromosomeNode>(it->first, false, state) &
-            it->second |
-        result;
+    result = std::make_shared<CheckChromosomeNode>(it->first, false, state) &
+                 it->second |
+             result;
   }
   return result;
+}
 }

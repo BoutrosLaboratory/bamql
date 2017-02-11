@@ -18,20 +18,20 @@
 #include "compiler.hpp"
 #include "ast_node_if.hpp"
 
-bamql::ConditionalNode::ConditionalNode(
-    const std::shared_ptr<AstNode> &condition_,
-    const std::shared_ptr<AstNode> &then_part_,
-    const std::shared_ptr<AstNode> &else_part_)
+namespace bamql {
+ConditionalNode::ConditionalNode(const std::shared_ptr<AstNode> &condition_,
+                                 const std::shared_ptr<AstNode> &then_part_,
+                                 const std::shared_ptr<AstNode> &else_part_)
     : condition(condition_), then_part(then_part_), else_part(else_part_) {
-  type_check(condition_, bamql::BOOL);
+  type_check(condition, BOOL);
   type_check_match(then_part, else_part);
 }
 
-llvm::Value *bamql::ConditionalNode::generate(GenerateState &state,
-                                              llvm::Value *read,
-                                              llvm::Value *header,
-                                              llvm::Value *error_fn,
-                                              llvm::Value *error_ctx) {
+llvm::Value *ConditionalNode::generate(GenerateState &state,
+                                       llvm::Value *read,
+                                       llvm::Value *header,
+                                       llvm::Value *error_fn,
+                                       llvm::Value *error_ctx) {
   /* Create three blocks: one for the “then”, one for the “else” and one for the
    * final. */
   auto function = state->GetInsertBlock()->getParent();
@@ -75,19 +75,19 @@ llvm::Value *bamql::ConditionalNode::generate(GenerateState &state,
   return phi;
 }
 
-bool bamql::ConditionalNode::usesIndex() {
+bool ConditionalNode::usesIndex() {
   return (then_part->usesIndex() && else_part->usesIndex()) ||
          (condition->usesIndex() &&
           (then_part->usesIndex() || else_part->usesIndex()));
 }
 
-bamql::ExprType bamql::ConditionalNode::type() { return then_part->type(); }
+ExprType ConditionalNode::type() { return then_part->type(); }
 
-llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
-                                                   llvm::Value *tid,
-                                                   llvm::Value *header,
-                                                   llvm::Value *error_fn,
-                                                   llvm::Value *error_ctx) {
+llvm::Value *ConditionalNode::generateIndex(GenerateState &state,
+                                            llvm::Value *tid,
+                                            llvm::Value *header,
+                                            llvm::Value *error_fn,
+                                            llvm::Value *error_ctx) {
   if (condition->usesIndex()) {
     /*
      * The logic in this function is twisty, so here is the explanation. Given
@@ -170,4 +170,5 @@ llvm::Value *bamql::ConditionalNode::generateIndex(GenerateState &state,
   }
   return llvm::ConstantInt::getTrue(state.module()->getContext());
 }
-void bamql::ConditionalNode::writeDebug(GenerateState &) {}
+void ConditionalNode::writeDebug(GenerateState &) {}
+}

@@ -18,20 +18,20 @@
 #include "compiler.hpp"
 #include "ast_node_contains.hpp"
 
-bamql::BitwiseContainsNode::BitwiseContainsNode(
-    std::shared_ptr<AstNode> &haystack_,
-    std::shared_ptr<AstNode> &needle_,
-    ParseState &state)
+namespace bamql {
+BitwiseContainsNode::BitwiseContainsNode(std::shared_ptr<AstNode> &haystack_,
+                                         std::shared_ptr<AstNode> &needle_,
+                                         ParseState &state)
     : DebuggableNode(state), haystack(haystack_), needle(needle_) {
   type_check(haystack, INT);
   type_check(needle, INT);
 }
 
-llvm::Value *bamql::BitwiseContainsNode::generate(GenerateState &state,
-                                                  llvm::Value *read,
-                                                  llvm::Value *header,
-                                                  llvm::Value *error_fn,
-                                                  llvm::Value *error_ctx) {
+llvm::Value *BitwiseContainsNode::generate(GenerateState &state,
+                                           llvm::Value *read,
+                                           llvm::Value *header,
+                                           llvm::Value *error_fn,
+                                           llvm::Value *error_ctx) {
   haystack->writeDebug(state);
   auto haystack_value =
       haystack->generate(state, read, header, error_fn, error_ctx);
@@ -43,4 +43,5 @@ llvm::Value *bamql::BitwiseContainsNode::generate(GenerateState &state,
                              needle_value);
 }
 
-bamql::ExprType bamql::BitwiseContainsNode::type() { return bamql::BOOL; }
+ExprType BitwiseContainsNode::type() { return BOOL; }
+}

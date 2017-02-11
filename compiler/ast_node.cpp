@@ -37,8 +37,7 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
       llvm::cast<llvm::Function>(generator->module()->getOrInsertFunction(
           name,
           llvm::Type::getInt1Ty(generator->module()->getContext()),
-          llvm::PointerType::get(bamql::getBamHeaderType(generator->module()),
-                                 0),
+          llvm::PointerType::get(getBamHeaderType(generator->module()), 0),
           param_type,
           getErrorHandlerType(generator->module()),
           llvm::PointerType::get(
@@ -95,24 +94,24 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
 
 llvm::Function *AstNode::createFilterFunction(
     std::shared_ptr<Generator> &generator, llvm::StringRef name) {
-  type_check(this, bamql::BOOL);
+  type_check(this, BOOL);
   return createFunction(
       generator,
       name,
       "read",
-      llvm::PointerType::get(bamql::getBamType(generator->module()), 0),
-      &bamql::AstNode::generate);
+      llvm::PointerType::get(getBamType(generator->module()), 0),
+      &AstNode::generate);
 }
 
 llvm::Function *AstNode::createIndexFunction(
     std::shared_ptr<Generator> &generator, llvm::StringRef name) {
-  type_check(this, bamql::BOOL);
+  type_check(this, BOOL);
   return createFunction(
       generator,
       name,
       "tid",
       llvm::Type::getInt32Ty(generator->module()->getContext()),
-      this->usesIndex() ? &bamql::AstNode::generateIndex : nullptr);
+      this->usesIndex() ? &AstNode::generateIndex : nullptr);
 }
 
 DebuggableNode::DebuggableNode(ParseState &state)

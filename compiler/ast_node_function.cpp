@@ -20,61 +20,61 @@
 #include "bamql-compiler.hpp"
 #include "ast_node_function.hpp"
 
-bamql::UserArg::UserArg(bamql::ExprType type_) : type(type_) {}
-void bamql::UserArg::nextArg(bamql::ParseState &state,
-                             size_t &pos,
-                             std::vector<std::shared_ptr<bamql::AstNode>> &args)
-    const throw(bamql::ParseError) {
-  state.parseCharInSpace(pos == 0 ? '(' : ',');
-  pos++;
-  auto node = bamql::AstNode::parse(state);
-  if (node->type() != type) {
-    throw bamql::ParseError(state.where(), "Type mismatch.");
-  }
-  args.push_back(node);
-}
-void bamql::NucleotideArg::nextArg(
-    bamql::ParseState &state,
-    size_t &pos,
-    std::vector<std::shared_ptr<bamql::AstNode>> &args) const
+namespace bamql {
+UserArg::UserArg(ExprType type_) : type(type_) {}
+void UserArg::nextArg(ParseState &state,
+                      size_t &pos,
+                      std::vector<std::shared_ptr<AstNode>> &args) const
     throw(ParseError) {
   state.parseCharInSpace(pos == 0 ? '(' : ',');
   pos++;
-  args.push_back(std::make_shared<bamql::CharConst>(state.parseNucleotide()));
+  auto node = AstNode::parse(state);
+  if (node->type() != type) {
+    throw ParseError(state.where(), "Type mismatch.");
+  }
+  args.push_back(node);
+}
+void NucleotideArg::nextArg(ParseState &state,
+                            size_t &pos,
+                            std::vector<std::shared_ptr<AstNode>> &args) const
+    throw(ParseError) {
+  state.parseCharInSpace(pos == 0 ? '(' : ',');
+  pos++;
+  args.push_back(std::make_shared<CharConst>(state.parseNucleotide()));
 }
 
-void bamql::AuxArg::nextArg(bamql::ParseState &state,
-                            size_t &pos,
-                            std::vector<std::shared_ptr<bamql::AstNode>> &args)
-    const throw(ParseError) {
+void AuxArg::nextArg(ParseState &state,
+                     size_t &pos,
+                     std::vector<std::shared_ptr<AstNode>> &args) const
+    throw(ParseError) {
   state.parseCharInSpace(pos == 0 ? '(' : ',');
   pos++;
   auto first = *state;
   state.next();
   if (!isalnum(first)) {
-    throw bamql::ParseError(state.where(),
-                            "Expected alpha numeric identifier string.");
+    throw ParseError(state.where(),
+                     "Expected alpha numeric identifier string.");
   }
   auto second = *state;
   state.next();
   if (!isalnum(second)) {
-    throw bamql::ParseError(state.where(),
-                            "Expected alpha numeric identifier string.");
+    throw ParseError(state.where(),
+                     "Expected alpha numeric identifier string.");
   }
-  args.push_back(std::make_shared<bamql::CharConst>(first));
-  args.push_back(std::make_shared<bamql::CharConst>(second));
+  args.push_back(std::make_shared<CharConst>(first));
+  args.push_back(std::make_shared<CharConst>(second));
 }
 
-bamql::FunctionNode::FunctionNode(
+FunctionNode::FunctionNode(
     const std::string &name_,
     const std::vector<std::shared_ptr<AstNode>> &&arguments_,
     ParseState &state)
     : DebuggableNode(state), arguments(std::move(arguments_)), name(name_) {}
-llvm::Value *bamql::FunctionNode::generate(GenerateState &state,
-                                           llvm::Value *read,
-                                           llvm::Value *header,
-                                           llvm::Value *error_fn,
-                                           llvm::Value *error_ctx) {
+llvm::Value *FunctionNode::generate(GenerateState &state,
+                                    llvm::Value *read,
+                                    llvm::Value *header,
+                                    llvm::Value *error_fn,
+                                    llvm::Value *error_ctx) {
   auto function = state.module()->getFunction(name);
   std::vector<llvm::Value *> arg_values;
   auto user_args = arguments.begin();
@@ -105,51 +105,49 @@ llvm::Value *bamql::FunctionNode::generate(GenerateState &state,
   }
   return generateCall(state, function, arg_values, error_fn, error_ctx);
 }
-bamql::BoolFunctionNode::BoolFunctionNode(
+BoolFunctionNode::BoolFunctionNode(
     const std::string &name_,
-    const std::vector<std::shared_ptr<bamql::AstNode>> &&arguments_,
-    bamql::ParseState &state)
+    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    ParseState &state)
     : FunctionNode(name_, std::move(arguments_), state) {}
-llvm::Value *bamql::BoolFunctionNode::generateCall(
-    bamql::GenerateState &state,
-    llvm::Function *func,
-    std::vector<llvm::Value *> &args,
-    llvm::Value *error_fun,
-    llvm::Value *error_ctx) {
+llvm::Value *BoolFunctionNode::generateCall(GenerateState &state,
+                                            llvm::Function *func,
+                                            std::vector<llvm::Value *> &args,
+                                            llvm::Value *error_fun,
+                                            llvm::Value *error_ctx) {
   auto call = state->CreateCall(func, args);
   call->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
   return call;
 }
-bamql::ExprType bamql::BoolFunctionNode::type() { return bamql::BOOL; }
+ExprType BoolFunctionNode::type() { return BOOL; }
 
-bamql::ConstIntFunctionNode::ConstIntFunctionNode(
+ConstIntFunctionNode::ConstIntFunctionNode(
     const std::string &name_,
-    const std::vector<std::shared_ptr<bamql::AstNode>> &&arguments_,
-    bamql::ParseState &state)
+    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    ParseState &state)
     : FunctionNode(name_, std::move(arguments_), state) {}
-llvm::Value *bamql::ConstIntFunctionNode::generateCall(
-    bamql::GenerateState &state,
+llvm::Value *ConstIntFunctionNode::generateCall(
+    GenerateState &state,
     llvm::Function *func,
     std::vector<llvm::Value *> &args,
     llvm::Value *error_fun,
     llvm::Value *error_ctx) {
   return state->CreateCall(func, args);
 }
-bamql::ExprType bamql::ConstIntFunctionNode::type() { return bamql::INT; }
+ExprType ConstIntFunctionNode::type() { return INT; }
 
-bamql::ErrorFunctionNode::ErrorFunctionNode(
+ErrorFunctionNode::ErrorFunctionNode(
     const std::string &name_,
-    const std::vector<std::shared_ptr<bamql::AstNode>> &&arguments_,
-    bamql::ParseState &state,
+    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    ParseState &state,
     const std::string &error_message_)
     : FunctionNode(name_, std::move(arguments_), state),
       error_message(state.createRuntimeError(error_message_)) {}
-llvm::Value *bamql::ErrorFunctionNode::generateCall(
-    GenerateState &state,
-    llvm::Function *func,
-    std::vector<llvm::Value *> &args,
-    llvm::Value *error_fun,
-    llvm::Value *error_ctx) {
+llvm::Value *ErrorFunctionNode::generateCall(GenerateState &state,
+                                             llvm::Function *func,
+                                             std::vector<llvm::Value *> &args,
+                                             llvm::Value *error_fun,
+                                             llvm::Value *error_ctx) {
   llvm::Value *success = nullptr;
   llvm::Value *result = nullptr;
   generateRead(state, func, args, success, result);
@@ -171,17 +169,17 @@ llvm::Value *bamql::ErrorFunctionNode::generateCall(
   return result;
 }
 
-bamql::DblFunctionNode::DblFunctionNode(
+DblFunctionNode::DblFunctionNode(
     const std::string &name_,
-    const std::vector<std::shared_ptr<bamql::AstNode>> &&arguments_,
-    bamql::ParseState &state,
+    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    ParseState &state,
     const std::string &error_message)
     : ErrorFunctionNode(name_, std::move(arguments_), state, error_message) {}
-void bamql::DblFunctionNode::generateRead(GenerateState &state,
-                                          llvm::Value *function,
-                                          std::vector<llvm::Value *> &args,
-                                          llvm::Value *&success,
-                                          llvm::Value *&result) {
+void DblFunctionNode::generateRead(GenerateState &state,
+                                   llvm::Value *function,
+                                   std::vector<llvm::Value *> &args,
+                                   llvm::Value *&success,
+                                   llvm::Value *&result) {
   auto type = llvm::Type::getDoubleTy(state.module()->getContext());
   auto box = state->CreateAlloca(type);
   state->CreateStore(
@@ -191,19 +189,19 @@ void bamql::DblFunctionNode::generateRead(GenerateState &state,
   success = state->CreateCall(function, args);
   result = state->CreateLoad(box);
 }
-bamql::ExprType bamql::DblFunctionNode::type() { return bamql::FP; }
+ExprType DblFunctionNode::type() { return FP; }
 
-bamql::IntFunctionNode::IntFunctionNode(
+IntFunctionNode::IntFunctionNode(
     const std::string &name_,
-    const std::vector<std::shared_ptr<bamql::AstNode>> &&arguments_,
-    bamql::ParseState &state,
+    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    ParseState &state,
     const std::string &error_message)
     : ErrorFunctionNode(name_, std::move(arguments_), state, error_message) {}
-void bamql::IntFunctionNode::generateRead(GenerateState &state,
-                                          llvm::Value *function,
-                                          std::vector<llvm::Value *> &args,
-                                          llvm::Value *&success,
-                                          llvm::Value *&result) {
+void IntFunctionNode::generateRead(GenerateState &state,
+                                   llvm::Value *function,
+                                   std::vector<llvm::Value *> &args,
+                                   llvm::Value *&success,
+                                   llvm::Value *&result) {
   auto type = llvm::Type::getInt32Ty(state.module()->getContext());
   auto box = state->CreateAlloca(type);
   state->CreateStore(llvm::ConstantInt::get(type, 0), box);
@@ -211,23 +209,24 @@ void bamql::IntFunctionNode::generateRead(GenerateState &state,
   success = state->CreateCall(function, args);
   result = state->CreateLoad(box);
 }
-bamql::ExprType bamql::IntFunctionNode::type() { return bamql::INT; }
+ExprType IntFunctionNode::type() { return INT; }
 
-bamql::StrFunctionNode::StrFunctionNode(
+StrFunctionNode::StrFunctionNode(
     const std::string &name_,
-    const std::vector<std::shared_ptr<bamql::AstNode>> &&arguments_,
-    bamql::ParseState &state,
+    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    ParseState &state,
     const std::string &error_message)
     : ErrorFunctionNode(name_, std::move(arguments_), state, error_message) {}
-void bamql::StrFunctionNode::generateRead(GenerateState &state,
-                                          llvm::Value *function,
-                                          std::vector<llvm::Value *> &args,
-                                          llvm::Value *&success,
-                                          llvm::Value *&result) {
+void StrFunctionNode::generateRead(GenerateState &state,
+                                   llvm::Value *function,
+                                   std::vector<llvm::Value *> &args,
+                                   llvm::Value *&success,
+                                   llvm::Value *&result) {
   result = state->CreateCall(function, args);
   success = state->CreateICmpNE(
       result,
       llvm::ConstantPointerNull::get(llvm::PointerType::get(
           llvm::Type::getInt8Ty(state.module()->getContext()), 0)));
 }
-bamql::ExprType bamql::StrFunctionNode::type() { return bamql::STR; }
+ExprType StrFunctionNode::type() { return STR; }
+}

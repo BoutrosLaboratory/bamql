@@ -27,8 +27,8 @@ public:
   ShortCircuitNode(const std::shared_ptr<AstNode> &left_,
                    const std::shared_ptr<AstNode> &right_)
       : left(left_), right(right_) {
-    type_check(left, bamql::BOOL);
-    type_check(right, bamql::BOOL);
+    type_check(left, BOOL);
+    type_check(right, BOOL);
   }
 
   llvm::Value *generate(GenerateState &state,
@@ -37,7 +37,7 @@ public:
                         llvm::Value *error_fn,
                         llvm::Value *error_ctx) {
     return generateGeneric(
-        &bamql::AstNode::generate, state, read, header, error_fn, error_ctx);
+        &AstNode::generate, state, read, header, error_fn, error_ctx);
   }
   llvm::Value *generateIndex(GenerateState &state,
                              llvm::Value *tid,
@@ -45,18 +45,14 @@ public:
                              llvm::Value *error_fn,
                              llvm::Value *error_ctx) {
     if (usesIndex()) {
-      return generateGeneric(&bamql::AstNode::generateIndex,
-                             state,
-                             tid,
-                             header,
-                             error_fn,
-                             error_ctx);
+      return generateGeneric(
+          &AstNode::generateIndex, state, tid, header, error_fn, error_ctx);
     } else {
       return llvm::ConstantInt::getTrue(state.module()->getContext());
     }
   }
   bool usesIndex() { return left->usesIndex() || right->usesIndex(); }
-  ExprType type() { return bamql::BOOL; }
+  ExprType type() { return BOOL; }
   /**
    * The value that causes short circuting.
    */
@@ -145,8 +141,8 @@ public:
   XOrNode(const std::shared_ptr<AstNode> &left_,
           const std::shared_ptr<AstNode> &right_)
       : left(left_), right(right_) {
-    type_check(left_, bamql::BOOL);
-    type_check(right_, bamql::BOOL);
+    type_check(left, BOOL);
+    type_check(right, BOOL);
   }
 
   llvm::Value *generate(GenerateState &state,
@@ -175,7 +171,7 @@ public:
     }
   }
   bool usesIndex() { return left->usesIndex() || right->usesIndex(); }
-  ExprType type() { return bamql::BOOL; }
+  ExprType type() { return BOOL; }
 
   void writeDebug(GenerateState &state) {}
 
@@ -189,7 +185,7 @@ private:
 class NotNode : public AstNode {
 public:
   NotNode(const std::shared_ptr<AstNode> &expr_) : expr(expr_) {
-    type_check(expr, bamql::BOOL);
+    type_check(expr, BOOL);
   }
   llvm::Value *generate(GenerateState &state,
                         llvm::Value *read,
@@ -212,7 +208,7 @@ public:
     return state->CreateNot(result);
   }
   bool usesIndex() { return expr->usesIndex(); }
-  ExprType type() { return bamql::BOOL; }
+  ExprType type() { return BOOL; }
 
   void writeDebug(GenerateState &state) {}
 

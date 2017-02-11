@@ -72,7 +72,7 @@ std::shared_ptr<AstNode> ParseState::parseLiteral() throw(ParseError) {
     int c = input[index];
     next();
     return std::make_shared<
-        bamql::LiteralNode<int, decltype(&make_int), &make_int, INT>>(c);
+        LiteralNode<int, decltype(&make_int), &make_int, INT>>(c);
   }
 
   if (!isdigit(input[index]) && input[index] != '-') {
