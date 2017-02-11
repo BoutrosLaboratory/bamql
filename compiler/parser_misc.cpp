@@ -14,30 +14,12 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <cassert>
 #include <cctype>
-#include <iostream>
 #include <sstream>
 #include "bamql-compiler.hpp"
-#include "compiler.hpp"
+#include "ast_node_literal.hpp"
 
 namespace bamql {
-
-llvm::Value *make_bool(llvm::LLVMContext &context, bool value) {
-  return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
-}
-
-llvm::Value *make_char(llvm::LLVMContext &context, char value) {
-  return llvm::ConstantInt::get(llvm::Type::getInt8Ty(context), value);
-}
-
-llvm::Value *make_int(llvm::LLVMContext &context, int value) {
-  return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), value);
-}
-
-llvm::Value *make_dbl(llvm::LLVMContext &context, double value) {
-  return llvm::ConstantFP::get(llvm::Type::getDoubleTy(context), value);
-}
 
 ParseError::ParseError(size_t index, std::string what)
     : std::runtime_error(what) {

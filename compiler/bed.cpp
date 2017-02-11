@@ -21,7 +21,9 @@
 #include <vector>
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
-#include "check_chromosome.hpp"
+#include "ast_node_chromosome.hpp"
+#include "ast_node_function.hpp"
+#include "ast_node_literal.hpp"
 
 const std::string CHR_PREFIX("chr");
 typedef std::map<std::string, std::shared_ptr<bamql::AstNode>> CheckMap;
@@ -77,9 +79,10 @@ std::shared_ptr<bamql::AstNode> bamql::parseBED(bamql::ParseState &state) throw(
   file.close();
   std::shared_ptr<bamql::AstNode> result = std::make_shared<BoolConst>(false);
   for (auto it = chromosomes.begin(); it != chromosomes.end(); it++) {
-    result = bamql::CheckChromosomeNode<false>::fromName(it->first, state) &
-                 it->second |
-             result;
+    result =
+        std::make_shared<bamql::CheckChromosomeNode>(it->first, false, state) &
+            it->second |
+        result;
   }
   return result;
 }

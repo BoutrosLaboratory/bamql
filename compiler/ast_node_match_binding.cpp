@@ -14,6 +14,7 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include <cassert>
 #include <iostream>
 #include <sstream>
 #include "bamql-compiler.hpp"

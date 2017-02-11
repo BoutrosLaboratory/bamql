@@ -15,19 +15,15 @@
  */
 
 #include <cstdint>
-#include <iostream>
 #include <htslib/sam.h>
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
-#include "check_chromosome.hpp"
+#include "ast_node_chromosome.hpp"
+#include "ast_node_contains.hpp"
+#include "ast_node_function.hpp"
 
 // Please keep the predicates in alphabetical order.
 namespace bamql {
-
-// These must be lower case
-const std::set<std::set<std::string>> equivalence_sets = {
-  { "23", "x" }, { "24", "y" }, { "25", "m", "mt" }
-};
 
 class ProbabilityArg : public FunctionArg {
 public:
@@ -139,8 +135,10 @@ PredicateMap getDefaultPredicates() {
           "bamql_aux_fp", { aux_arg }, "Auxiliary double not available.") },
 
     // Chromosome information
-    { "chr", CheckChromosomeNode<false>::parse },
-    { "mate_chr", CheckChromosomeNode<true>::parse },
+    { "chr",
+      std::bind(CheckChromosomeNode::parse, std::placeholders::_1, false) },
+    { "mate_chr",
+      std::bind(CheckChromosomeNode::parse, std::placeholders::_1, true) },
     { "chr_name",
       parseFunction<StrFunctionNode, const std::string &>(
           "bamql_chr", { false_arg }, "Read not mapped.") },

@@ -19,6 +19,10 @@
 #include <vector>
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
+#include "ast_node_compare.hpp"
+#include "ast_node_if.hpp"
+#include "ast_node_loop.hpp"
+#include "ast_node_regex.hpp"
 
 namespace bamql {
 

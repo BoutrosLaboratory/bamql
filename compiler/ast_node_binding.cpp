@@ -14,9 +14,8 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <iostream>
-#include <sstream>
 #include "bamql-compiler.hpp"
+#include "compiler.hpp"
 
 namespace bamql {
 

@@ -16,35 +16,7 @@
 
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
-
-bamql::RegexNode::RegexNode(std::shared_ptr<AstNode> &operand_,
-                            RegularExpression &&pattern_,
-                            ParseState &state)
-    : DebuggableNode(state), operand(operand_), pattern(std::move(pattern_)) {
-  type_check(operand_, bamql::STR);
-}
-llvm::Value *bamql::RegexNode::generate(GenerateState &state,
-                                        llvm::Value *read,
-                                        llvm::Value *header,
-                                        llvm::Value *error_fn,
-                                        llvm::Value *error_ctx) {
-  operand->writeDebug(state);
-  auto operand_value =
-      operand->generate(state, read, header, error_fn, error_ctx);
-  this->writeDebug(state);
-  auto function = state.module()->getFunction("bamql_re_match");
-  llvm::Value *args[] = { pattern(state), operand_value };
-  return state->CreateCall(function, args);
-}
-llvm::Value *bamql::RegexNode::generateIndex(GenerateState &state,
-                                             llvm::Value *param,
-                                             llvm::Value *header,
-                                             llvm::Value *error_fn,
-                                             llvm::Value *error_ctx) {
-  return llvm::ConstantInt::getTrue(state.module()->getContext());
-}
-bool bamql::RegexNode::usesIndex() { return false; }
-bamql::ExprType bamql::RegexNode::type() { return bamql::BOOL; }
+#include "ast_node_compare.hpp"
 
 bamql::CompareFPNode::CompareFPNode(bamql::CreateFCmp comparator_,
                                     std::shared_ptr<AstNode> &left_,
@@ -125,25 +97,3 @@ llvm::Value *bamql::CompareStrNode::generate(GenerateState &state,
       "");
 }
 bamql::ExprType bamql::CompareStrNode::type() { return bamql::BOOL; }
-
-bamql::BitwiseContainsNode::BitwiseContainsNode(
-    std::shared_ptr<AstNode> &haystack_,
-    std::shared_ptr<AstNode> &needle_,
-    ParseState &state)
-    : DebuggableNode(state), haystack(haystack_), needle(needle_) {}
-llvm::Value *bamql::BitwiseContainsNode::generate(GenerateState &state,
-                                                  llvm::Value *read,
-                                                  llvm::Value *header,
-                                                  llvm::Value *error_fn,
-                                                  llvm::Value *error_ctx) {
-  haystack->writeDebug(state);
-  auto haystack_value =
-      haystack->generate(state, read, header, error_fn, error_ctx);
-  needle->writeDebug(state);
-  auto needle_value =
-      needle->generate(state, read, header, error_fn, error_ctx);
-  this->writeDebug(state);
-  return state->CreateICmpEQ(state->CreateAnd(haystack_value, needle_value),
-                             needle_value);
-}
-bamql::ExprType bamql::BitwiseContainsNode::type() { return bamql::BOOL; }

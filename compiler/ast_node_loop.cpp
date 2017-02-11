@@ -15,7 +15,7 @@
  */
 
 #include "bamql-compiler.hpp"
-#include "compiler.hpp"
+#include "ast_node_loop.hpp"
 
 class bamql::LoopVar : public bamql::AstNode {
 public:
@@ -53,6 +53,9 @@ bamql::LoopNode::LoopNode(
   } } };
   state.push(loopmap);
   body = AstNode::parse(state);
+  if (body->type() != bamql::BOOL) {
+    throw ParseError(state.where(), "Loop body expression must be Boolean.");
+  }
   state.pop(loopmap);
 }
 

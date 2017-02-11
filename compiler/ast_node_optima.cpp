@@ -14,14 +14,8 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <fstream>
-#include <map>
-#include <sstream>
-#include <string>
-#include <vector>
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
-#include "check_chromosome.hpp"
 
 namespace bamql {
 
@@ -33,11 +27,8 @@ public:
                std::shared_ptr<AstNode> &right_)
       : DebuggableNode(state), direction(direction_), left(left_),
         right(right_) {
-    if (left->type() != right->type()) {
-      std::cerr << __FILE__ ":" << __LINE__
-                << ": Expression left and right types don't match\n";
-      abort();
-    }
+    type_check_match(left, right);
+    type_check_not(left, BOOL);
   }
 
   llvm::Value *generate(GenerateState &state,

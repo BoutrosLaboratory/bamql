@@ -13,10 +13,25 @@
  * that the Ontario Institute for Cancer Research be acknowledged and/or
  * credit be given to OICR scientists, as scientifically appropriate.
  */
+#pragma once
 
-#include "config.h"
-#include <string>
+#include "bamql-compiler.hpp"
 
 namespace bamql {
-std::string version() { return std::string(VERSION); }
+class BitwiseContainsNode : public DebuggableNode {
+public:
+  BitwiseContainsNode(std::shared_ptr<AstNode> &haystack,
+                      std::shared_ptr<AstNode> &needle,
+                      ParseState &state);
+  llvm::Value *generate(GenerateState &state,
+                        llvm::Value *read,
+                        llvm::Value *header,
+                        llvm::Value *error_fn,
+                        llvm::Value *error_ctx);
+  ExprType type();
+
+private:
+  std::shared_ptr<AstNode> haystack;
+  std::shared_ptr<AstNode> needle;
+};
 }

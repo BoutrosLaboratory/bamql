@@ -14,9 +14,24 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include "config.h"
-#include <string>
+#include "bamql-compiler.hpp"
+#include "ast_node_literal.hpp"
 
 namespace bamql {
-std::string version() { return std::string(VERSION); }
+
+llvm::Value *make_bool(llvm::LLVMContext &context, bool value) {
+  return llvm::ConstantInt::get(llvm::Type::getInt1Ty(context), value);
+}
+
+llvm::Value *make_char(llvm::LLVMContext &context, char value) {
+  return llvm::ConstantInt::get(llvm::Type::getInt8Ty(context), value);
+}
+
+llvm::Value *make_int(llvm::LLVMContext &context, int value) {
+  return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), value);
+}
+
+llvm::Value *make_dbl(llvm::LLVMContext &context, double value) {
+  return llvm::ConstantFP::get(llvm::Type::getDoubleTy(context), value);
+}
 }

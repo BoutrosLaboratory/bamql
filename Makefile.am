@@ -70,13 +70,20 @@ libbamql_cpl_la_LDFLAGS = \
 	$(NULL)
 libbamql_cpl_la_SOURCES = \
 	compiler/ast_node_binding.cpp \
+	compiler/ast_node_chromosome.cpp \
+	compiler/ast_node_compare.cpp \
+	compiler/ast_node_contains.cpp \
+	compiler/ast_node.cpp \
 	compiler/ast_node_function.cpp \
+	compiler/ast_node_if.cpp \
+	compiler/ast_node_literal.cpp \
 	compiler/ast_node_logical.cpp \
 	compiler/ast_node_loop.cpp \
 	compiler/ast_node_match_binding.cpp \
-	compiler/ast_node_matching.cpp \
 	compiler/ast_node_optima.cpp \
+	compiler/ast_node_regex.cpp \
 	compiler/bed.cpp \
+	compiler/generator.cpp \
 	compiler/misc.cpp \
 	compiler/parser.cpp \
 	compiler/parser_misc.cpp \

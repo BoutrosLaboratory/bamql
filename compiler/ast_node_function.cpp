@@ -14,11 +14,11 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <cctype>
-#include <cstdlib>
+#include <cassert>
 #include <limits>
+#include <iostream>
 #include "bamql-compiler.hpp"
-#include "compiler.hpp"
+#include "ast_node_function.hpp"
 
 bamql::UserArg::UserArg(bamql::ExprType type_) : type(type_) {}
 void bamql::UserArg::nextArg(bamql::ParseState &state,
