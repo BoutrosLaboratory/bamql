@@ -20,6 +20,7 @@
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
 #include "ast_node_compare.hpp"
+#include "ast_node_contains.hpp"
 #include "ast_node_if.hpp"
 #include "ast_node_loop.hpp"
 #include "ast_node_regex.hpp"
@@ -131,6 +132,14 @@ static std::shared_ptr<AstNode> parseComparison(ParseState &state) throw(
     state.parseSpace();
     auto pattern = state.parseRegEx();
     return std::make_shared<RegexNode>(left, std::move(pattern), state);
+  }
+  if (state.parseKeyword("\\")) {
+    if (left->type() != INT) {
+      throw ParseError(state.where(), "Type mismatch.");
+    }
+    state.parseSpace();
+    auto right = parseTerminal(state);
+    return std::make_shared<BitwiseContainsNode>(left, right, state);
   }
   if (state.parseKeyword(":")) {
     if (left->type() != STR) {

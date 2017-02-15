@@ -170,6 +170,7 @@ PredicateMap getDefaultPredicates() {
     { "supplementary?",
       std::bind(parseFlag, std::placeholders::_1, BAM_FSUPPLEMENTARY) },
     { "unmapped?", std::bind(parseFlag, std::placeholders::_1, BAM_FUNMAP) },
+    { "flags", parseFunction<ConstIntFunctionNode>("bamql_flags", {}) },
 
     // Constants
     { "false", [](ParseState &state) { return falseNode; } },

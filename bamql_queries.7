@@ -86,6 +86,10 @@ or
 .BR glob (7)
 for details. If \fBi\fR is included, the match will be case-insensitive.
 
+haystack \fB\\\fR needle
+
+Check that the integer \fIhaystack\fR contains all the bits set in \fIneedle\fR. This is equivalent to the C/Java/C#/Python/PERL expression \fB(haystack & needle) == needle\fR.
+
 .SS NEGATION (NOT)
 \fB!\fR expr
 
@@ -156,6 +160,10 @@ The read is either a PCR or an optical duplicate. That is, another read with the
 .B supplementary?
 
 The alignment is supplementary.
+
+.B flags
+
+Returns the read flag as an integer.
 
 .SS MAPPING INFORMATION
 
