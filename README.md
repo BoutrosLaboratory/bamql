@@ -43,6 +43,6 @@ The following will take a sub-sample for mitochondrial sequences and all the seq
 
 Again, to filter, use `bamql` like this:
 
-    bamql -i input.bam -o mitochondrial_subsample_with_traps.bam 'chr(M) & random(0.2) | chr(ug*)'
+    bamql -f input.bam -o mitochondrial_subsample_with_traps.bam 'chr(M) & random(0.2) | chr(ug*)'
 
 The details can be found in the manual page, which can be viewed by typing `man bamql_queries` at the command prompt or [view the manual online](http://artefacts.masella.name/bamql_queries.html).
