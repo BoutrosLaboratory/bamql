@@ -1,0 +1,4 @@
+#!/bin/sh
+
+exec bamql -f $1 -o $2 'paired?'
+

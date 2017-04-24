@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+
+import pysam
+import sys
+import re
+
+infile = pysam.AlignmentFile(sys.argv[1], "rb")
+output = pysam.AlignmentFile(sys.argv[2], "wb", template=infile)
+position = 13353
+mapped_position = 0
+for read in infile:
+    if position < read.pos+1 or read.alen == None or position > read.pos+read.alen:
+        continue
+    if (read.cigartuples == None):
+        mapped_position = (read.pos + read.alen -  position) if read.is_reverse else (position - read.pos)
+    else:
+        required_offset = (read.pos + read.alen -  position) if read.is_reverse else (position - read.pos -1)
+        mapped_position = 0
+        for cigartuple in read.cigartuples:
+            for incr in range(cigartuple[1]):
+                if required_offset < 0 :
+                    break
+                if (cigartuple[0] == 0 or cigartuple[0] == 2 or cigartuple[0] == 3 or cigartuple[0] == 8):
+                    required_offset -= 1
+                if(cigartuple[0]==0 or cigartuple[0]==1 or cigartuple[0]==4 or cigartuple[0] == 8):
+                    mapped_position += 1
+    if mapped_position > 0 and read.query_sequence[mapped_position-1] == 'C' and not read.is_unmapped:
+        output.write(read)
+infile.close()
+output.close()

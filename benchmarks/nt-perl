@@ -1,0 +1,55 @@
+#!/usr/bin/env perl
+use strict;
+use Bio::DB::Sam;
+my $input  = Bio::DB::Bam->open( $ARGV[0], "rb" );
+my $output = Bio::DB::Bam->open( $ARGV[1], "wb" );
+my $header = $input->header();
+my $position        = 13353;
+my $op              = '';
+my $op_length       = 0;
+my $mapped_position = 0;
+my $required_offset = 0;
+my $cigar           = "";
+$output->header_write($header);
+
+while ( my $read = $input->read1 ) {
+    if ( $position - $read->start >= 0 and $position <= $read->end ) {
+
+        $cigar = $read->cigar_str;
+        if ( $cigar !~ m/\*/ ) {
+            if ( $read->reversed ) {
+                $required_offset =
+                  ( $read->start + $read->length - 1 - $position );
+            }
+            else {
+                $required_offset = ( $position - $read->start );
+            }
+
+            $mapped_position = 0;
+            while ( $cigar =~ m/([0-9]+)([A-Z]+)/mg ) {
+
+                $op_length = $1;
+                $op        = $2;
+
+                for (
+                    my $incr = 0 ;
+                    $incr < $op_length && $required_offset >= 0 ;
+                    $incr++
+                  )
+                {
+                    if ( $op =~ /M/ or $op =~ /D/ or $op =~ /N/ or $op =~ /X/ )
+                    {
+                        $required_offset -= 1;
+                    }
+                    if ( $op =~ /M/ or $op =~ /I/ or $op =~ /S/ or $op =~ /X/ )
+                    {
+                        $mapped_position += 1;
+                    }
+                }
+            }
+        }
+        if ( substr( $read->query->dna, $mapped_position - 1, 1 ) =~ m/^C/i ) {
+            $output->write1($read);
+        }
+    }
+}

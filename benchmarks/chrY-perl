@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+use strict;
+use Bio::DB::Sam;
+my $input  = Bio::DB::Bam->open( $ARGV[0], "rb" );
+my $output = Bio::DB::Bam->open( $ARGV[1], "wb" );
+my $header = $input->header();
+$output->header_write($header);
+while ( my $read = $input->read1 ) {
+    if ( $header->target_name->[ $read->tid ] =~ /^(chr)?(Y|24)$/i ) {
+        $output->write1($read);
+    }
+}

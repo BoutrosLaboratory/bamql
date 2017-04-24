@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+import pysam
+import sys
+import re
+
+infile = pysam.AlignmentFile(sys.argv[1], "rb")
+output = pysam.AlignmentFile(sys.argv[2], "wb", template=infile)
+is_y = re.compile('^(chr)?(y|24)$', re.IGNORECASE)
+for read in infile:
+    if read.reference_id != -1 and is_y.match(infile.getrname(read.reference_id)):
+        output.write(read)
+infile.close()
+output.close()

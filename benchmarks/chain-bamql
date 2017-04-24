@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec bamql-chain -f $1 -c shuttle 'chr(1)' chrom1-bamql.bam 'chr(2)' chrom2-bamql.bam 'chr(3)' chrom3-bamql.bam

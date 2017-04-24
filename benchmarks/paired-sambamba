@@ -1,0 +1,3 @@
+#!/bin/sh
+
+sambamba view -f bam -o $2 -F 'paired' $1

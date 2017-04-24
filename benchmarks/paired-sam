@@ -1,0 +1,4 @@
+#!/bin/sh
+
+samtools view -h $1 -b -o $2 -f 1
+
