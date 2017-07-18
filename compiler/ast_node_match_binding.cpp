@@ -116,27 +116,27 @@ public:
     regex = state.parseRegEx(names);
 
     PredicateMap childPredicates;
-    for (auto it = names.begin(); it != names.end(); it++) {
+    for (auto &name : names) {
       std::stringstream message;
-      message << it->first << " is not matched.";
+      message << name.first << " is not matched.";
       std::string errorMessage = state.createRuntimeError(message.str());
 
       ExprType type = STR;
       int decode = 0;
-      if (endsWith(it->first, "_d")) {
+      if (endsWith(name.first, "_d")) {
         decode = 1;
         type = FP;
-      } else if (endsWith(it->first, "_i")) {
+      } else if (endsWith(name.first, "_i")) {
         decode = 2;
         type = INT;
-      } else if (endsWith(it->first, "_c")) {
+      } else if (endsWith(name.first, "_c")) {
         decode = 3;
         type = INT;
       }
       auto use = std::make_shared<BoundMatchNode>(
-          state, it->second, type, decode, errorMessage);
+          state, name.second, type, decode, errorMessage);
       definitions.push_back(use);
-      childPredicates[it->first] = [=](ParseState & state) throw(ParseError) {
+      childPredicates[name.first] = [=](ParseState & state) throw(ParseError) {
         return std::static_pointer_cast<AstNode>(use);
       };
       state.parseSpace();
@@ -171,8 +171,8 @@ public:
     arg_values.push_back(error_ctx);
     arg_values.push_back(input_value);
 
-    for (auto it = definitions.begin(); it != definitions.end(); it++) {
-      (*it)->prepare(state, arg_values);
+    for (auto def : definitions) {
+      def->prepare(state, arg_values);
     }
     auto matched = state->CreateCall(function, arg_values);
 
@@ -188,8 +188,8 @@ public:
     state->SetInsertPoint(match_block);
     body->writeDebug(state);
     auto body_result = body->generate(state, read, header, error_fn, error_ctx);
-    for (auto it = definitions.begin(); it != definitions.end(); it++) {
-      (*it)->cleanup(state);
+    for (auto &def : definitions) {
+      def->cleanup(state);
     }
     state->CreateBr(merge_block);
 

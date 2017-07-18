@@ -23,11 +23,11 @@ Generator::Generator(llvm::Module *module, llvm::DIScope *debug_scope_)
     : mod(module), debug_scope(debug_scope_) {
   std::map<std::string, llvm::IRBuilder<> **> tors = { { "__ctor", &ctor },
                                                        { "__dtor", &dtor } };
-  for (auto it = tors.begin(); it != tors.end(); it++) {
+  for (auto &tor : tors) {
     auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
-        it->first, llvm::Type::getVoidTy(module->getContext()), nullptr));
+        tor.first, llvm::Type::getVoidTy(module->getContext()), nullptr));
     func->setLinkage(llvm::GlobalValue::InternalLinkage);
-    *it->second = new llvm::IRBuilder<>(
+    *tor.second = new llvm::IRBuilder<>(
         llvm::BasicBlock::Create(module->getContext(), "entry", func));
   }
 }
@@ -53,18 +53,18 @@ Generator::~Generator() {
   };
   auto struct_ty = llvm::StructType::create(struct_elements);
   auto array_ty = llvm::ArrayType::get(struct_ty, 1);
-  for (auto it = tors.begin(); it != tors.end(); it++) {
-    it->second->CreateRetVoid();
+  for (auto &tor : tors) {
+    tor.second->CreateRetVoid();
     auto link = new llvm::GlobalVariable(*mod,
                                          array_ty,
                                          false,
                                          llvm::GlobalVariable::AppendingLinkage,
                                          0,
-                                         it->first);
+                                         tor.first);
     llvm::Constant *constants[] = {
       llvm::ConstantStruct::get(struct_ty,
                                 llvm::ConstantInt::get(int32_ty, 65535),
-                                it->second->GetInsertBlock()->getParent(),
+                                tor.second->GetInsertBlock()->getParent(),
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
 #else
                                 llvm::ConstantPointerNull::get(base_str),
@@ -73,7 +73,7 @@ Generator::~Generator() {
                                 nullptr)
     };
     link->setInitializer(llvm::ConstantArray::get(array_ty, constants));
-    delete it->second;
+    delete tor.second;
   }
 }
 

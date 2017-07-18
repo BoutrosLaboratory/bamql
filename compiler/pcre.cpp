@@ -118,9 +118,8 @@ RegularExpression globToRegEx(const std::string &prefix,
 
   std::stringstream regex;
   regex << prefix;
-  for (auto glob_char = glob_str.begin(); glob_char != glob_str.end();
-       glob_char++) {
-    switch (*glob_char) {
+  for (auto &glob_char : glob_str) {
+    switch (glob_char) {
     case '*':
       regex << ".*";
       break;
@@ -131,7 +130,7 @@ RegularExpression globToRegEx(const std::string &prefix,
       regex << "\\.";
       break;
     default:
-      regex << *glob_char;
+      regex << glob_char;
       break;
     }
   }
@@ -147,13 +146,13 @@ RegularExpression setToRegEx(const std::string &prefix,
   std::stringstream all;
   all << prefix << "(";
   bool first = true;
-  for (auto name = names.begin(); name != names.end(); name++) {
+  for (auto &name : names) {
     if (first) {
       first = false;
     } else {
       all << "|";
     }
-    all << *name;
+    all << name;
   }
   all << ")" << suffix;
   return createPCRE(all.str().c_str(), true, 0, captures);

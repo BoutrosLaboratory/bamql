@@ -22,18 +22,17 @@
 static bamql::RegularExpression chrStrToRegex(const std::string &str) {
   // If we are dealing with a chromosome that goes by many names, match all of
   // them.
-  for (auto set = bamql::equivalence_sets.begin();
-       set != bamql::equivalence_sets.end();
-       set++) {
-    for (auto equiv = set->begin(); equiv != set->end(); equiv++) {
-      bool same = equiv->length() == str.length();
-      for (size_t i = 0; i < equiv->length() && same; i++) {
-        same = tolower(str[i]) == (*equiv)[i];
+  for (const auto &set : bamql::equivalence_sets) {
+    for (const auto &equiv : set) {
+      if (equiv.length() == str.length() &&
+          std::equal(equiv.begin(),
+                     equiv.end(),
+                     str.begin(),
+                     [](unsigned char a, unsigned char b) {
+            return std::tolower(a) == std::tolower(b);
+          })) {
+        return bamql::setToRegEx("^(chr)?", set, "$");
       }
-      if (!same) {
-        continue;
-      }
-      return bamql::setToRegEx("^(chr)?", *set, "$");
     }
   }
   // otherwise, just match the provided chromosome.

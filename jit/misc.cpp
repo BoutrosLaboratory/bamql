@@ -48,10 +48,10 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
     std::unique_ptr<llvm::Module> module) {
 
   std::map<llvm::Function *, void (*)()> required;
-  for (auto func_it = known.begin(); func_it != known.end(); func_it++) {
-    auto func = module->getFunction(func_it->first);
+  for (auto &known_func : known) {
+    auto func = module->getFunction(known_func.first);
     if (func != nullptr) {
-      required[func] = func_it->second;
+      required[func] = known_func.second;
     }
   }
   std::string error;
@@ -81,14 +81,13 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
   if (!engine) {
     std::cerr << error << std::endl;
   } else {
-    for (auto func_it = required.begin(); func_it != required.end();
-         func_it++) {
+    for (auto &required_func : required) {
       union {
         void (*func)();
         void *ptr;
       } convert;
-      convert.func = func_it->second;
-      engine->addGlobalMapping(func_it->first, convert.ptr);
+      convert.func = required_func.second;
+      engine->addGlobalMapping(required_func.first, convert.ptr);
     }
   }
   return engine;

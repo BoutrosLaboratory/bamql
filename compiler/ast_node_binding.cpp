@@ -69,9 +69,9 @@ public:
                         llvm::Value *header,
                         llvm::Value *error_fn,
                         llvm::Value *error_ctx) {
-    for (auto it = definitions.begin(); it != definitions.end(); it++) {
-      (*it)->writeDebug(state);
-      (*it)->generateAtDefinition(state, read, header, error_fn, error_ctx);
+    for (auto &def : definitions) {
+      def->writeDebug(state);
+      def->generateAtDefinition(state, read, header, error_fn, error_ctx);
     }
     body->writeDebug(state);
     return body->generate(state, read, header, error_fn, error_ctx);
@@ -81,10 +81,9 @@ public:
                              llvm::Value *header,
                              llvm::Value *error_fn,
                              llvm::Value *error_ctx) {
-    for (auto it = definitions.begin(); it != definitions.end(); it++) {
-      (*it)->writeDebug(state);
-      (*it)
-          ->generateIndexAtDefinition(state, read, header, error_fn, error_ctx);
+    for (auto &def : definitions) {
+      def->writeDebug(state);
+      def->generateIndexAtDefinition(state, read, header, error_fn, error_ctx);
     }
     body->writeDebug(state);
     return body->generateIndex(state, read, header, error_fn, error_ctx);
