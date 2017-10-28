@@ -33,7 +33,7 @@ typedef llvm::Value *(llvm::IRBuilder<>::*CreateFCmp)(llvm::Value *lhs,
                                                       llvm::MDNode *fpmathtag);
 #endif
 
-class CompareFPNode : public DebuggableNode {
+class CompareFPNode final : public DebuggableNode {
 public:
   CompareFPNode(CreateFCmp comparator,
                 std::shared_ptr<AstNode> &left,
@@ -52,7 +52,7 @@ private:
   std::shared_ptr<AstNode> right;
 };
 
-class CompareIntNode : public DebuggableNode {
+class CompareIntNode final : public DebuggableNode {
 public:
   CompareIntNode(CreateICmp comparator,
                  std::shared_ptr<AstNode> &left,
@@ -71,7 +71,7 @@ private:
   std::shared_ptr<AstNode> right;
 };
 
-class CompareStrNode : public DebuggableNode {
+class CompareStrNode final : public DebuggableNode {
 public:
   CompareStrNode(CreateICmp comparator,
                  std::shared_ptr<AstNode> &left,

@@ -58,7 +58,14 @@ static void createFunction(llvm::Module *module,
                                      module);
   func->setCallingConv(llvm::CallingConv::C);
   if (ret->isIntegerTy() && ret->getIntegerBitWidth() == 1) {
-    func->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+    func->addAttribute(
+#if LLVM_VERSION_MAJOR <= 4
+        llvm::AttributeSet::ReturnIndex
+#else
+        llvm::AttributeList::ReturnIndex
+#endif
+        ,
+        llvm::Attribute::ZExt);
   }
   policy(func);
 }
@@ -193,6 +200,9 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
         module);
 
     struct_ty = module->getTypeByName(name);
+    if (struct_ty == nullptr) {
+      abort();
+    }
   }
   return struct_ty;
 }

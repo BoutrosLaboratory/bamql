@@ -46,7 +46,7 @@ bool checkChain(ChainPattern chain, bool matches) {
  * One link of a chain. It checks the filter, writes matching reads to a file,
  * and propagates the read to the next link in the chain.
  */
-class OutputWrangler : public bamql::CompileIterator {
+class OutputWrangler final : public bamql::CompileIterator {
 public:
   OutputWrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
                  std::shared_ptr<bamql::Generator> &generator,

@@ -112,7 +112,7 @@ private:
 /**
  * A syntax node for logical conjunction (AND).
  */
-class AndNode : public ShortCircuitNode {
+class AndNode final : public ShortCircuitNode {
 public:
   AndNode(const std::shared_ptr<AstNode> &left_,
           const std::shared_ptr<AstNode> &right_)
@@ -124,7 +124,7 @@ public:
 /**
  * A syntax node for logical disjunction (OR).
  */
-class OrNode : public ShortCircuitNode {
+class OrNode final : public ShortCircuitNode {
 public:
   OrNode(const std::shared_ptr<AstNode> &left_,
          const std::shared_ptr<AstNode> &right_)
@@ -136,7 +136,7 @@ public:
 /**
  * A syntax node for exclusive disjunction (XOR).
  */
-class XOrNode : public AstNode {
+class XOrNode final : public AstNode {
 public:
   XOrNode(const std::shared_ptr<AstNode> &left_,
           const std::shared_ptr<AstNode> &right_)
@@ -182,7 +182,7 @@ private:
 /**
  * A syntax node for logical complement (NOT).
  */
-class NotNode : public AstNode {
+class NotNode final : public AstNode {
 public:
   NotNode(const std::shared_ptr<AstNode> &expr_) : expr(expr_) {
     type_check(expr, BOOL);

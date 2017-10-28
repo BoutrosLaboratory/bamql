@@ -33,17 +33,28 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
                                         llvm::StringRef param_name,
                                         llvm::Type *param_type,
                                         GenerateMember member) {
-  auto func =
-      llvm::cast<llvm::Function>(generator->module()->getOrInsertFunction(
-          name,
-          llvm::Type::getInt1Ty(generator->module()->getContext()),
-          llvm::PointerType::get(getBamHeaderType(generator->module()), 0),
-          param_type,
-          getErrorHandlerType(generator->module()),
-          llvm::PointerType::get(
-              llvm::Type::getInt8Ty(generator->module()->getContext()), 0),
-          nullptr));
-  func->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+  llvm::Type *func_args_ty[] = {
+    llvm::PointerType::get(getBamHeaderType(generator->module()), 0),
+    param_type,
+    getErrorHandlerType(generator->module()),
+    llvm::PointerType::get(
+        llvm::Type::getInt8Ty(generator->module()->getContext()), 0)
+  };
+  auto func_ty = llvm::FunctionType::get(
+      llvm::Type::getInt1Ty(generator->module()->getContext()),
+      func_args_ty,
+      false);
+
+  auto func = llvm::cast<llvm::Function>(
+      generator->module()->getOrInsertFunction(name, func_ty));
+  func->addAttribute(
+#if LLVM_VERSION_MAJOR <= 4
+      llvm::AttributeSet::ReturnIndex
+#else
+      llvm::AttributeList::ReturnIndex
+#endif
+      ,
+      llvm::Attribute::ZExt);
 
   auto entry = llvm::BasicBlock::Create(
       generator->module()->getContext(), "entry", func);

@@ -29,7 +29,7 @@ static bool endsWith(const std::string &str, const std::string &tail) {
 
 namespace bamql {
 
-class BoundMatchNode : public DebuggableNode {
+class BoundMatchNode final : public DebuggableNode {
 public:
   BoundMatchNode(ParseState &state,
                  int number_,
@@ -96,7 +96,7 @@ private:
   int number;
 };
 
-class MatchBindingNode : public DebuggableNode {
+class MatchBindingNode final : public DebuggableNode {
 public:
   MatchBindingNode(ParseState &state) throw(ParseError)
       : DebuggableNode(state) {

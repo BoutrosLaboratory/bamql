@@ -19,7 +19,7 @@
 
 namespace bamql {
 
-class RegexNode : public DebuggableNode {
+class RegexNode final : public DebuggableNode {
 public:
   RegexNode(std::shared_ptr<AstNode> &operand,
             RegularExpression &&pattern,

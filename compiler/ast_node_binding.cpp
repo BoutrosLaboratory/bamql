@@ -19,7 +19,7 @@
 
 namespace bamql {
 
-class UseNode : public DebuggableNode {
+class UseNode final : public DebuggableNode {
 public:
   UseNode(ParseState &state, std::shared_ptr<AstNode> e)
       : DebuggableNode(state), expr(e) {}
@@ -61,7 +61,7 @@ private:
   std::shared_ptr<AstNode> expr;
 };
 
-class BindingNode : public DebuggableNode {
+class BindingNode final : public DebuggableNode {
 public:
   BindingNode(ParseState &state) : DebuggableNode(state) {}
   llvm::Value *generate(GenerateState &state,

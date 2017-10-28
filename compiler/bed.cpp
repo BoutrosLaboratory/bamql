@@ -78,8 +78,8 @@ std::shared_ptr<AstNode> parseBED(ParseState &state) throw(ParseError) {
   std::shared_ptr<AstNode> result = std::make_shared<BoolConst>(false);
   for (auto &chromosome : chromosomes) {
     result =
-        std::make_shared<CheckChromosomeNode>(chromosome.first, false, state) &
-            chromosome.second |
+        (std::make_shared<CheckChromosomeNode>(chromosome.first, false, state) &
+         chromosome.second) |
         result;
   }
   return result;

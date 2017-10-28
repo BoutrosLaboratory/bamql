@@ -22,7 +22,7 @@ namespace bamql {
 /**
  * A syntax node for ternary if.
  */
-class ConditionalNode : public AstNode {
+class ConditionalNode final : public AstNode {
 public:
   ConditionalNode(const std::shared_ptr<AstNode> &condition,
                   const std::shared_ptr<AstNode> &then_part,

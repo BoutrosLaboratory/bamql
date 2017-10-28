@@ -28,7 +28,7 @@ public:
       throw(ParseError) = 0;
 };
 
-class UserArg : public FunctionArg {
+class UserArg final : public FunctionArg {
 public:
   UserArg(ExprType type_);
   void nextArg(ParseState &state,
@@ -40,7 +40,7 @@ private:
   ExprType type;
 };
 
-class AuxArg : public FunctionArg {
+class AuxArg final : public FunctionArg {
 public:
   AuxArg() {}
   void nextArg(ParseState &state,
@@ -49,7 +49,7 @@ public:
       throw(ParseError);
 };
 
-class NucleotideArg : public FunctionArg {
+class NucleotideArg final : public FunctionArg {
 public:
   NucleotideArg() {}
   void nextArg(ParseState &state,
@@ -59,7 +59,7 @@ public:
 };
 
 template <typename T, typename F, F LF, ExprType ET>
-class StaticArg : public FunctionArg {
+class StaticArg final : public FunctionArg {
 public:
   StaticArg(T value_) : value(value_) {}
   virtual void nextArg(ParseState &state,
@@ -102,7 +102,7 @@ private:
   const std::string name;
 };
 
-class BoolFunctionNode : public FunctionNode {
+class BoolFunctionNode final : public FunctionNode {
 public:
   BoolFunctionNode(const std::string &name_,
                    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
@@ -114,7 +114,7 @@ public:
                             llvm::Value *error_ctx);
   ExprType type();
 };
-class ConstIntFunctionNode : public FunctionNode {
+class ConstIntFunctionNode final : public FunctionNode {
 public:
   ConstIntFunctionNode(const std::string &name_,
                        const std::vector<std::shared_ptr<AstNode>> &&arguments_,
@@ -149,7 +149,7 @@ private:
   std::string error_message;
 };
 
-class DblFunctionNode : public ErrorFunctionNode {
+class DblFunctionNode final : public ErrorFunctionNode {
 public:
   DblFunctionNode(const std::string &name_,
                   const std::vector<std::shared_ptr<AstNode>> &&arguments_,
@@ -162,7 +162,7 @@ public:
                     llvm::Value *&out_result);
   ExprType type();
 };
-class IntFunctionNode : public ErrorFunctionNode {
+class IntFunctionNode final : public ErrorFunctionNode {
 public:
   IntFunctionNode(const std::string &name_,
                   const std::vector<std::shared_ptr<AstNode>> &&arguments_,
@@ -176,7 +176,7 @@ public:
   ExprType type();
 };
 
-class StrFunctionNode : public ErrorFunctionNode {
+class StrFunctionNode final : public ErrorFunctionNode {
 public:
   StrFunctionNode(const std::string &name_,
                   const std::vector<std::shared_ptr<AstNode>> &&arguments_,

@@ -19,7 +19,7 @@
 
 namespace bamql {
 
-class ChooseBetter : public DebuggableNode {
+class ChooseBetter final : public DebuggableNode {
 public:
   ChooseBetter(ParseState &state,
                bool direction_,

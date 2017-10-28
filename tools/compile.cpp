@@ -50,7 +50,7 @@ std::vector<std::string> reserved = {
   "union",   "unsigned", "void",   "volatile", "while"
 };
 
-class ExistingFunction : public bamql::AstNode {
+class ExistingFunction final : public bamql::AstNode {
 public:
   ExistingFunction(llvm::Function *main_, llvm::Function *index_)
       : main(main_), index(index_) {}
@@ -61,7 +61,14 @@ public:
                         llvm::Value *error_context) {
     llvm::Value *args[] = { header, read, error_fn, error_context };
     auto call = state->CreateCall(main, args);
-    call->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+    call->addAttribute(
+#if LLVM_VERSION_MAJOR <= 4
+        llvm::AttributeSet::ReturnIndex
+#else
+        llvm::AttributeList::ReturnIndex
+#endif
+        ,
+        llvm::Attribute::ZExt);
     return call;
   }
 
@@ -72,7 +79,15 @@ public:
                              llvm::Value *error_context) {
     llvm::Value *args[] = { header, chromosome, error_fn, error_context };
     auto call = state->CreateCall(index, args);
-    call->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+    call->addAttribute(
+#if LLVM_VERSION_MAJOR <= 4
+        llvm::AttributeSet::ReturnIndex
+#else
+        llvm::AttributeList::ReturnIndex
+#endif
+
+        ,
+        llvm::Attribute::ZExt);
     return call;
   }
   bool usesIndex() { return true; }
@@ -140,7 +155,14 @@ llvm::Function *createExternFunction(
                                   name,
                                   generator->module());
     func->setCallingConv(llvm::CallingConv::C);
-    func->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+    func->addAttribute(
+#if LLVM_VERSION_MAJOR <= 4
+        llvm::AttributeSet::ReturnIndex
+#else
+        llvm::AttributeList::ReturnIndex
+#endif
+        ,
+        llvm::Attribute::ZExt);
   }
   return func;
 }
@@ -553,7 +575,11 @@ int main(int argc, char *const *argv) {
     debug_builder->finalize();
   }
   if (dump) {
+#if LLVM_VERSION_MAJOR <= 4
     module->dump();
+#else
+    module->print(llvm::errs(), nullptr);
+#endif
   }
 
   // Create the output object file.
@@ -573,7 +599,13 @@ int main(int argc, char *const *argv) {
                                   "",
                                   llvm::TargetOptions(),
                                   llvm::Reloc::PIC_,
-                                  llvm::CodeModel::Default));
+#if LLVM_VERSION_MAJOR <= 4
+                                  llvm::CodeModel::Default
+#else
+                                  llvm::CodeModel::Small
+#endif
+
+                                  ));
   if (!target_machine) {
     std::cerr << "Could not allocate target machine." << std::endl;
     return 1;

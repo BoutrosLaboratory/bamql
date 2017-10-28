@@ -45,7 +45,7 @@ protected:
   virtual std::shared_ptr<AstNode> makeAst(double probability) const = 0;
 };
 
-class FixedProbabilityArg : public ProbabilityArg {
+class FixedProbabilityArg final : public ProbabilityArg {
 public:
   FixedProbabilityArg() {}
 
@@ -55,7 +55,7 @@ protected:
         LiteralNode<double, decltype(&make_dbl), &make_dbl, FP>>(probability);
   }
 };
-class MappingQualityArg : public ProbabilityArg {
+class MappingQualityArg final : public ProbabilityArg {
 public:
   MappingQualityArg() {}
 

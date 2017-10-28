@@ -26,7 +26,7 @@ extern const std::set<std::set<std::string>> equivalence_sets;
 /**
  * A predicate that checks of the chromosome name.
  */
-class CheckChromosomeNode : public DebuggableNode {
+class CheckChromosomeNode final : public DebuggableNode {
 public:
   CheckChromosomeNode(RegularExpression &&name_, bool mate_, ParseState &state);
 

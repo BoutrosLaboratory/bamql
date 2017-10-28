@@ -18,7 +18,7 @@
 #include "bamql-compiler.hpp"
 
 namespace bamql {
-class BitwiseContainsNode : public DebuggableNode {
+class BitwiseContainsNode final : public DebuggableNode {
 public:
   BitwiseContainsNode(std::shared_ptr<AstNode> &haystack,
                       std::shared_ptr<AstNode> &needle,

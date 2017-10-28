@@ -18,7 +18,7 @@
 #include "ast_node_loop.hpp"
 
 namespace bamql {
-class LoopVar : public AstNode {
+class LoopVar final : public AstNode {
 public:
   LoopVar(LoopNode *owner_) : owner(owner_) {}
   llvm::Value *generate(GenerateState &state,

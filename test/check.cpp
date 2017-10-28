@@ -76,7 +76,7 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "min(read_group, header) == header", { "A", "B", "C" } },
 };
 
-class Checker : public bamql::CompileIterator {
+class Checker final : public bamql::CompileIterator {
 public:
   Checker(std::shared_ptr<llvm::ExecutionEngine> &engine,
           std::shared_ptr<bamql::Generator> &generator,

@@ -25,7 +25,9 @@ Generator::Generator(llvm::Module *module, llvm::DIScope *debug_scope_)
                                                        { "__dtor", &dtor } };
   for (auto &tor : tors) {
     auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
-        tor.first, llvm::Type::getVoidTy(module->getContext()), nullptr));
+        tor.first,
+        llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()),
+                                false)));
     func->setLinkage(llvm::GlobalValue::InternalLinkage);
     *tor.second = new llvm::IRBuilder<>(
         llvm::BasicBlock::Create(module->getContext(), "entry", func));
@@ -64,13 +66,17 @@ Generator::~Generator() {
     llvm::Constant *constants[] = {
       llvm::ConstantStruct::get(struct_ty,
                                 llvm::ConstantInt::get(int32_ty, 65535),
-                                tor.second->GetInsertBlock()->getParent(),
+                                tor.second->GetInsertBlock()->getParent()
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
 #else
-                                llvm::ConstantPointerNull::get(base_str),
+                                ,
+                                llvm::ConstantPointerNull::get(base_str)
 #endif
-
-                                nullptr)
+#if LLVM_VERSION_MAJOR <= 4
+                                ,
+                                nullptr
+#endif
+                                )
     };
     link->setInitializer(llvm::ConstantArray::get(array_ty, constants));
     delete tor.second;

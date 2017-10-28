@@ -28,7 +28,7 @@ llvm::Value *make_int(llvm::LLVMContext &context, int value);
 llvm::Value *make_dbl(llvm::LLVMContext &context, double value);
 
 template <typename T, typename F, F LF, ExprType ET>
-class LiteralNode : public AstNode {
+class LiteralNode final : public AstNode {
 public:
   LiteralNode(T value_) : value(value_) {}
   llvm::Value *generate(GenerateState &state,

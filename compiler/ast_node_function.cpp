@@ -116,7 +116,14 @@ llvm::Value *BoolFunctionNode::generateCall(GenerateState &state,
                                             llvm::Value *error_fun,
                                             llvm::Value *error_ctx) {
   auto call = state->CreateCall(func, args);
-  call->addAttribute(llvm::AttributeSet::ReturnIndex, llvm::Attribute::ZExt);
+  call->addAttribute(
+#if LLVM_VERSION_MAJOR <= 4
+      llvm::AttributeSet::ReturnIndex
+#else
+      llvm::AttributeList::ReturnIndex
+#endif
+      ,
+      llvm::Attribute::ZExt);
   return call;
 }
 ExprType BoolFunctionNode::type() { return BOOL; }

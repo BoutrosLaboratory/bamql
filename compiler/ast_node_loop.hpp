@@ -20,7 +20,7 @@
 namespace bamql {
 
 class LoopVar;
-class LoopNode : public AstNode {
+class LoopNode final : public AstNode {
   friend class LoopVar;
 
 public:
