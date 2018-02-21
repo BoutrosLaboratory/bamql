@@ -57,3 +57,42 @@ static void hts_close0(htsFile *handle) {
 std::shared_ptr<htsFile> bamql::open(const char *filename, const char *mode) {
   return std::shared_ptr<htsFile>(hts_open(filename, mode), hts_close0);
 }
+
+template <typename T> class Pool {
+public:
+  Pool(std::function<T *()> allocate_, std::function<void(T *)> deallocate_)
+      : allocate(allocate_), deallocate(deallocate_) {}
+  ~Pool() {
+    while (!pool.empty()) {
+      deallocate(pool.back());
+      pool.pop_back();
+    }
+  }
+  std::shared_ptr<T> take() {
+    std::unique_lock<std::mutex> lock(m);
+    T *item;
+    if (pool.empty()) {
+      item = allocate();
+      items.push_back(item);
+    } else {
+      item = pool.back();
+      pool.pop_back();
+    }
+    return std::shared_ptr<T>(item, [this](T *item) {
+      std::unique_lock<std::mutex> lock(m);
+      pool.push_back(item);
+    }
+
+                              );
+  }
+
+private:
+  std::function<T *()> allocate;
+  std::function<void(T *)> deallocate;
+  std::vector<T *> pool;
+  std::vector<T *> items;
+  std::mutex m;
+};
+
+static Pool<bam1_t> bam_read_pool(bam_init1, bam_destroy1);
+std::shared_ptr<bam1_t> bamql::allocateRead() { return bam_read_pool.take(); }

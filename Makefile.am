@@ -123,6 +123,7 @@ libbamql_itr_la_LDFLAGS = \
 	-no-undefined \
 	$(NULL)
 libbamql_itr_la_SOURCES = \
+	iterator/async_writer.cpp \
 	iterator/misc.cpp \
 	iterator/reader.cpp \
 	$(NULL)

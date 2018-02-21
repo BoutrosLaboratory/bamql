@@ -16,6 +16,7 @@
 
 #include <unistd.h>
 #include <iostream>
+#include <future>
 #include <sstream>
 #include <sys/stat.h>
 #include <uuid.h>
@@ -59,8 +60,8 @@ public:
                  std::shared_ptr<OutputWrangler> &n,
                  std::shared_ptr<std::map<const char *, size_t>> &errors_)
       : bamql::CompileIterator::CompileIterator(engine, generator, node, name),
-        chain(c), errors(errors_), file_name(file_name_), output_file(o),
-        next(n), query(query_) {}
+        chain(c), errors(errors_), file_name(file_name_), output(o), next(n),
+        query(query_) {}
   virtual void prepareExecution() {
     CompileIterator::prepareExecution();
     if (next) {
@@ -98,13 +99,7 @@ public:
 
     auto copy = bamql::appendProgramToHeader(
         header.get(), name.str(), std::string(id_str), version, query);
-    if (output_file) {
-      if (sam_hdr_write(output_file.get(), copy.get()) == -1) {
-        std::cerr << "Error writing to output BAM. Giving up on file."
-                  << std::endl;
-        output_file = nullptr;
-      }
-    }
+    output.ingestHeader(copy);
     if (next)
       next->ingestHeader(chain == 3 ? header : copy);
   }
@@ -117,14 +112,7 @@ public:
                  std::shared_ptr<bam_hdr_t> &header,
                  std::shared_ptr<bam1_t> &read) {
     if (matches) {
-      count++;
-      if (output_file) {
-        if (sam_write1(output_file.get(), header.get(), read.get()) == -1) {
-          std::cerr << "Error writing to output BAM. Giving up on file."
-                    << std::endl;
-          output_file = nullptr;
-        }
-      }
+      output.write(header, read);
     }
     if (next && checkChain(chain, matches)) {
       next->processRead(header, read);
@@ -139,7 +127,7 @@ public:
     }
   }
   void write_summary() {
-    std::cout << count << " " << file_name << std::endl;
+    std::cout << output.count() << " " << file_name << std::endl;
     if (next) {
       next->write_summary();
     }
@@ -147,10 +135,9 @@ public:
 
 private:
   ChainPattern chain;
-  size_t count = 0;
   std::shared_ptr<std::map<const char *, size_t>> errors;
   std::string file_name;
-  std::shared_ptr<htsFile> output_file;
+  bamql::AsyncBamWriter output;
   std::shared_ptr<OutputWrangler> next;
   std::string query;
 };

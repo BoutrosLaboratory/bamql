@@ -49,42 +49,18 @@ public:
     uuid_unparse(uuid, id_buf);
     std::string id_str(id_buf);
 
-    if (accept) {
-      std::string name("bamql-accept");
-      auto copy = bamql::appendProgramToHeader(
-          header.get(), name, id_str, version, query);
-      if (sam_hdr_write(accept.get(), copy.get()) == -1) {
-        std::cerr << "Error writing to output BAM. Giving up on file."
-                  << std::endl;
-        accept = nullptr;
-      }
-    }
-    if (reject) {
-      std::string name("bamql-reject");
-      auto copy = bamql::appendProgramToHeader(
-          header.get(), name, id_str, version, query);
-      if (sam_hdr_write(reject.get(), copy.get()) == -1) {
-        std::cerr << "Error writing to output BAM. Giving up on file."
-                  << std::endl;
-        reject = nullptr;
-      }
-    }
+    std::string accept_name("bamql-accept");
+    accept.ingestHeader(header, accept_name, id_str, version, query);
+    std::string reject_name("bamql-reject");
+    reject.ingestHeader(header, reject_name, id_str, version, query);
   }
   void readMatch(bool matches,
                  std::shared_ptr<bam_hdr_t> &header,
                  std::shared_ptr<bam1_t> &read) {
-    (matches ? accept_count : reject_count)++;
-    std::shared_ptr<htsFile> &chosen = matches ? accept : reject;
-    if (chosen) {
-      if (sam_write1(chosen.get(), header.get(), read.get()) == -1) {
-        std::cerr << "Error writing to output BAM. Giving up on file."
-                  << std::endl;
-        chosen = nullptr;
-      }
-    }
-    if (verbose && (accept_count + reject_count) % 1000000 == 0) {
-      std::cout << "So far, Accepted: " << accept_count
-                << " Rejected: " << reject_count << std::endl;
+    (matches ? accept : reject).write(header, read);
+    if (verbose && (accept.count() + reject.count()) % 1000000 == 0) {
+      std::cout << "So far, Accepted: " << accept.count()
+                << " Rejected: " << reject.count() << std::endl;
     }
   }
   void handleError(const char *message) {
@@ -95,8 +71,8 @@ public:
     }
   }
   void writeSummary() {
-    std::cout << "Accepted: " << accept_count << std::endl
-              << "Rejected: " << reject_count << std::endl;
+    std::cout << "Accepted: " << accept.count() << std::endl
+              << "Rejected: " << reject.count() << std::endl;
     for (auto it = errors.begin(); it != errors.end(); it++) {
       std::cout << it->first << " (Occurred " << it->second << " times)"
                 << std::endl;
@@ -104,12 +80,10 @@ public:
   }
 
 private:
-  std::shared_ptr<htsFile> accept;
-  size_t accept_count = 0;
+  bamql::AsyncBamWriter accept;
   std::map<const char *, size_t> errors;
   std::string query;
-  std::shared_ptr<htsFile> reject;
-  size_t reject_count = 0;
+  bamql::AsyncBamWriter reject;
   bool verbose;
 };
 
