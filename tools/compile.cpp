@@ -512,27 +512,27 @@ int main(int argc, char *const *argv) {
             diVoidP);
 #else
         debug_builder->createParameterVariable(
-            filter_scope, "header", 0, diFile, startLine, diBamHdr, true);
+            filter_scope, "header", 1, diFile, startLine, diBamHdr, true);
         debug_builder->createParameterVariable(
-            filter_scope, "read", 1, diFile, startLine, diBam1, true);
+            filter_scope, "read", 2, diFile, startLine, diBam1, true);
         debug_builder->createParameterVariable(filter_scope,
                                                "error_func",
-                                               2,
+                                               3,
                                                diFile,
                                                startLine,
                                                diErrorFunc,
                                                true);
         debug_builder->createParameterVariable(
-            filter_scope, "error_context", 3, diFile, startLine, diVoidP, true);
+            filter_scope, "error_context", 4, diFile, startLine, diVoidP, true);
 
         debug_builder->createParameterVariable(
-            index_scope, "header", 0, diFile, startLine, diBamHdr, true);
+            index_scope, "header", 1, diFile, startLine, diBamHdr, true);
         debug_builder->createParameterVariable(
-            index_scope, "tid", 1, diFile, startLine, diInt32, true);
+            index_scope, "tid", 2, diFile, startLine, diInt32, true);
         debug_builder->createParameterVariable(
-            index_scope, "error_func", 2, diFile, startLine, diErrorFunc, true);
+            index_scope, "error_func", 3, diFile, startLine, diErrorFunc, true);
         debug_builder->createParameterVariable(
-            index_scope, "error_context", 3, diFile, startLine, diVoidP, true);
+            index_scope, "error_context", 4, diFile, startLine, diVoidP, true);
 #endif
       }
 
