@@ -83,4 +83,9 @@ std::shared_ptr<bam_hdr_t> appendProgramToHeader(const bam_hdr_t *original,
                                                  const std::string &args);
 
 std::shared_ptr<htsFile> open(const char *filename, const char *mode);
+
+int main(int argc,
+         char *const *argv,
+         FilterFunction filter,
+         IndexFunction index_function);
 }

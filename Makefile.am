@@ -113,16 +113,19 @@ libbamql_rt_la_SOURCES = \
 libbamql_itr_la_CPPFLAGS = \
 	-std=c++11 \
 	$(HTS_CFLAGS) \
+	$(UUID_CFLAGS) \
 	-g -O2 \
 	$(NULL)
 libbamql_itr_la_LIBADD = \
 	$(HTS_LIBS) \
+	$(UUID_LIBS) \
 	$(NULL)
 libbamql_itr_la_LDFLAGS = \
 	-version-info 0:0:0 \
 	-no-undefined \
 	$(NULL)
 libbamql_itr_la_SOURCES = \
+	iterator/harness.cpp \
 	iterator/misc.cpp \
 	iterator/reader.cpp \
 	$(NULL)
