@@ -24,11 +24,11 @@ namespace bamql {
  */
 class ShortCircuitNode : public AstNode {
 public:
-  ShortCircuitNode(const std::shared_ptr<AstNode> &left_,
-                   const std::shared_ptr<AstNode> &right_)
-      : left(left_), right(right_) {
-    type_check(left, BOOL);
-    type_check(right, BOOL);
+  ShortCircuitNode(const std::vector<std::shared_ptr<AstNode>> &&terms_)
+      : terms(terms_) {
+    for (auto term : terms) {
+      type_check(term, BOOL);
+    }
   }
 
   llvm::Value *generate(GenerateState &state,
@@ -51,12 +51,19 @@ public:
       return llvm::ConstantInt::getTrue(state.module()->getContext());
     }
   }
-  bool usesIndex() { return left->usesIndex() || right->usesIndex(); }
+  bool usesIndex() {
+    for (auto term : terms) {
+      if (term->usesIndex()) {
+        return true;
+      }
+    }
+    return false;
+  }
   ExprType type() { return BOOL; }
   /**
    * The value that causes short circuting.
    */
-  virtual llvm::Value *branchValue(llvm::LLVMContext &context) = 0;
+  virtual bool branchValue() = 0;
 
   void writeDebug(GenerateState &state) {}
 
@@ -71,67 +78,67 @@ private:
      * and
      * the final block. */
     auto function = state->GetInsertBlock()->getParent();
-    auto next_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "next", function);
     auto merge_block = llvm::BasicBlock::Create(
         state.module()->getContext(), "merge", function);
 
-    /* Generate the left expression in the current block. */
-    this->left->writeDebug(state);
-    auto left_value =
-        ((*this->left).*member)(state, param, header, error_fn, error_ctx);
-    auto short_circuit_value = state->CreateICmpEQ(
-        left_value, this->branchValue(state.module()->getContext()));
-    /* If short circuiting, jump to the final block, otherwise, do the
-     * right-hand
-     * expression. */
-    state->CreateCondBr(short_circuit_value, merge_block, next_block);
     auto original_block = state->GetInsertBlock();
 
-    /* Generate the right-hand expression, then jump to the final block.*/
-    state->SetInsertPoint(next_block);
-    this->right->writeDebug(state);
-    auto right_value =
-        ((*this->right).*member)(state, param, header, error_fn, error_ctx);
-    state->CreateBr(merge_block);
-    next_block = state->GetInsertBlock();
-
-    /* Merge from the above paths, selecting the correct value through a PHI
-     * node.
-     */
+    /* Merge from the paths we are going to generate, selecting the correct
+* value through a PHI node.
+*/
     state->SetInsertPoint(merge_block);
     auto phi = state->CreatePHI(
-        llvm::Type::getInt1Ty(state.module()->getContext()), 2);
-    phi->addIncoming(left_value, original_block);
-    phi->addIncoming(right_value, next_block);
+        llvm::Type::getInt1Ty(state.module()->getContext()), terms.size() + 1);
+
+    state->SetInsertPoint(original_block);
+
+    auto reference = llvm::ConstantInt::get(
+        llvm::Type::getInt1Ty(state.module()->getContext()),
+        this->branchValue());
+
+    for (auto term : terms) {
+      auto next_block = llvm::BasicBlock::Create(
+          state.module()->getContext(), "next", function);
+
+      /* Generate the term expression in the current block. */
+      term->writeDebug(state);
+      auto value = ((*term).*member)(state, param, header, error_fn, error_ctx);
+      auto short_circuit_value = state->CreateICmpEQ(value, reference);
+      /* If short circuiting, jump to the final block, otherwise, do the
+                   * next expression. */
+      state->CreateCondBr(short_circuit_value, merge_block, next_block);
+      phi->addIncoming(value, state->GetInsertBlock());
+      state->SetInsertPoint(next_block);
+    }
+
+    state->CreateBr(merge_block);
+    phi->addIncoming(llvm::ConstantInt::get(
+                         llvm::Type::getInt1Ty(state.module()->getContext()),
+                         !this->branchValue()),
+                     state->GetInsertBlock());
+
+    state->SetInsertPoint(merge_block);
     return phi;
   }
-  std::shared_ptr<AstNode> left;
-  std::shared_ptr<AstNode> right;
+  std::vector<std::shared_ptr<AstNode>> terms;
 };
 /**
  * A syntax node for logical conjunction (AND).
  */
 class AndNode final : public ShortCircuitNode {
 public:
-  AndNode(const std::shared_ptr<AstNode> &left_,
-          const std::shared_ptr<AstNode> &right_)
-      : ShortCircuitNode(left_, right_) {}
-  llvm::Value *branchValue(llvm::LLVMContext &context) {
-    return llvm::ConstantInt::getFalse(context);
-  }
+  AndNode(std::vector<std::shared_ptr<AstNode>> &&terms_)
+      : ShortCircuitNode(std::move(terms_)) {}
+  bool branchValue() { return false; }
 };
 /**
  * A syntax node for logical disjunction (OR).
  */
 class OrNode final : public ShortCircuitNode {
 public:
-  OrNode(const std::shared_ptr<AstNode> &left_,
-         const std::shared_ptr<AstNode> &right_)
-      : ShortCircuitNode(left_, right_) {}
-  llvm::Value *branchValue(llvm::LLVMContext &context) {
-    return llvm::ConstantInt::getTrue(context);
-  }
+  OrNode(std::vector<std::shared_ptr<AstNode>> &&terms_)
+      : ShortCircuitNode(std::move(terms_)) {}
+  bool branchValue() { return true; }
 };
 /**
  * A syntax node for exclusive disjunction (XOR).
@@ -215,19 +222,34 @@ public:
 private:
   std::shared_ptr<AstNode> expr;
 };
+std::shared_ptr<AstNode> makeOr(std::vector<std::shared_ptr<AstNode>> &&terms) {
+  auto result = std::make_shared<OrNode>(std::move(terms));
+  return result;
+}
+std::shared_ptr<AstNode> makeAnd(
+    std::vector<std::shared_ptr<AstNode>> &&terms) {
+  auto result = std::make_shared<AndNode>(std::move(terms));
+  return result;
+}
 }
 
 namespace std {
 std::shared_ptr<bamql::AstNode> operator&(
     std::shared_ptr<bamql::AstNode> left,
     std::shared_ptr<bamql::AstNode> right) {
-  auto result = std::make_shared<bamql::AndNode>(left, right);
+  std::vector<std::shared_ptr<bamql::AstNode>> terms;
+  terms.push_back(left);
+  terms.push_back(right);
+  auto result = std::make_shared<bamql::AndNode>(std::move(terms));
   return result;
 }
 std::shared_ptr<bamql::AstNode> operator|(
     std::shared_ptr<bamql::AstNode> left,
     std::shared_ptr<bamql::AstNode> right) {
-  auto result = std::make_shared<bamql::OrNode>(left, right);
+  std::vector<std::shared_ptr<bamql::AstNode>> terms;
+  terms.push_back(left);
+  terms.push_back(right);
+  auto result = std::make_shared<bamql::OrNode>(std::move(terms));
   return result;
 }
 std::shared_ptr<bamql::AstNode> operator^(

@@ -213,16 +213,53 @@ static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
   return node;
 }
 
+/**
+ * Handle binary operators operators (the intermediate steps in recursive
+ * descent)
+ */
+template <
+    char S,
+    std::shared_ptr<AstNode>(*make)(std::vector<std::shared_ptr<AstNode>> &&),
+    ParseFunc N>
+static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
+    ParseError) {
+  std::vector<std::shared_ptr<AstNode>> items;
+
+  auto prev_where = state.where();
+  std::shared_ptr<AstNode> node = N(state);
+  state.parseSpace();
+  while (!state.empty() && *state == S) {
+    if (node) {
+      if (node->type() != BOOL) {
+        throw ParseError(prev_where, "Expression must be Boolean.");
+      }
+      items.push_back(node);
+      node = nullptr;
+    }
+    state.next();
+
+    prev_where = state.where();
+    auto next = N(state);
+    if (next->type() != BOOL) {
+      throw ParseError(prev_where, "Expression must be Boolean.");
+    }
+    items.push_back(next);
+    state.parseSpace();
+  }
+  if (items.size() > 0) {
+    node = make(std::move(items));
+  }
+  return node;
+}
+
 static std::shared_ptr<AstNode> parseIntermediate(ParseState &state) throw(
     ParseError) {
-  return parseBinary<
-      '|',
-      std::bit_or<std::shared_ptr<AstNode>>,
-      parseBinary<'^',
-                  std::bit_xor<std::shared_ptr<AstNode>>,
-                  parseBinary<'&',
-                              std::bit_and<std::shared_ptr<AstNode>>,
-                              parseImplication>>>(state);
+  return parseBinary<'|',
+                     makeOr,
+                     parseBinary<'^',
+                                 std::bit_xor<std::shared_ptr<AstNode>>,
+                                 parseBinary<'&', makeAnd, parseImplication>>>(
+      state);
 }
 
 /**

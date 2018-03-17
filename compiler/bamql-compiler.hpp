@@ -328,6 +328,15 @@ private:
 };
 
 /**
+ * Create a logical OR from a list of nodes.
+ */
+std::shared_ptr<AstNode> makeOr(std::vector<std::shared_ptr<AstNode>> &&terms);
+/**
+ * Create a logical AND from a list of nodes.
+ */
+std::shared_ptr<AstNode> makeAnd(std::vector<std::shared_ptr<AstNode>> &&terms);
+
+/**
  * The current version of the library.
  */
 std::string version();

@@ -17,6 +17,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <vector>
 #include "bamql-compiler.hpp"
 #define type_check(EXPRESSION, TYPE)                                           \
   do {                                                                         \
