@@ -421,7 +421,7 @@ int main(int argc, char *const *argv) {
                   << std::endl;
       header_file << "extern bool " << index_name.str()
                   << "(bam_hdr_t*, uint32_t, bamql_error_handler, "
-                     "bamql_error_handler, void*);" << std::endl;
+                     "void*);" << std::endl;
 
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
       llvm::DISubprogram filter_scope;
