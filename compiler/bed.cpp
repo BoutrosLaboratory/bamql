@@ -27,7 +27,7 @@
 
 static const std::string CHR_PREFIX("chr");
 namespace bamql {
-typedef std::map<std::string, std::shared_ptr<AstNode>> CheckMap;
+typedef std::map<std::string, std::vector<std::shared_ptr<AstNode>>> CheckMap;
 
 std::shared_ptr<AstNode> parseBED(ParseState &state) throw(ParseError) {
   state.parseCharInSpace('(');
@@ -69,19 +69,18 @@ std::shared_ptr<AstNode> parseBED(ParseState &state) throw(ParseError) {
     CheckMap::iterator lb = chromosomes.lower_bound(chr);
 
     if (lb != chromosomes.end() && !(chromosomes.key_comp()(chr, lb->first))) {
-      lb->second = lb->second | check;
+      lb->second.push_back(check);
     } else {
-      chromosomes.insert(lb, CheckMap::value_type(chr, check));
+      chromosomes.insert(lb, CheckMap::value_type(chr, { check }));
     }
   }
   file.close();
-  std::shared_ptr<AstNode> result = std::make_shared<BoolConst>(false);
+  std::vector<std::shared_ptr<AstNode>> result;
   for (auto &chromosome : chromosomes) {
-    result =
-        (std::make_shared<CheckChromosomeNode>(chromosome.first, false, state) &
-         chromosome.second) |
-        result;
+    result.push_back(
+        std::make_shared<CheckChromosomeNode>(chromosome.first, false, state) &
+        makeOr(std::move(chromosome.second)));
   }
-  return result;
+  return makeOr(std::move(result));
 }
 }
