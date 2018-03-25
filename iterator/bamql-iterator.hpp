@@ -84,6 +84,8 @@ std::shared_ptr<bam_hdr_t> appendProgramToHeader(const bam_hdr_t *original,
 
 std::shared_ptr<htsFile> open(const char *filename, const char *mode);
 
+std::string makeUuid();
+
 int main(int argc,
          char *const *argv,
          FilterFunction filter,

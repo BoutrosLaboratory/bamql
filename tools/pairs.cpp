@@ -19,7 +19,6 @@
 #include <map>
 #include <iostream>
 #include <sys/stat.h>
-#include <uuid.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/Support/TargetSelect.h>
 #include "bamql-compiler.hpp"
@@ -80,11 +79,7 @@ public:
         output(output_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
     auto version = bamql::version();
-    uuid_t uuid;
-    uuid_generate(uuid);
-    char id_buf[sizeof(uuid_t) * 2 + 1];
-    uuid_unparse(uuid, id_buf);
-    std::string id_str(id_buf);
+    auto id_str = bamql::makeUuid();
 
     std::string name("bamql-pairs");
     auto copy = bamql::appendProgramToHeader(

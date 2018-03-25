@@ -20,7 +20,7 @@ CPPFLAGS="${SAVED_CPPFLAGS}"
 AX_LLVM(LLVM_CORE, [core])
 AX_LLVM(LLVM_WRITE, [core nativecodegen])
 AX_LLVM(LLVM_RUN, [core executionengine native mcjit])
-PKG_CHECK_MODULES(UUID, [ uuid ])
+PKG_CHECK_MODULES(UUID, [ uuid ], [], [PKG_CHECK_MODULES(UUID, [ ossp-uuid ])])
 PKG_CHECK_MODULES(PCRE, [ libpcre ])
 PKG_CHECK_MODULES(HTS, [ htslib ], [], [
   # This is only to support the very old HTSLib on Trusty. Delete in April 2019

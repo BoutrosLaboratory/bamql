@@ -18,7 +18,6 @@
 #include <iostream>
 #include <sstream>
 #include <sys/stat.h>
-#include <uuid.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/Support/TargetSelect.h>
 #include "bamql-compiler.hpp"
@@ -91,13 +90,9 @@ public:
       }
     }
 
-    uuid_t uuid;
-    uuid_generate(uuid);
-    char id_str[sizeof(uuid_t) * 2 + 1];
-    uuid_unparse(uuid, id_str);
-
+    auto id_str = bamql::makeUuid();
     auto copy = bamql::appendProgramToHeader(
-        header.get(), name.str(), std::string(id_str), version, query);
+        header.get(), name.str(), id_str, version, query);
     if (output_file) {
       if (sam_hdr_write(output_file.get(), copy.get()) == -1) {
         std::cerr << "Error writing to output BAM. Giving up on file."

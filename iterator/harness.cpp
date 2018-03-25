@@ -18,7 +18,6 @@
 #include <map>
 #include <iostream>
 #include <sys/stat.h>
-#include <uuid.h>
 #include "bamql-iterator.hpp"
 
 namespace bamql {
@@ -38,11 +37,7 @@ public:
       : accept(a), filter(filter_), index(index_), reject(r),
         verbose(verbose_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
-    uuid_t uuid;
-    uuid_generate(uuid);
-    char id_buf[sizeof(uuid_t) * 2 + 1];
-    uuid_unparse(uuid, id_buf);
-    std::string id_str(id_buf);
+    auto id_str = makeUuid();
 
     if (accept) {
       std::string name("bamql-accept");

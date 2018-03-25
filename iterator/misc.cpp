@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <cstring>
 #include <sstream>
+#include <uuid.h>
 #include "bamql-iterator.hpp"
 
 std::shared_ptr<bam_hdr_t> bamql::appendProgramToHeader(
@@ -56,4 +57,30 @@ static void hts_close0(htsFile *handle) {
 
 std::shared_ptr<htsFile> bamql::open(const char *filename, const char *mode) {
   return std::shared_ptr<htsFile>(hts_open(filename, mode), hts_close0);
+}
+
+std::string bamql::makeUuid() {
+#ifdef _UUID_UUID_H
+  uuid_t uuid;
+  char id_buf[sizeof(uuid_t) * 2 + 1];
+  uuid_generate(uuid);
+  uuid_unparse(uuid, id_buf);
+#elif defined(__UUID_H__)
+  uuid_t *uuid = nullptr;
+  char id_buf[UUID_LEN_STR + 1];
+  size_t id_buf_len;
+  if (uuid_create(&uuid) != UUID_RC_OK ||
+      uuid_export(uuid, UUID_FMT_STR, id_buf, &id_buf_len) != UUID_RC_OK) {
+    if (uuid != nullptr) {
+      uuid_destroy(uuid);
+    }
+    return "00000000-0000-0000-0000-000000000000";
+  }
+  uuid_destroy(uuid);
+  return std::string(id_buf, id_buf_len);
+#else
+#error "Cannot determine UUID library calls."
+#endif
+  std::string id_str(id_buf);
+  return id_str;
 }
