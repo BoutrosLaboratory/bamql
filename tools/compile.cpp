@@ -38,7 +38,6 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
-#include <llvm/Target/TargetSubtargetInfo.h>
 #include "bamql-compiler.hpp"
 #include "config.h"
 
