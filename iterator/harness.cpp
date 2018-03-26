@@ -32,17 +32,19 @@ public:
   DataCollector(FilterFunction filter_,
                 IndexFunction index_,
                 bool verbose_,
+                const std::string &h_,
+                const std::string &v_,
                 std::shared_ptr<htsFile> &a,
                 std::shared_ptr<htsFile> &r)
-      : accept(a), filter(filter_), index(index_), reject(r),
-        verbose(verbose_) {}
+      : accept(a), filter(filter_), header_str(h_), index(index_), reject(r),
+        verbose(verbose_), version_str(v_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
     auto id_str = makeUuid();
 
     if (accept) {
       std::string name("bamql-accept");
       auto copy = bamql::appendProgramToHeader(
-          header.get(), name, id_str, "unknown", "unknown");
+          header.get(), name, id_str, version_str, header_str);
       if (sam_hdr_write(accept.get(), copy.get()) == -1) {
         std::cerr << "Error writing to output BAM. Giving up on file."
                   << std::endl;
@@ -52,7 +54,7 @@ public:
     if (reject) {
       std::string name("bamql-reject");
       auto copy = bamql::appendProgramToHeader(
-          header.get(), name, id_str, "unknown", "unknown");
+          header.get(), name, id_str, version_str, header_str);
       if (sam_hdr_write(reject.get(), copy.get()) == -1) {
         std::cerr << "Error writing to output BAM. Giving up on file."
                   << std::endl;
@@ -102,9 +104,11 @@ private:
   std::map<const char *, size_t> errors;
   FilterFunction filter;
   IndexFunction index;
+  std::string header_str;
   std::shared_ptr<htsFile> reject;
   size_t reject_count = 0;
   bool verbose;
+  std::string version_str;
 };
 
 static void error_wrapper(const char *message, void *context) {
@@ -114,7 +118,9 @@ static void error_wrapper(const char *message, void *context) {
 int main(int argc,
          char *const *argv,
          FilterFunction filter,
-         IndexFunction index) {
+         IndexFunction index,
+         const std::string &headerName,
+         const std::string &version) {
   std::shared_ptr<htsFile> accept; // The file where reads matching the query
                                    // will be placed.
   std::shared_ptr<htsFile> reject; // The file where reads not matching the
@@ -187,7 +193,8 @@ int main(int argc,
   }
 
   // Process the input file.
-  DataCollector stats(filter, index, verbose, accept, reject);
+  DataCollector stats(
+      filter, index, verbose, headerName, version, accept, reject);
   if (stats.processFile(bam_filename, binary, ignore_index)) {
     stats.writeSummary();
     return 0;

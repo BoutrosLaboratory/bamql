@@ -13,5 +13,5 @@
 #include <bamql-iterator.hpp>
 #include "myscript.h"
 int main(int argc, char **argv) {
-  return bamql::main(argc, argv, check, check_index);
+  return bamql::main(argc, argv, check, check_index, "myscript-check", "1.0");
 }

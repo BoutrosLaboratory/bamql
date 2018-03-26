@@ -89,5 +89,7 @@ std::string makeUuid();
 int main(int argc,
          char *const *argv,
          FilterFunction filter,
-         IndexFunction index_function);
+         IndexFunction index_function,
+         const std::string &headerName,
+         const std::string &version);
 }
