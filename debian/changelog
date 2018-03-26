@@ -1,3 +1,12 @@
+bamql (1.5~ppa0) xenial; urgency=medium
+
+  * [tool] Avoid deep nesting of short circuited nodes
+  * [dev] Add harness for creating compiled scripts
+  * [dev] Fix incorrect signature in generated header file
+  * [dev] Fix library names in pkg-config
+
+ -- Andre Masella <andre@masella.name>  Mon, 26 Mar 2018 16:17:26 -0400
+
 bamql (1.4~ppa0) xenial; urgency=medium
 
   * [lang] Fix bug causing string comparisons to be wrong
