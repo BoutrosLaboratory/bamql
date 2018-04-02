@@ -194,6 +194,9 @@ PredicateMap getDefaultPredicates() {
       parseFunction<IntFunctionNode, const std::string &>(
           "bamql_position_end", {}, "Read is not mapped.") },
 
+    { "mate_begin",
+      parseFunction<ConstIntFunctionNode>("bamql_mate_position_begin", {}) },
+
     // Miscellaneous
     { "bed", parseBED },
     { "mapping_quality",
@@ -204,6 +207,8 @@ PredicateMap getDefaultPredicates() {
     { "header",
       parseFunction<StrFunctionNode, const std::string &>(
           "bamql_header", {}, "Header not available.") },
+    { "insert_size",
+      parseFunction<ConstIntFunctionNode>("bamql_insert_size", {}) },
     { "nt",
       parseFunction<BoolFunctionNode>("bamql_check_nt",
                                       { int_arg, nucleotide_arg, false_arg }) },

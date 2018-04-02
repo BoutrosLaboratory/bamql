@@ -145,6 +145,17 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
     createFunction(
         module, "bamql_header", PureReadArg, base_str, { ptr_bam1_t });
     createFunction(module,
+                   "bamql_insert_size",
+                   PureReadArg,
+                   base_uint32,
+                   { ptr_bam1_t, getErrorHandlerType(module), base_str });
+    createFunction(
+        module,
+        "bamql_mate_position_begin",
+        PureReadArg,
+        base_uint32,
+        { ptr_bam_hdr_t, ptr_bam1_t, getErrorHandlerType(module), base_str });
+    createFunction(module,
                    "bamql_position_begin",
                    PureReadArg,
                    base_bool,

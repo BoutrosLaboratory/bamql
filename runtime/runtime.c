@@ -214,6 +214,30 @@ const char *bamql_header(bam1_t *read)
 	return bam_get_qname(read);
 }
 
+uint32_t bamql_insert_size(bam1_t *read, bamql_error_handler error_fn,
+			   void *error_ctx)
+{
+	int32_t isize;
+	if (read->core.isize == 0) {
+		error_fn("No insert size is provided in BAM.", error_ctx);
+		return 0;
+	}
+	/* Access this memory as aliased because although it claims to be unsigned, it's signed. */
+	isize = *((int32_t *) & read->core.isize);
+	return isize < 0 ? -isize : isize;
+}
+
+uint32_t bamql_mate_position_begin(bam_hdr_t *header, bam1_t *read,
+				   bamql_error_handler error_fn,
+				   void *error_ctx)
+{
+	if (read->core.mtid >= header->n_targets) {
+		error_fn("Mate read is not mapped.", error_ctx);
+		return 0;
+	}
+	return read->core.mpos + 1;
+}
+
 bool bamql_position_begin(bam_hdr_t *header, bam1_t *read, uint32_t * out)
 {
 	if (read->core.tid >= header->n_targets) {

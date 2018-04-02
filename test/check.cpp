@@ -74,6 +74,8 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
   { "min (3.1 , 4.0 , 5.2 ) < 3.5",
     { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" } },
   { "min(read_group, header) == header", { "A", "B", "C" } },
+  { "insert_size == 49", { "H", "I" } },
+  { "mate_begin == 11439", { "J" } },
 };
 
 class Checker final : public bamql::CompileIterator {

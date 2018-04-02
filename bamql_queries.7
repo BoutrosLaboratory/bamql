@@ -197,9 +197,17 @@ Matches the read if the probability of error is less than \fIprobability\fR. The
 
 Returns the final position of the read on the chromosome, if it is mapped.
 
+\fBinsert_size\fR
+
+Returns the size of the region between a pair of mapped reads if the aligner has been able to determine it.
+
 \fBmate_chr(\fRglob\fB)\fR
 
 This works identically to \fBchr\fR, but on the chromosome of the mate pair, if one exists. If the mate is unmapped, this returns false.
+
+\fBmate_begin\fR
+
+Returns the start position of the mate pair on the chromosome, if it is mapped. Note that \fBmate_end\fR, while logical, cannot exist because the necessary information is not available.
 
 \fBmate_chr_name\fR
 

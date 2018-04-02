@@ -45,6 +45,11 @@ extern "C" {
 	const char *bamql_chr(bam_hdr_t *header, bam1_t *read, bool mate);
 	uint32_t bamql_flags(bam1_t *read);
 	const char *bamql_header(bam1_t *read);
+	uint32_t bamql_insert_size(bam1_t *read, bamql_error_handler error_fn,
+				   void *error_ctx);
+	uint32_t bamql_mate_position_begin(bam_hdr_t *header, bam1_t *read,
+					   bamql_error_handler error_fn,
+					   void *error_ctx);
 	bool bamql_position_begin(bam_hdr_t *header, bam1_t *read,
 				  uint32_t * out);
 	bool bamql_position_end(bam_hdr_t *header, bam1_t *read,
