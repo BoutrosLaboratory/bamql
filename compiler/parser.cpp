@@ -14,20 +14,20 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <functional>
-#include <iostream>
-#include <vector>
-#include "bamql-compiler.hpp"
-#include "compiler.hpp"
 #include "ast_node_compare.hpp"
 #include "ast_node_contains.hpp"
 #include "ast_node_if.hpp"
 #include "ast_node_loop.hpp"
 #include "ast_node_regex.hpp"
+#include "bamql-compiler.hpp"
+#include "compiler.hpp"
+#include <functional>
+#include <iostream>
+#include <vector>
 
 namespace bamql {
 
-typedef std::shared_ptr<AstNode>(*ParseFunc)(ParseState &state);
+typedef std::shared_ptr<AstNode> (*ParseFunc)(ParseState &state);
 
 /**
  * Handle terminal operators (final step in the recursive descent)
@@ -110,11 +110,9 @@ private:
 const std::vector<EquivalenceCheck> equivalence_checks = {
   { "==", &llvm::IRBuilder<>::CreateICmpEQ, &llvm::IRBuilder<>::CreateFCmpOEQ },
   { "!=", &llvm::IRBuilder<>::CreateICmpNE, &llvm::IRBuilder<>::CreateFCmpONE },
-  { "<=",
-    &llvm::IRBuilder<>::CreateICmpSLE,
+  { "<=", &llvm::IRBuilder<>::CreateICmpSLE,
     &llvm::IRBuilder<>::CreateFCmpOLE },
-  { ">=",
-    &llvm::IRBuilder<>::CreateICmpSGE,
+  { ">=", &llvm::IRBuilder<>::CreateICmpSGE,
     &llvm::IRBuilder<>::CreateFCmpOGE },
   { "<", &llvm::IRBuilder<>::CreateICmpSLT, &llvm::IRBuilder<>::CreateFCmpOLT },
   { ">", &llvm::IRBuilder<>::CreateICmpSGT, &llvm::IRBuilder<>::CreateFCmpOGT },
@@ -159,8 +157,7 @@ static std::shared_ptr<AstNode> parseComparison(ParseState &state) throw(
     return std::make_shared<RegexNode>(left, std::move(pattern), state);
   }
   for (auto it = equivalence_checks.begin();
-       it != equivalence_checks.end() && !it->parse(state, left);
-       it++)
+       it != equivalence_checks.end() && !it->parse(state, left); it++)
     ;
   return left;
 }
@@ -219,7 +216,7 @@ static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
  */
 template <
     char S,
-    std::shared_ptr<AstNode>(*make)(std::vector<std::shared_ptr<AstNode>> &&),
+    std::shared_ptr<AstNode> (*make)(std::vector<std::shared_ptr<AstNode>> &&),
     ParseFunc N>
 static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
     ParseError) {
@@ -254,10 +251,8 @@ static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
 
 static std::shared_ptr<AstNode> parseIntermediate(ParseState &state) throw(
     ParseError) {
-  return parseBinary<'|',
-                     makeOr,
-                     parseBinary<'^',
-                                 std::bit_xor<std::shared_ptr<AstNode>>,
+  return parseBinary<'|', makeOr,
+                     parseBinary<'^', std::bit_xor<std::shared_ptr<AstNode>>,
                                  parseBinary<'&', makeAnd, parseImplication>>>(
       state);
 }

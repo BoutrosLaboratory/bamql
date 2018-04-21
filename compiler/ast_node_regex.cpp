@@ -14,9 +14,9 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include "ast_node_regex.hpp"
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
-#include "ast_node_regex.hpp"
 
 namespace bamql {
 RegexNode::RegexNode(std::shared_ptr<AstNode> &operand_,

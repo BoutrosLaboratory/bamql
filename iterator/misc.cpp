@@ -14,11 +14,11 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include "bamql-iterator.hpp"
 #include <cstdio>
 #include <cstring>
 #include <sstream>
 #include <uuid.h>
-#include "bamql-iterator.hpp"
 
 std::shared_ptr<bam_hdr_t> bamql::appendProgramToHeader(
     const bam_hdr_t *original,

@@ -14,10 +14,10 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <sstream>
-#include <pcre.h>
-#include "bamql-compiler.hpp"
 #include "ast_node_regex.hpp"
+#include "bamql-compiler.hpp"
+#include <pcre.h>
+#include <sstream>
 
 static bamql::RegularExpression createPCRE(
     const std::string &input,
@@ -60,11 +60,8 @@ static bamql::RegularExpression createPCRE(
     auto null_value = llvm::ConstantPointerNull::get(base_str);
     auto compile_func = state.module()->getFunction("bamql_re_compile");
     auto free_func = state.module()->getFunction("bamql_re_free");
-    auto var = new llvm::GlobalVariable(*state.module(),
-                                        base_str,
-                                        false,
-                                        llvm::GlobalVariable::PrivateLinkage,
-                                        0,
+    auto var = new llvm::GlobalVariable(*state.module(), base_str, false,
+                                        llvm::GlobalVariable::PrivateLinkage, 0,
                                         ".regex");
     var->setInitializer(null_value);
     llvm::Value *construct_args[] = { state.getGenerator().createString(input),
@@ -97,9 +94,7 @@ RegularExpression ParseState::parseRegEx(
   auto stop = index++;
 
   return createPCRE(input.substr(start + 1, stop - start - 1),
-                    parseKeyword("i"),
-                    start,
-                    names);
+                    parseKeyword("i"), start, names);
 }
 
 RegularExpression ParseState::parseRegEx() throw(ParseError) {

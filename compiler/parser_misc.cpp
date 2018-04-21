@@ -14,10 +14,10 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include "ast_node_literal.hpp"
+#include "bamql-compiler.hpp"
 #include <cctype>
 #include <sstream>
-#include "bamql-compiler.hpp"
-#include "ast_node_literal.hpp"
 
 namespace bamql {
 

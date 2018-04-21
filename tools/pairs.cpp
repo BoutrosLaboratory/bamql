@@ -14,15 +14,15 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <unistd.h>
-#include <fstream>
-#include <map>
-#include <iostream>
-#include <sys/stat.h>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/Support/TargetSelect.h>
 #include "bamql-compiler.hpp"
 #include "bamql-jit.hpp"
+#include <fstream>
+#include <iostream>
+#include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/Support/TargetSelect.h>
+#include <map>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /**
  * Handler for output collection. Shunts reads into appropriate files and tracks
@@ -82,8 +82,8 @@ public:
     auto id_str = bamql::makeUuid();
 
     std::string name("bamql-pairs");
-    auto copy = bamql::appendProgramToHeader(
-        header.get(), name, id_str, version, query);
+    auto copy = bamql::appendProgramToHeader(header.get(), name, id_str,
+                                             version, query);
     if (sam_hdr_write(output.get(), copy.get()) == -1) {
       std::cerr << "Error writing to output BAM. Giving up on file."
                 << std::endl;
@@ -159,10 +159,12 @@ int main(int argc, char *const *argv) {
   }
   if (help) {
     std::cout << argv[0] << " [-b] [-I] [-o accepted_pairs.bam] -f input.bam "
-                            "{query | -q query.bamql}" << std::endl;
+                            "{query | -q query.bamql}"
+              << std::endl;
     std::cout << "Filter a BAM/SAM file based on the provided query and keep "
                  "read pairs if either is accepted. For "
-                 "details, see the man page." << std::endl;
+                 "details, see the man page."
+              << std::endl;
     std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)."
               << std::endl;
     std::cout << "\t-f\tThe input file to read." << std::endl;
@@ -170,7 +172,8 @@ int main(int argc, char *const *argv) {
     std::cout << "\t-o\tThe output file for read pairs that pass the query."
               << std::endl;
     std::cout << "\t-q\tA file containing the query, instead of providing it "
-                 "on the command line." << std::endl;
+                 "on the command line."
+              << std::endl;
     return 0;
   }
 

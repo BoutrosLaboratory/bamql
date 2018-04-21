@@ -17,10 +17,10 @@
 #pragma once
 #include <exception>
 #include <functional>
+#include <llvm/Config/llvm-config.h>
 #include <map>
 #include <memory>
 #include <set>
-#include <llvm/Config/llvm-config.h>
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
 #include <llvm/DIBuilder.h>
 #else
@@ -71,8 +71,9 @@ class GenerateState;
  * A predicate is a function that parses a named predicate, and, upon success,
  * returns a syntax node.
  */
-typedef std::function<
-    std::shared_ptr<AstNode>(ParseState &state) throw(ParseError)> Predicate;
+typedef std::function<std::shared_ptr<AstNode>(ParseState &state) throw(
+    ParseError)>
+    Predicate;
 
 typedef std::function<llvm::Value *(GenerateState &state)> RegularExpression;
 

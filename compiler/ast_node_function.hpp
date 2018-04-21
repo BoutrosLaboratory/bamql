@@ -15,8 +15,8 @@
  */
 #pragma once
 
-#include "bamql-compiler.hpp"
 #include "ast_node_literal.hpp"
+#include "bamql-compiler.hpp"
 
 namespace bamql {
 
@@ -205,8 +205,8 @@ Predicate parseFunction(
       state.parseCharInSpace(')');
     }
 
-    return std::make_shared<T>(
-        name, std::move(arguments), state, extra_config...);
+    return std::make_shared<T>(name, std::move(arguments), state,
+                               extra_config...);
   };
 }
 }

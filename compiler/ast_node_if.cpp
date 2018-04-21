@@ -14,9 +14,9 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include "ast_node_if.hpp"
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
-#include "ast_node_if.hpp"
 
 namespace bamql {
 ConditionalNode::ConditionalNode(const std::shared_ptr<AstNode> &condition_,
@@ -104,12 +104,12 @@ llvm::Value *ConditionalNode::generateIndex(GenerateState &state,
     /* Create three blocks: one for the “then”, one for the “else” and one for
      * the final. */
     auto function = state->GetInsertBlock()->getParent();
-    auto then_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "then", function);
-    auto else_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "else", function);
-    auto merge_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "merge", function);
+    auto then_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                               "then", function);
+    auto else_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                               "else", function);
+    auto merge_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                                "merge", function);
 
     /* Compute the conditional argument and then decide to which block to jump.
      * If true, try to make a decision based on the “then” block, otherwise,
@@ -147,10 +147,10 @@ llvm::Value *ConditionalNode::generateIndex(GenerateState &state,
   }
   if (then_part->usesIndex() && else_part->usesIndex()) {
     auto function = state->GetInsertBlock()->getParent();
-    auto else_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "else", function);
-    auto merge_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "merge", function);
+    auto else_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                               "else", function);
+    auto merge_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                                "merge", function);
     auto then_result =
         then_part->generateIndex(state, tid, header, error_fn, error_ctx);
     state->CreateCondBr(then_result, merge_block, else_block);

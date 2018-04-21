@@ -25,9 +25,8 @@ Generator::Generator(llvm::Module *module, llvm::DIScope *debug_scope_)
                                                        { "__dtor", &dtor } };
   for (auto &tor : tors) {
     auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
-        tor.first,
-        llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()),
-                                false)));
+        tor.first, llvm::FunctionType::get(
+                       llvm::Type::getVoidTy(module->getContext()), false)));
     func->setLinkage(llvm::GlobalValue::InternalLinkage);
     *tor.second = new llvm::IRBuilder<>(
         llvm::BasicBlock::Create(module->getContext(), "entry", func));
@@ -57,23 +56,20 @@ Generator::~Generator() {
   auto array_ty = llvm::ArrayType::get(struct_ty, 1);
   for (auto &tor : tors) {
     tor.second->CreateRetVoid();
-    auto link = new llvm::GlobalVariable(*mod,
-                                         array_ty,
-                                         false,
+    auto link = new llvm::GlobalVariable(*mod, array_ty, false,
                                          llvm::GlobalVariable::AppendingLinkage,
-                                         0,
-                                         tor.first);
+                                         0, tor.first);
     llvm::Constant *constants[] = {
       llvm::ConstantStruct::get(struct_ty,
                                 llvm::ConstantInt::get(int32_ty, 65535),
                                 tor.second->GetInsertBlock()->getParent()
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
 #else
-                                ,
+                                    ,
                                 llvm::ConstantPointerNull::get(base_str)
 #endif
 #if LLVM_VERSION_MAJOR <= 4
-                                ,
+                                    ,
                                 nullptr
 #endif
                                 )
@@ -97,13 +93,9 @@ llvm::Constant *Generator::createString(const std::string &str) {
 
   auto array = llvm::ConstantDataArray::getString(mod->getContext(), str);
   auto global_variable = new llvm::GlobalVariable(
-      *mod,
-      llvm::ArrayType::get(llvm::Type::getInt8Ty(mod->getContext()),
-                           str.length() + 1),
-      true,
-      llvm::GlobalValue::PrivateLinkage,
-      0,
-      ".str");
+      *mod, llvm::ArrayType::get(llvm::Type::getInt8Ty(mod->getContext()),
+                                 str.length() + 1),
+      true, llvm::GlobalValue::PrivateLinkage, 0, ".str");
   global_variable->setAlignment(1);
   global_variable->setInitializer(array);
   auto zero =

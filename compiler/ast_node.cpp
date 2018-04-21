@@ -35,14 +35,12 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
                                         GenerateMember member) {
   llvm::Type *func_args_ty[] = {
     llvm::PointerType::get(getBamHeaderType(generator->module()), 0),
-    param_type,
-    getErrorHandlerType(generator->module()),
+    param_type, getErrorHandlerType(generator->module()),
     llvm::PointerType::get(
         llvm::Type::getInt8Ty(generator->module()->getContext()), 0)
   };
   auto func_ty = llvm::FunctionType::get(
-      llvm::Type::getInt1Ty(generator->module()->getContext()),
-      func_args_ty,
+      llvm::Type::getInt1Ty(generator->module()->getContext()), func_args_ty,
       false);
 
   auto func = llvm::cast<llvm::Function>(
@@ -56,8 +54,8 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
       ,
       llvm::Attribute::ZExt);
 
-  auto entry = llvm::BasicBlock::Create(
-      generator->module()->getContext(), "entry", func);
+  auto entry = llvm::BasicBlock::Create(generator->module()->getContext(),
+                                        "entry", func);
   GenerateState state(generator, entry);
   auto args = func->arg_begin();
   auto header_value =
@@ -93,13 +91,11 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
 #endif
   error_ctx_value->setName("error_ctx");
   this->writeDebug(state);
-  state->CreateRet(member == nullptr ? llvm::ConstantInt::getTrue(
-                                           generator->module()->getContext())
-                                     : (this->*member)(state,
-                                                       param_value,
-                                                       header_value,
-                                                       error_fn_value,
-                                                       error_ctx_value));
+  state->CreateRet(
+      member == nullptr
+          ? llvm::ConstantInt::getTrue(generator->module()->getContext())
+          : (this->*member)(state, param_value, header_value, error_fn_value,
+                            error_ctx_value));
   return func;
 }
 
@@ -107,9 +103,7 @@ llvm::Function *AstNode::createFilterFunction(
     std::shared_ptr<Generator> &generator, llvm::StringRef name) {
   type_check(this, BOOL);
   return createFunction(
-      generator,
-      name,
-      "read",
+      generator, name, "read",
       llvm::PointerType::get(getBamType(generator->module()), 0),
       &AstNode::generate);
 }
@@ -118,9 +112,7 @@ llvm::Function *AstNode::createIndexFunction(
     std::shared_ptr<Generator> &generator, llvm::StringRef name) {
   type_check(this, BOOL);
   return createFunction(
-      generator,
-      name,
-      "tid",
+      generator, name, "tid",
       llvm::Type::getInt32Ty(generator->module()->getContext()),
       this->usesIndex() ? &AstNode::generateIndex : nullptr);
 }
@@ -129,13 +121,12 @@ DebuggableNode::DebuggableNode(ParseState &state)
     : line(state.currentLine()), column(state.currentColumn()) {}
 void DebuggableNode::writeDebug(GenerateState &state) {
   if (state.debugScope() != nullptr)
-    state->SetCurrentDebugLocation(llvm::DebugLoc::get(line,
-                                                       column,
+    state->SetCurrentDebugLocation(llvm::DebugLoc::get(line, column,
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
                                                        *state.debugScope()
 #else
                                                        state.debugScope()
 #endif
-                                                       ));
+                                                           ));
 }
 }

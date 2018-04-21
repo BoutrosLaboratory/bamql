@@ -14,10 +14,10 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include "bamql-compiler.hpp"
 #include <cassert>
 #include <iostream>
 #include <sstream>
-#include "bamql-compiler.hpp"
 
 static bool endsWith(const std::string &str, const std::string &tail) {
   if (str.length() > tail.length()) {
@@ -133,8 +133,8 @@ public:
         decode = 3;
         type = INT;
       }
-      auto use = std::make_shared<BoundMatchNode>(
-          state, name.second, type, decode, errorMessage);
+      auto use = std::make_shared<BoundMatchNode>(state, name.second, type,
+                                                  decode, errorMessage);
       definitions.push_back(use);
       childPredicates[name.first] = [=](ParseState & state) throw(ParseError) {
         return std::static_pointer_cast<AstNode>(use);
@@ -178,10 +178,10 @@ public:
 
     auto original_block = state->GetInsertBlock();
     auto target_function = state->GetInsertBlock()->getParent();
-    auto match_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "match", target_function);
-    auto merge_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "merge", target_function);
+    auto match_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                                "match", target_function);
+    auto merge_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                                "merge", target_function);
 
     state->CreateCondBr(matched, match_block, merge_block);
 

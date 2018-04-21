@@ -14,8 +14,8 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <sstream>
 #include "bamql-jit.hpp"
+#include <sstream>
 
 static void error_wrapper(const char *message, void *context) {
   ((bamql::CompileIterator *)context)->handleError(message);
@@ -46,6 +46,6 @@ bool bamql::CompileIterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,
 
 void bamql::CompileIterator::processRead(std::shared_ptr<bam_hdr_t> &header,
                                          std::shared_ptr<bam1_t> &read) {
-  readMatch(
-      filter(header.get(), read.get(), error_wrapper, this), header, read);
+  readMatch(filter(header.get(), read.get(), error_wrapper, this), header,
+            read);
 }

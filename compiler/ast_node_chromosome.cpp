@@ -14,10 +14,10 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <set>
-#include <htslib/sam.h>
-#include "bamql-compiler.hpp"
 #include "ast_node_chromosome.hpp"
+#include "bamql-compiler.hpp"
+#include <htslib/sam.h>
+#include <set>
 
 static bamql::RegularExpression chrStrToRegex(const std::string &str) {
   // If we are dealing with a chromosome that goes by many names, match all of
@@ -25,12 +25,10 @@ static bamql::RegularExpression chrStrToRegex(const std::string &str) {
   for (const auto &set : bamql::equivalence_sets) {
     for (const auto &equiv : set) {
       if (equiv.length() == str.length() &&
-          std::equal(equiv.begin(),
-                     equiv.end(),
-                     str.begin(),
+          std::equal(equiv.begin(), equiv.end(), str.begin(),
                      [](unsigned char a, unsigned char b) {
-            return std::tolower(a) == std::tolower(b);
-          })) {
+                       return std::tolower(a) == std::tolower(b);
+                     })) {
         return bamql::setToRegEx("^(chr)?", set, "$");
       }
     }
@@ -61,9 +59,7 @@ llvm::Value *CheckChromosomeNode::generate(GenerateState &state,
                                            llvm::Value *error_ctx) {
   auto function = state.module()->getFunction("bamql_check_chromosome");
   llvm::Value *args[] = {
-    header,
-    read,
-    name(state),
+    header, read, name(state),
     mate ? llvm::ConstantInt::getTrue(state.module()->getContext())
          : llvm::ConstantInt::getFalse(state.module()->getContext())
   };

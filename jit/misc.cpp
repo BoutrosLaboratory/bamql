@@ -14,11 +14,11 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <iostream>
-#include <pcre.h>
-#include <llvm/Support/DynamicLibrary.h>
-#include "bamql-runtime.h"
 #include "bamql-jit.hpp"
+#include "bamql-runtime.h"
+#include <iostream>
+#include <llvm/Support/DynamicLibrary.h>
+#include <pcre.h>
 
 std::map<std::string, void (*)()> known = {
   { "bamql_aux_fp", (void (*)())bamql_aux_fp },
@@ -71,7 +71,7 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
           std::move(module)
 #endif
 
-          )
+              )
           .setEngineKind(llvm::EngineKind::JIT)
           .setErrorStr(&error)
           .setMAttrs(attrs)

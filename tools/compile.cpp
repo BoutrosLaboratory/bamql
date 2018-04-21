@@ -14,22 +14,24 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <libgen.h>
-#include <unistd.h>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <libgen.h>
+#include <llvm/IR/Module.h>
 #include <memory>
 #include <set>
 #include <sstream>
 #include <system_error>
+#include <unistd.h>
 #include <vector>
-#include <llvm/IR/Module.h>
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
 #include <llvm/PassManager.h>
 #else
 #include <llvm/IR/LegacyPassManager.h>
 #endif
+#include "bamql-compiler.hpp"
+#include "config.h"
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/Host.h>
@@ -38,8 +40,6 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
-#include "bamql-compiler.hpp"
-#include "config.h"
 
 std::vector<std::string> reserved = {
   "main",    "auto",     "break",  "case",     "char",   "const",    "continue",
@@ -142,17 +142,14 @@ llvm::Function *createExternFunction(
   if (func == nullptr) {
     std::vector<llvm::Type *> args = {
       llvm::PointerType::get(bamql::getBamHeaderType(generator->module()), 0),
-      param_type,
-      bamql::getErrorHandlerType(generator->module()),
+      param_type, bamql::getErrorHandlerType(generator->module()),
       llvm::PointerType::get(
           llvm::Type::getInt8Ty(generator->module()->getContext()), 0)
     };
     auto func_type = llvm::FunctionType::get(
         llvm::Type::getInt1Ty(generator->module()->getContext()), args, false);
-    func = llvm::Function::Create(func_type,
-                                  llvm::GlobalValue::ExternalLinkage,
-                                  name,
-                                  generator->module());
+    func = llvm::Function::Create(func_type, llvm::GlobalValue::ExternalLinkage,
+                                  name, generator->module());
     func->setCallingConv(llvm::CallingConv::C);
     func->addAttribute(
 #if LLVM_VERSION_MAJOR <= 4
@@ -205,7 +202,8 @@ int main(int argc, char *const *argv) {
     std::cout << argv[0] << "[-d] [-g] [-H output.h] [-o output.o] query.bamql"
               << std::endl;
     std::cout << "Compile a collection of queries to object code. For details, "
-                 "see the man page." << std::endl;
+                 "see the man page."
+              << std::endl;
     std::cout
         << "\t-d\tDump the human-readable LLVM bitcode to standard output."
         << std::endl;
@@ -216,7 +214,8 @@ int main(int argc, char *const *argv) {
         << std::endl;
     std::cout
         << "\t-o\tThe output file containing the object code. If unspecified, "
-           "it will be the input file name suffixed by `.o'." << std::endl;
+           "it will be the input file name suffixed by `.o'."
+        << std::endl;
     return 0;
   }
 
@@ -277,20 +276,13 @@ int main(int argc, char *const *argv) {
     debug_builder = std::make_shared<llvm::DIBuilder>(*module);
     diFile = debug_builder->createFile(base_name, dir_name);
 #if LLVM_VERSION_MAJOR < 4
-    debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C,
-                                     base_name,
-                                     dir_name,
-                                     PACKAGE_STRING,
-                                     false,
-                                     "",
-                                     0);
+    debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C, base_name,
+                                     dir_name, PACKAGE_STRING, false, "", 0);
 #else
-    debug_builder->createCompileUnit(
-        llvm::dwarf::DW_LANG_C, diFile, PACKAGE_STRING, false, "", 0);
+    debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C, diFile,
+                                     PACKAGE_STRING, false, "", 0);
 #endif
-    diInt32 = debug_builder->createBasicType("uint32",
-                                             32,
-                                             32
+    diInt32 = debug_builder->createBasicType("uint32", 32, 32
 #if LLVM_VERSION_MAJOR < 4
                                              ,
                                              llvm::dwarf::DW_ATE_unsigned
@@ -366,13 +358,11 @@ int main(int argc, char *const *argv) {
       }
       auto index_name = name + "_index";
       auto node = std::make_shared<ExistingFunction>(
-          createExternFunction(generator,
-                               name,
+          createExternFunction(generator, name,
                                llvm::PointerType::get(
                                    bamql::getBamType(generator->module()), 0)),
           createExternFunction(
-              generator,
-              index_name,
+              generator, index_name,
               llvm::Type::getInt32Ty(generator->module()->getContext())));
       predicates[name] = [=](bamql::ParseState &state) { return node; };
     }
@@ -420,7 +410,8 @@ int main(int argc, char *const *argv) {
                   << std::endl;
       header_file << "extern bool " << index_name.str()
                   << "(bam_hdr_t*, uint32_t, bamql_error_handler, "
-                     "void*);" << std::endl;
+                     "void*);"
+                  << std::endl;
 
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
       llvm::DISubprogram filter_scope;
@@ -430,104 +421,56 @@ int main(int argc, char *const *argv) {
       llvm::DISubprogram *index_scope = nullptr;
 #endif
       if (debug) {
-        filter_scope = debug_builder->createFunction(diFile,
-                                                     name,
-                                                     name,
-                                                     diFile,
-                                                     startLine,
-                                                     diFilterFunc,
-                                                     false,
-                                                     true,
-                                                     startLine);
+        filter_scope =
+            debug_builder->createFunction(diFile, name, name, diFile, startLine,
+                                          diFilterFunc, false, true, startLine);
 
-        index_scope = debug_builder->createFunction(diFile,
-                                                    index_name.str(),
-                                                    index_name.str(),
-                                                    diFile,
-                                                    startLine,
-                                                    diIndexFunc,
-                                                    false,
-                                                    true,
-                                                    startLine);
+        index_scope = debug_builder->createFunction(
+            diFile, index_name.str(), index_name.str(), diFile, startLine,
+            diIndexFunc, false, true, startLine);
       }
       if (debug) {
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
         debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter,
-            filter_scope,
-            "header",
-            diFile,
-            startLine,
-            diBamHdr);
+            llvm::dwarf::DW_AT_variable_parameter, filter_scope, "header",
+            diFile, startLine, diBamHdr);
         debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter,
-            filter_scope,
-            "read",
-            diFile,
-            startLine,
-            diBam1);
+            llvm::dwarf::DW_AT_variable_parameter, filter_scope, "read", diFile,
+            startLine, diBam1);
         debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter,
-            filter_scope,
-            "error_func",
-            diFile,
-            startLine,
-            diErrorFunc);
+            llvm::dwarf::DW_AT_variable_parameter, filter_scope, "error_func",
+            diFile, startLine, diErrorFunc);
         debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter,
-            filter_scope,
-            "error_context",
-            diFile,
-            startLine,
-            diVoidP);
+            llvm::dwarf::DW_AT_variable_parameter, filter_scope,
+            "error_context", diFile, startLine, diVoidP);
 
         debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter,
-            index_scope,
-            "header",
-            diFile,
-            startLine,
-            diBamHdr);
+            llvm::dwarf::DW_AT_variable_parameter, index_scope, "header",
+            diFile, startLine, diBamHdr);
         debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter,
-            index_scope,
-            "tid",
-            diFile,
-            startLine,
-            diInt32);
+            llvm::dwarf::DW_AT_variable_parameter, index_scope, "tid", diFile,
+            startLine, diInt32);
         debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter,
-            index_scope,
-            "error_func",
-            diFile,
-            startLine,
-            diErrorFunc);
+            llvm::dwarf::DW_AT_variable_parameter, index_scope, "error_func",
+            diFile, startLine, diErrorFunc);
         debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter,
-            index_scope,
-            "error_context",
-            diFile,
-            startLine,
-            diVoidP);
+            llvm::dwarf::DW_AT_variable_parameter, index_scope, "error_context",
+            diFile, startLine, diVoidP);
 #else
         debug_builder->createParameterVariable(
             filter_scope, "header", 1, diFile, startLine, diBamHdr, true);
-        debug_builder->createParameterVariable(
-            filter_scope, "read", 2, diFile, startLine, diBam1, true);
-        debug_builder->createParameterVariable(filter_scope,
-                                               "error_func",
-                                               3,
-                                               diFile,
-                                               startLine,
-                                               diErrorFunc,
+        debug_builder->createParameterVariable(filter_scope, "read", 2, diFile,
+                                               startLine, diBam1, true);
+        debug_builder->createParameterVariable(filter_scope, "error_func", 3,
+                                               diFile, startLine, diErrorFunc,
                                                true);
         debug_builder->createParameterVariable(
             filter_scope, "error_context", 4, diFile, startLine, diVoidP, true);
 
-        debug_builder->createParameterVariable(
-            index_scope, "header", 1, diFile, startLine, diBamHdr, true);
-        debug_builder->createParameterVariable(
-            index_scope, "tid", 2, diFile, startLine, diInt32, true);
+        debug_builder->createParameterVariable(index_scope, "header", 1, diFile,
+                                               startLine, diBamHdr, true);
+        debug_builder->createParameterVariable(index_scope, "tid", 2, diFile,
+                                               startLine, diInt32, true);
         debug_builder->createParameterVariable(
             index_scope, "error_func", 3, diFile, startLine, diErrorFunc, true);
         debug_builder->createParameterVariable(
@@ -593,11 +536,8 @@ int main(int argc, char *const *argv) {
     return 1;
   }
   std::shared_ptr<llvm::TargetMachine> target_machine(
-      target->createTargetMachine(target_triple,
-                                  llvm::sys::getHostCPUName(),
-                                  "",
-                                  llvm::TargetOptions(),
-                                  llvm::Reloc::PIC_,
+      target->createTargetMachine(target_triple, llvm::sys::getHostCPUName(),
+                                  "", llvm::TargetOptions(), llvm::Reloc::PIC_,
 #if LLVM_VERSION_MAJOR <= 4
                                   llvm::CodeModel::Default
 #else
@@ -632,8 +572,7 @@ int main(int argc, char *const *argv) {
   std::error_code error_c;
 #endif
   llvm::raw_fd_ostream output_stream(
-      createFileName(argv[optind], output, ".o").c_str(),
-      error_c,
+      createFileName(argv[optind], output, ".o").c_str(), error_c,
       llvm::sys::fs::F_None);
   if (error.length() > 0) {
     std::cerr << error << std::endl;

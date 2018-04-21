@@ -14,11 +14,11 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <cassert>
-#include <limits>
-#include <iostream>
-#include "bamql-compiler.hpp"
 #include "ast_node_function.hpp"
+#include "bamql-compiler.hpp"
+#include <cassert>
+#include <iostream>
+#include <limits>
 
 namespace bamql {
 UserArg::UserArg(ExprType type_) : type(type_) {}
@@ -231,9 +231,8 @@ void StrFunctionNode::generateRead(GenerateState &state,
                                    llvm::Value *&result) {
   result = state->CreateCall(function, args);
   success = state->CreateICmpNE(
-      result,
-      llvm::ConstantPointerNull::get(llvm::PointerType::get(
-          llvm::Type::getInt8Ty(state.module()->getContext()), 0)));
+      result, llvm::ConstantPointerNull::get(llvm::PointerType::get(
+                  llvm::Type::getInt8Ty(state.module()->getContext()), 0)));
 }
 ExprType StrFunctionNode::type() { return STR; }
 }

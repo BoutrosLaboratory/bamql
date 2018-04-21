@@ -52,10 +52,9 @@ static void createFunction(llvm::Module *module,
                            MemoryPolicy policy,
                            llvm::Type *ret,
                            const std::vector<llvm::Type *> &args) {
-  auto func = llvm::Function::Create(llvm::FunctionType::get(ret, args, false),
-                                     llvm::GlobalValue::ExternalLinkage,
-                                     name,
-                                     module);
+  auto func =
+      llvm::Function::Create(llvm::FunctionType::get(ret, args, false),
+                             llvm::GlobalValue::ExternalLinkage, name, module);
   func->setCallingConv(llvm::CallingConv::C);
   if (ret->isIntegerTy() && ret->getIntegerBitWidth() == 1) {
     func->addAttribute(
@@ -87,128 +86,65 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
     auto base_double = llvm::Type::getDoubleTy(module->getContext());
     auto ptr_double = llvm::PointerType::get(base_double, 0);
 
-    createFunction(module,
-                   "bamql_aux_fp",
-                   NoRecurse,
-                   base_bool,
+    createFunction(module, "bamql_aux_fp", NoRecurse, base_bool,
                    { ptr_bam1_t, base_uint8, base_uint8, ptr_double });
-    createFunction(module,
-                   "bamql_aux_int",
-                   NoRecurse,
-                   base_bool,
+    createFunction(module, "bamql_aux_int", NoRecurse, base_bool,
                    { ptr_bam1_t, base_uint8, base_uint8, ptr_uint32 });
-    createFunction(module,
-                   "bamql_aux_str",
-                   PureReadArg,
-                   base_str,
+    createFunction(module, "bamql_aux_str", PureReadArg, base_str,
                    { ptr_bam1_t, base_uint8, base_uint8 });
-    createFunction(module,
-                   "bamql_check_chromosome",
-                   PureReadArg,
-                   base_bool,
+    createFunction(module, "bamql_check_chromosome", PureReadArg, base_bool,
                    { ptr_bam_hdr_t, ptr_bam1_t, base_str, base_bool });
-    createFunction(module,
-                   "bamql_check_chromosome_id",
-                   PureReadArg,
-                   base_bool,
+    createFunction(module, "bamql_check_chromosome_id", PureReadArg, base_bool,
                    { ptr_bam_hdr_t, base_uint32, base_str });
-    createFunction(module,
-                   "bamql_check_mapping_quality",
-                   PureReadArgNoRecurse,
-                   base_bool,
-                   { ptr_bam1_t, base_uint8 });
-    createFunction(module,
-                   "bamql_check_nt",
-                   PureReadArgNoRecurse,
-                   base_bool,
+    createFunction(module, "bamql_check_mapping_quality", PureReadArgNoRecurse,
+                   base_bool, { ptr_bam1_t, base_uint8 });
+    createFunction(module, "bamql_check_nt", PureReadArgNoRecurse, base_bool,
                    { ptr_bam1_t, base_uint32, base_uint8, base_bool });
-    createFunction(module,
-                   "bamql_check_position",
-                   PureReadArgNoRecurse,
+    createFunction(module, "bamql_check_position", PureReadArgNoRecurse,
                    base_bool,
                    { ptr_bam_hdr_t, ptr_bam1_t, base_uint32, base_uint32 });
-    createFunction(module,
-                   "bamql_check_split_pair",
-                   PureReadArgNoRecurse,
-                   base_bool,
-                   { ptr_bam_hdr_t, ptr_bam1_t });
-    createFunction(module,
-                   "bamql_chr",
-                   PureReadArg,
-                   base_str,
+    createFunction(module, "bamql_check_split_pair", PureReadArgNoRecurse,
+                   base_bool, { ptr_bam_hdr_t, ptr_bam1_t });
+    createFunction(module, "bamql_chr", PureReadArg, base_str,
                    { ptr_bam_hdr_t, ptr_bam1_t, base_bool });
-    createFunction(module,
-                   "bamql_flags",
-                   PureReadArgNoRecurse,
-                   base_uint32,
+    createFunction(module, "bamql_flags", PureReadArgNoRecurse, base_uint32,
                    { ptr_bam1_t });
-    createFunction(
-        module, "bamql_header", PureReadArg, base_str, { ptr_bam1_t });
-    createFunction(module,
-                   "bamql_insert_size",
-                   PureReadArg,
-                   base_uint32,
+    createFunction(module, "bamql_header", PureReadArg, base_str,
+                   { ptr_bam1_t });
+    createFunction(module, "bamql_insert_size", PureReadArg, base_uint32,
                    { ptr_bam1_t, getErrorHandlerType(module), base_str });
     createFunction(
-        module,
-        "bamql_mate_position_begin",
-        PureReadArg,
-        base_uint32,
+        module, "bamql_mate_position_begin", PureReadArg, base_uint32,
         { ptr_bam_hdr_t, ptr_bam1_t, getErrorHandlerType(module), base_str });
-    createFunction(module,
-                   "bamql_position_begin",
-                   PureReadArg,
-                   base_bool,
+    createFunction(module, "bamql_position_begin", PureReadArg, base_bool,
                    { ptr_bam_hdr_t, ptr_bam1_t, ptr_uint32 });
-    createFunction(module,
-                   "bamql_position_end",
-                   PureReadArg,
-                   base_bool,
+    createFunction(module, "bamql_position_end", PureReadArg, base_bool,
                    { ptr_bam_hdr_t, ptr_bam1_t, ptr_uint32 });
-    createFunction(module,
-                   "bamql_randomly",
-                   MutateInaccessible,
-                   base_bool,
+    createFunction(module, "bamql_randomly", MutateInaccessible, base_bool,
                    { base_double });
-    createFunction(module,
-                   "bamql_re_match",
-                   PureReadArg,
-                   base_bool,
+    createFunction(module, "bamql_re_match", PureReadArg, base_bool,
                    { base_str, base_str });
-    createFunction(module,
-                   "bamql_strcmp",
-                   PureReadArg,
-                   base_uint32,
+    createFunction(module, "bamql_strcmp", PureReadArg, base_uint32,
                    { base_str, base_str });
-    createFunction(module,
-                   "bamql_re_compile",
-                   PureReadArg,
-                   base_str,
+    createFunction(module, "bamql_re_compile", PureReadArg, base_str,
                    { base_str, base_uint32, base_uint32 });
 
     llvm::Type *pcre_free_args[] = { base_str };
     llvm::Function::Create(
-        llvm::FunctionType::get(
-            llvm::Type::getVoidTy(module->getContext()), pcre_free_args, false),
-        llvm::GlobalValue::ExternalLinkage,
-        "pcre_free_substring",
-        module);
+        llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()),
+                                pcre_free_args, false),
+        llvm::GlobalValue::ExternalLinkage, "pcre_free_substring", module);
     llvm::Type *bamql_re_free_args[] = { llvm::PointerType::get(base_str, 0) };
     llvm::Function::Create(
         llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()),
-                                bamql_re_free_args,
-                                false),
-        llvm::GlobalValue::ExternalLinkage,
-        "bamql_re_free",
-        module);
-    llvm::Type *re_bind_args[] = {
-      base_str, base_uint32, getErrorHandlerType(module), base_str, base_str
-    };
+                                bamql_re_free_args, false),
+        llvm::GlobalValue::ExternalLinkage, "bamql_re_free", module);
+    llvm::Type *re_bind_args[] = { base_str, base_uint32,
+                                   getErrorHandlerType(module), base_str,
+                                   base_str };
     llvm::Function::Create(
         llvm::FunctionType::get(base_bool, re_bind_args, true),
-        llvm::GlobalValue::ExternalLinkage,
-        "bamql_re_bind",
-        module);
+        llvm::GlobalValue::ExternalLinkage, "bamql_re_bind", module);
 
     struct_ty = module->getTypeByName(name);
     if (struct_ty == nullptr) {
@@ -231,8 +167,8 @@ llvm::Type *getErrorHandlerType(llvm::Module *module) {
       llvm::IntegerType::get(module->getContext(), 8), 0);
   std::vector<llvm::Type *> args{ base_str, base_str };
   return llvm::PointerType::get(
-      llvm::FunctionType::get(
-          llvm::Type::getVoidTy(module->getContext()), args, false),
+      llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()), args,
+                              false),
       0);
 }
 llvm::Type *getReifiedType(ExprType type, llvm::LLVMContext &context) {

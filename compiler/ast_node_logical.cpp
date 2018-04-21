@@ -36,8 +36,8 @@ public:
                         llvm::Value *header,
                         llvm::Value *error_fn,
                         llvm::Value *error_ctx) {
-    return generateGeneric(
-        &AstNode::generate, state, read, header, error_fn, error_ctx);
+    return generateGeneric(&AstNode::generate, state, read, header, error_fn,
+                           error_ctx);
   }
   llvm::Value *generateIndex(GenerateState &state,
                              llvm::Value *tid,
@@ -45,8 +45,8 @@ public:
                              llvm::Value *error_fn,
                              llvm::Value *error_ctx) {
     if (usesIndex()) {
-      return generateGeneric(
-          &AstNode::generateIndex, state, tid, header, error_fn, error_ctx);
+      return generateGeneric(&AstNode::generateIndex, state, tid, header,
+                             error_fn, error_ctx);
     } else {
       return llvm::ConstantInt::getTrue(state.module()->getContext());
     }
@@ -78,8 +78,8 @@ private:
      * and
      * the final block. */
     auto function = state->GetInsertBlock()->getParent();
-    auto merge_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "merge", function);
+    auto merge_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                                "merge", function);
 
     auto original_block = state->GetInsertBlock();
 
@@ -97,8 +97,8 @@ private:
         this->branchValue());
 
     for (auto term : terms) {
-      auto next_block = llvm::BasicBlock::Create(
-          state.module()->getContext(), "next", function);
+      auto next_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                                 "next", function);
 
       /* Generate the term expression in the current block. */
       term->writeDebug(state);
@@ -257,8 +257,9 @@ std::shared_ptr<bamql::AstNode> operator^(
     std::shared_ptr<bamql::AstNode> right) {
   auto result = std::make_shared<bamql::XOrNode>(left, right);
   return result;
-} std::shared_ptr<bamql::AstNode>
-operator~(std::shared_ptr<bamql::AstNode> expr) {
+}
+std::shared_ptr<bamql::AstNode> operator~(
+    std::shared_ptr<bamql::AstNode> expr) {
   auto result = std::make_shared<bamql::NotNode>(expr);
   return result;
 }

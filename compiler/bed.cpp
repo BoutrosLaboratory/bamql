@@ -14,16 +14,16 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include "ast_node_chromosome.hpp"
+#include "ast_node_function.hpp"
+#include "ast_node_literal.hpp"
+#include "bamql-compiler.hpp"
+#include "compiler.hpp"
 #include <fstream>
 #include <map>
 #include <sstream>
 #include <string>
 #include <vector>
-#include "bamql-compiler.hpp"
-#include "compiler.hpp"
-#include "ast_node_chromosome.hpp"
-#include "ast_node_function.hpp"
-#include "ast_node_literal.hpp"
 
 static const std::string CHR_PREFIX("chr");
 namespace bamql {

@@ -14,16 +14,16 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include "bamql-compiler.hpp"
+#include "bamql-jit.hpp"
 #include <iomanip>
 #include <iostream>
+#include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/Support/TargetSelect.h>
 #include <set>
 #include <sstream>
 #include <utility>
 #include <vector>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/Support/TargetSelect.h>
-#include "bamql-compiler.hpp"
-#include "bamql-jit.hpp"
 
 /*
  * Each pair is a query and the names of the sequences from test.sam that

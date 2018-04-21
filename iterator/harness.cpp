@@ -14,11 +14,11 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <unistd.h>
-#include <map>
-#include <iostream>
-#include <sys/stat.h>
 #include "bamql-iterator.hpp"
+#include <iostream>
+#include <map>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace bamql {
 
@@ -43,8 +43,8 @@ public:
 
     if (accept) {
       std::string name("bamql-accept");
-      auto copy = bamql::appendProgramToHeader(
-          header.get(), name, id_str, version_str, header_str);
+      auto copy = bamql::appendProgramToHeader(header.get(), name, id_str,
+                                               version_str, header_str);
       if (sam_hdr_write(accept.get(), copy.get()) == -1) {
         std::cerr << "Error writing to output BAM. Giving up on file."
                   << std::endl;
@@ -53,8 +53,8 @@ public:
     }
     if (reject) {
       std::string name("bamql-reject");
-      auto copy = bamql::appendProgramToHeader(
-          header.get(), name, id_str, version_str, header_str);
+      auto copy = bamql::appendProgramToHeader(header.get(), name, id_str,
+                                               version_str, header_str);
       if (sam_hdr_write(reject.get(), copy.get()) == -1) {
         std::cerr << "Error writing to output BAM. Giving up on file."
                   << std::endl;
@@ -193,8 +193,8 @@ int main(int argc,
   }
 
   // Process the input file.
-  DataCollector stats(
-      filter, index, verbose, headerName, version, accept, reject);
+  DataCollector stats(filter, index, verbose, headerName, version, accept,
+                      reject);
   if (stats.processFile(bam_filename, binary, ignore_index)) {
     stats.writeSummary();
     return 0;

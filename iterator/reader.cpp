@@ -14,11 +14,11 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <cstdio>
+#include "bamql-iterator.hpp"
 #include <climits>
+#include <cstdio>
 #include <iostream>
 #include <sstream>
-#include "bamql-iterator.hpp"
 
 bamql::ReadIterator::ReadIterator() {}
 

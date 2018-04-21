@@ -64,8 +64,7 @@ public:
     default:
       abort();
     }
-    return state->CreateSelect(result,
-                               direction ? left_value : right_value,
+    return state->CreateSelect(result, direction ? left_value : right_value,
                                direction ? right_value : left_value);
   }
   ExprType type() { return left->type(); }

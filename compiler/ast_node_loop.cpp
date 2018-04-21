@@ -14,8 +14,8 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include "bamql-compiler.hpp"
 #include "ast_node_loop.hpp"
+#include "bamql-compiler.hpp"
 
 namespace bamql {
 class LoopVar final : public AstNode {
@@ -50,8 +50,8 @@ LoopNode::LoopNode(
     : all(all_), values(std::move(values_)),
       var(std::make_shared<LoopVar>(this)) {
   PredicateMap loopmap{ { var_name, [&](ParseState &state) {
-    return std::static_pointer_cast<AstNode>(var);
-  } } };
+                           return std::static_pointer_cast<AstNode>(var);
+                         } } };
   state.push(loopmap);
   body = AstNode::parse(state);
   if (body->type() != BOOL) {
@@ -83,8 +83,8 @@ llvm::Value *LoopNode::generate(GenerateState &state,
       state->CreateSwitch(state->CreateLoad(index), merge_block, values.size());
   std::map<llvm::BasicBlock *, llvm::Value *> results;
   for (size_t it = 0; it < values.size(); it++) {
-    auto case_block = llvm::BasicBlock::Create(
-        state.module()->getContext(), "case", function);
+    auto case_block = llvm::BasicBlock::Create(state.module()->getContext(),
+                                               "case", function);
     switch_inst->addCase(llvm::ConstantInt::get(type, it), case_block);
     state->SetInsertPoint(case_block);
     auto result =
@@ -103,8 +103,7 @@ llvm::Value *LoopNode::generate(GenerateState &state,
   state->CreateStore(state->CreateAdd(state->CreateLoad(index),
                                       llvm::ConstantInt::get(type, 1)),
                      index);
-  state->CreateCondBr(body_result,
-                      all ? next_block : merge_block,
+  state->CreateCondBr(body_result, all ? next_block : merge_block,
                       all ? merge_block : next_block);
   body_block = state->GetInsertBlock();
 

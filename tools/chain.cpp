@@ -14,14 +14,14 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <unistd.h>
-#include <iostream>
-#include <sstream>
-#include <sys/stat.h>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/Support/TargetSelect.h>
 #include "bamql-compiler.hpp"
 #include "bamql-jit.hpp"
+#include <iostream>
+#include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/Support/TargetSelect.h>
+#include <sstream>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /**
  * A type for a chaining behaviour. This is a bitfield where the lowest bit is
@@ -91,8 +91,8 @@ public:
     }
 
     auto id_str = bamql::makeUuid();
-    auto copy = bamql::appendProgramToHeader(
-        header.get(), name.str(), id_str, version, query);
+    auto copy = bamql::appendProgramToHeader(header.get(), name.str(), id_str,
+                                             version, query);
     if (output_file) {
       if (sam_hdr_write(output_file.get(), copy.get()) == -1) {
         std::cerr << "Error writing to output BAM. Giving up on file."
@@ -193,9 +193,11 @@ int main(int argc, char *const *argv) {
   }
   if (help) {
     std::cout << argv[0] << " [-b] [-c] [-I] [-v] -f input.bam "
-                            " query1 output1.bam ..." << std::endl;
+                            " query1 output1.bam ..."
+              << std::endl;
     std::cout << "Filter a BAM/SAM file based on the provided query. For "
-                 "details, see the man page." << std::endl;
+                 "details, see the man page."
+              << std::endl;
     std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)."
               << std::endl;
     std::cout << "\t-c\tChain the queries, rather than use them independently."
@@ -254,16 +256,9 @@ int main(int argc, char *const *argv) {
     // Add the link to the chain.
     std::stringstream function_name;
     function_name << "filter" << it;
-    output = std::make_shared<OutputWrangler>(engine,
-                                              generator,
-                                              query,
-                                              ast,
-                                              function_name.str(),
-                                              chain,
-                                              std::string(argv[it + 1]),
-                                              output_file,
-                                              output,
-                                              errors);
+    output = std::make_shared<OutputWrangler>(
+        engine, generator, query, ast, function_name.str(), chain,
+        std::string(argv[it + 1]), output_file, output, errors);
   }
   generator = nullptr;
   engine->finalizeObject();

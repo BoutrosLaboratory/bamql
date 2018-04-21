@@ -14,15 +14,15 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
-#include <unistd.h>
-#include <fstream>
-#include <map>
-#include <iostream>
-#include <sys/stat.h>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/Support/TargetSelect.h>
 #include "bamql-compiler.hpp"
 #include "bamql-jit.hpp"
+#include <fstream>
+#include <iostream>
+#include <llvm/ExecutionEngine/MCJIT.h>
+#include <llvm/Support/TargetSelect.h>
+#include <map>
+#include <sys/stat.h>
+#include <unistd.h>
 
 /**
  * Handler for output collection. Shunts reads into appropriate files and tracks
@@ -46,8 +46,8 @@ public:
 
     if (accept) {
       std::string name("bamql-accept");
-      auto copy = bamql::appendProgramToHeader(
-          header.get(), name, id_str, version, query);
+      auto copy = bamql::appendProgramToHeader(header.get(), name, id_str,
+                                               version, query);
       if (sam_hdr_write(accept.get(), copy.get()) == -1) {
         std::cerr << "Error writing to output BAM. Giving up on file."
                   << std::endl;
@@ -56,8 +56,8 @@ public:
     }
     if (reject) {
       std::string name("bamql-reject");
-      auto copy = bamql::appendProgramToHeader(
-          header.get(), name, id_str, version, query);
+      auto copy = bamql::appendProgramToHeader(header.get(), name, id_str,
+                                               version, query);
       if (sam_hdr_write(reject.get(), copy.get()) == -1) {
         std::cerr << "Error writing to output BAM. Giving up on file."
                   << std::endl;
@@ -175,7 +175,8 @@ int main(int argc, char *const *argv) {
            "rejected_reads.bam] [-v] -f input.bam {query | -q query.bamql}"
         << std::endl;
     std::cout << "Filter a BAM/SAM file based on the provided query. For "
-                 "details, see the man page." << std::endl;
+                 "details, see the man page."
+              << std::endl;
     std::cout << "\t-b\tThe input file is binary (BAM) not text (SAM)."
               << std::endl;
     std::cout << "\t-f\tThe input file to read." << std::endl;
@@ -185,7 +186,8 @@ int main(int argc, char *const *argv) {
     std::cout << "\t-O\tThe output file for reads that fail the query."
               << std::endl;
     std::cout << "\t-q\tA file containing the query, instead of providing it "
-                 "on the command line." << std::endl;
+                 "on the command line."
+              << std::endl;
     std::cout << "\t-v\tPrint some information along the way." << std::endl;
     return 0;
   }
@@ -242,8 +244,8 @@ int main(int argc, char *const *argv) {
   }
 
   // Process the input file.
-  DataCollector stats(
-      engine, generator, query_content, ast, verbose, accept, reject);
+  DataCollector stats(engine, generator, query_content, ast, verbose, accept,
+                      reject);
   generator = nullptr;
   engine->finalizeObject();
   engine->runStaticConstructorsDestructors(false);
