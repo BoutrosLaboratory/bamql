@@ -214,6 +214,12 @@ const char *bamql_header(bam1_t *read)
 	return bam_get_qname(read);
 }
 
+bool bamql_insert_reversed(bam1_t *read)
+{
+	return *((int32_t *) & read->core.isize) < 0;
+
+}
+
 uint32_t bamql_insert_size(bam1_t *read, bamql_error_handler error_fn,
 			   void *error_ctx)
 {

@@ -33,6 +33,7 @@ std::map<std::string, void (*)()> known = {
   { "bamql_chr", (void (*)())bamql_chr },
   { "bamql_flags", (void (*)())bamql_flags },
   { "bamql_header", (void (*)())bamql_header },
+  { "bamql_insert_reversed", (void (*)())bamql_insert_reversed },
   { "bamql_insert_size", (void (*)())bamql_insert_size },
   { "bamql_mate_position_begin", (void (*)())bamql_mate_position_begin },
   { "bamql_position_begin", (void (*)())bamql_position_begin },

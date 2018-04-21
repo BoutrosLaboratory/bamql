@@ -197,6 +197,10 @@ Matches the read if the probability of error is less than \fIprobability\fR. The
 
 Returns the final position of the read on the chromosome, if it is mapped.
 
+\fBinsert_reversed\fR
+
+Satisfied if the insert size indicates that it is flipped relative to the reference. If the insert is in the direction of the reference or the insert size is not provided, this returns false.
+
 \fBinsert_size\fR
 
 Returns the size of the region between a pair of mapped reads if the aligner has been able to determine it.

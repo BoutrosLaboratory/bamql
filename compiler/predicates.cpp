@@ -200,6 +200,8 @@ PredicateMap getDefaultPredicates() {
                     "bamql_header", {}, "Header not available.") },
     { "insert_size",
       parseFunction<ConstIntFunctionNode>("bamql_insert_size", {}) },
+    { "insert_reversed",
+      parseFunction<BoolFunctionNode>("bamql_insert_reversed", {}) },
     { "nt", parseFunction<BoolFunctionNode>(
                 "bamql_check_nt", { int_arg, nucleotide_arg, false_arg }) },
     { "nt_exact",
