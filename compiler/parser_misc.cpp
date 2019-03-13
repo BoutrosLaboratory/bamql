@@ -120,7 +120,9 @@ std::shared_ptr<AstNode> ParseState::parsePredicate() throw(ParseError) {
     }
   }
 
-  throw ParseError(start, "Unknown predicate.");
+  std::stringstream errmsg;
+  errmsg << "Unknown predicate: " << name;
+  throw ParseError(start, errmsg.str());
 }
 
 double ParseState::parseDouble() throw(ParseError) {
