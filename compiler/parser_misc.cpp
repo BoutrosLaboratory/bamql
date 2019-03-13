@@ -105,6 +105,7 @@ std::shared_ptr<AstNode> ParseState::parsePredicate() throw(ParseError) {
   while (!empty() &&
          ((**this >= 'a' && **this <= 'z') ||
           ((where() - start) > 0 && (**this == '_' || **this == '?' ||
+                                     (**this >= 'A' && **this <= 'Z') ||
                                      (**this >= '0' && **this <= '9'))))) {
     next();
   }
