@@ -24,8 +24,7 @@ namespace bamql {
 UserArg::UserArg(ExprType type_) : type(type_) {}
 void UserArg::nextArg(ParseState &state,
                       size_t &pos,
-                      std::vector<std::shared_ptr<AstNode>> &args) const
-    throw(ParseError) {
+                      std::vector<std::shared_ptr<AstNode>> &args) const {
   state.parseCharInSpace(pos == 0 ? '(' : ',');
   pos++;
   auto node = AstNode::parse(state);
@@ -36,8 +35,7 @@ void UserArg::nextArg(ParseState &state,
 }
 void NucleotideArg::nextArg(ParseState &state,
                             size_t &pos,
-                            std::vector<std::shared_ptr<AstNode>> &args) const
-    throw(ParseError) {
+                            std::vector<std::shared_ptr<AstNode>> &args) const {
   state.parseCharInSpace(pos == 0 ? '(' : ',');
   pos++;
   args.push_back(std::make_shared<CharConst>(state.parseNucleotide()));
@@ -45,8 +43,7 @@ void NucleotideArg::nextArg(ParseState &state,
 
 void AuxArg::nextArg(ParseState &state,
                      size_t &pos,
-                     std::vector<std::shared_ptr<AstNode>> &args) const
-    throw(ParseError) {
+                     std::vector<std::shared_ptr<AstNode>> &args) const {
   state.parseCharInSpace(pos == 0 ? '(' : ',');
   pos++;
   auto first = *state;

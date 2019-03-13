@@ -29,7 +29,7 @@ static const std::string CHR_PREFIX("chr");
 namespace bamql {
 typedef std::map<std::string, std::vector<std::shared_ptr<AstNode>>> CheckMap;
 
-std::shared_ptr<AstNode> parseBED(ParseState &state) throw(ParseError) {
+std::shared_ptr<AstNode> parseBED(ParseState &state) {
   state.parseCharInSpace('(');
   std::ifstream file(state.parseStr(")", true));
   state.parseCharInSpace(')');

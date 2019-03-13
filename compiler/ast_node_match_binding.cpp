@@ -98,8 +98,7 @@ private:
 
 class MatchBindingNode final : public DebuggableNode {
 public:
-  MatchBindingNode(ParseState &state) throw(ParseError)
-      : DebuggableNode(state) {
+  MatchBindingNode(ParseState &state) : DebuggableNode(state) {
     input = AstNode::parse(state);
     if (input->type() != STR) {
       throw ParseError(state.where(),
@@ -136,7 +135,7 @@ public:
       auto use = std::make_shared<BoundMatchNode>(state, name.second, type,
                                                   decode, errorMessage);
       definitions.push_back(use);
-      childPredicates[name.first] = [=](ParseState & state) throw(ParseError) {
+      childPredicates[name.first] = [=](ParseState &state) {
         return std::static_pointer_cast<AstNode>(use);
       };
       state.parseSpace();
@@ -216,8 +215,7 @@ private:
   std::shared_ptr<AstNode> body;
 };
 
-std::shared_ptr<AstNode> parseMatchBinding(ParseState &state) throw(
-    ParseError) {
+std::shared_ptr<AstNode> parseMatchBinding(ParseState &state) {
   return std::make_shared<MatchBindingNode>(state);
 }
 }

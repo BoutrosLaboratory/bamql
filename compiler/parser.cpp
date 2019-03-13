@@ -27,13 +27,12 @@
 
 namespace bamql {
 
-typedef std::shared_ptr<AstNode> (*ParseFunc)(ParseState &state);
+typedef std::shared_ptr<AstNode>(*ParseFunc)(ParseState &state);
 
 /**
  * Handle terminal operators (final step in the recursive descent)
  */
-static std::shared_ptr<AstNode> parseTerminal(ParseState &state) throw(
-    ParseError) {
+static std::shared_ptr<AstNode> parseTerminal(ParseState &state) {
 
   state.parseSpace();
   if (state.empty()) {
@@ -72,8 +71,7 @@ public:
       : float_compare(float_compare_), integer_compare(integer_compare_),
         symbol(symbol_) {}
 
-  bool parse(ParseState &state, std::shared_ptr<AstNode> &left) const
-      throw(ParseError) {
+  bool parse(ParseState &state, std::shared_ptr<AstNode> &left) const {
     auto where = state.where();
     if (!state.parseKeyword(symbol)) {
       return false;
@@ -118,8 +116,7 @@ const std::vector<EquivalenceCheck> equivalence_checks = {
   { ">", &llvm::IRBuilder<>::CreateICmpSGT, &llvm::IRBuilder<>::CreateFCmpOGT },
 };
 
-static std::shared_ptr<AstNode> parseComparison(ParseState &state) throw(
-    ParseError) {
+static std::shared_ptr<AstNode> parseComparison(ParseState &state) {
   auto left = parseTerminal(state);
   state.parseSpace();
   if (state.parseKeyword("~")) {
@@ -165,8 +162,7 @@ static std::shared_ptr<AstNode> parseComparison(ParseState &state) throw(
 /**
  * Parse the implication (->) operator.
  */
-static std::shared_ptr<AstNode> parseImplication(ParseState &state) throw(
-    ParseError) {
+static std::shared_ptr<AstNode> parseImplication(ParseState &state) {
   auto antecedent = parseComparison(state);
   state.parseSpace();
   while (state.parseKeyword("->")) {
@@ -182,8 +178,7 @@ static std::shared_ptr<AstNode> parseImplication(ParseState &state) throw(
  * descent)
  */
 template <char S, typename Op, ParseFunc N>
-static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
-    ParseError) {
+static std::shared_ptr<AstNode> parseBinary(ParseState &state) {
   std::vector<std::shared_ptr<AstNode>> items;
 
   auto prev_where = state.where();
@@ -216,10 +211,9 @@ static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
  */
 template <
     char S,
-    std::shared_ptr<AstNode> (*make)(std::vector<std::shared_ptr<AstNode>> &&),
+    std::shared_ptr<AstNode>(*make)(std::vector<std::shared_ptr<AstNode>> &&),
     ParseFunc N>
-static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
-    ParseError) {
+static std::shared_ptr<AstNode> parseBinary(ParseState &state) {
   std::vector<std::shared_ptr<AstNode>> items;
 
   auto prev_where = state.where();
@@ -249,8 +243,7 @@ static std::shared_ptr<AstNode> parseBinary(ParseState &state) throw(
   return node;
 }
 
-static std::shared_ptr<AstNode> parseIntermediate(ParseState &state) throw(
-    ParseError) {
+static std::shared_ptr<AstNode> parseIntermediate(ParseState &state) {
   return parseBinary<'|', makeOr,
                      parseBinary<'^', std::bit_xor<std::shared_ptr<AstNode>>,
                                  parseBinary<'&', makeAnd, parseImplication>>>(
@@ -260,8 +253,7 @@ static std::shared_ptr<AstNode> parseIntermediate(ParseState &state) throw(
 /**
  * Handle conditional operators
  */
-static std::shared_ptr<AstNode> parseConditional(ParseState &state) throw(
-    ParseError) {
+static std::shared_ptr<AstNode> parseConditional(ParseState &state) {
   auto cond_part = parseIntermediate(state);
   auto prev_where = state.where();
   state.parseSpace();
@@ -284,7 +276,7 @@ static std::shared_ptr<AstNode> parseConditional(ParseState &state) throw(
   return std::make_shared<ConditionalNode>(cond_part, then_part, else_part);
 }
 
-static std::shared_ptr<AstNode> parseLoop(ParseState &state) throw(ParseError) {
+static std::shared_ptr<AstNode> parseLoop(ParseState &state) {
   state.parseSpace();
   bool all;
   if ((all = state.parseKeyword("all")) || state.parseKeyword("any")) {
@@ -315,7 +307,7 @@ static std::shared_ptr<AstNode> parseLoop(ParseState &state) throw(ParseError) {
 /**
  * Handle let operators (first step in the recursive descent)
  */
-std::shared_ptr<AstNode> AstNode::parse(ParseState &state) throw(ParseError) {
+std::shared_ptr<AstNode> AstNode::parse(ParseState &state) {
   state.parseSpace();
   if (state.parseKeyword("let")) {
     return parseBinding(state);
@@ -330,8 +322,8 @@ std::shared_ptr<AstNode> AstNode::parse(ParseState &state) throw(ParseError) {
  * Parse a string into a syntax tree using the built-in logical operations and
  * the predicates provided.
  */
-std::shared_ptr<AstNode> AstNode::parse(
-    const std::string &input, PredicateMap &predicates) throw(ParseError) {
+std::shared_ptr<AstNode> AstNode::parse(const std::string &input,
+                                        PredicateMap &predicates) {
   ParseState state(input);
   state.push(predicates);
   std::shared_ptr<AstNode> node = AstNode::parse(state);

@@ -42,16 +42,16 @@ private:
   LoopNode *owner;
 };
 
-LoopNode::LoopNode(
-    ParseState &state,
-    const std::string &var_name,
-    bool all_,
-    std::vector<std::shared_ptr<AstNode>> &&values_) throw(ParseError)
+LoopNode::LoopNode(ParseState &state,
+                   const std::string &var_name,
+                   bool all_,
+                   std::vector<std::shared_ptr<AstNode>> &&values_)
     : all(all_), values(std::move(values_)),
       var(std::make_shared<LoopVar>(this)) {
-  PredicateMap loopmap{ { var_name, [&](ParseState &state) {
-                           return std::static_pointer_cast<AstNode>(var);
-                         } } };
+  PredicateMap loopmap{ { var_name,
+                          [&](ParseState &state) {
+                            return std::static_pointer_cast<AstNode>(var);
+                          } } };
   state.push(loopmap);
   body = AstNode::parse(state);
   if (body->type() != BOOL) {

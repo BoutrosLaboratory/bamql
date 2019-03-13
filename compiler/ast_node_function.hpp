@@ -24,8 +24,7 @@ class FunctionArg {
 public:
   virtual void nextArg(ParseState &state,
                        size_t &pos,
-                       std::vector<std::shared_ptr<AstNode>> &args) const
-      throw(ParseError) = 0;
+                       std::vector<std::shared_ptr<AstNode>> &args) const = 0;
 };
 
 class UserArg final : public FunctionArg {
@@ -33,8 +32,7 @@ public:
   UserArg(ExprType type_);
   void nextArg(ParseState &state,
                size_t &pos,
-               std::vector<std::shared_ptr<AstNode>> &args) const
-      throw(ParseError);
+               std::vector<std::shared_ptr<AstNode>> &args) const;
 
 private:
   ExprType type;
@@ -45,8 +43,7 @@ public:
   AuxArg() {}
   void nextArg(ParseState &state,
                size_t &pos,
-               std::vector<std::shared_ptr<AstNode>> &args) const
-      throw(ParseError);
+               std::vector<std::shared_ptr<AstNode>> &args) const;
 };
 
 class NucleotideArg final : public FunctionArg {
@@ -54,8 +51,7 @@ public:
   NucleotideArg() {}
   void nextArg(ParseState &state,
                size_t &pos,
-               std::vector<std::shared_ptr<AstNode>> &args) const
-      throw(ParseError);
+               std::vector<std::shared_ptr<AstNode>> &args) const;
 };
 
 template <typename T, typename F, F LF, ExprType ET>
@@ -64,8 +60,7 @@ public:
   StaticArg(T value_) : value(value_) {}
   virtual void nextArg(ParseState &state,
                        size_t &pos,
-                       std::vector<std::shared_ptr<AstNode>> &args) const
-      throw(ParseError) {
+                       std::vector<std::shared_ptr<AstNode>> &args) const {
     args.push_back(std::make_shared<LiteralNode<T, F, LF, ET>>(value));
   }
 
@@ -194,7 +189,7 @@ template <typename T, typename... Config>
 Predicate parseFunction(
     const std::string &name,
     const std::vector<std::reference_wrapper<const FunctionArg>> args,
-    Config... extra_config) throw(ParseError) {
+    Config... extra_config) {
   return [=](ParseState &state) {
     std::vector<std::shared_ptr<AstNode>> arguments;
     size_t pos = 0;

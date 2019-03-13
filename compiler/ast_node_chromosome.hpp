@@ -47,8 +47,7 @@ public:
 
   ExprType type();
 
-  static std::shared_ptr<AstNode> parse(ParseState &state,
-                                        bool mate) throw(ParseError);
+  static std::shared_ptr<AstNode> parse(ParseState &state, bool mate);
 
 private:
   bool mate;

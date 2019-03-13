@@ -47,7 +47,7 @@ void ParseState::next() {
   }
 }
 
-int ParseState::parseInt() throw(ParseError) {
+int ParseState::parseInt() {
   size_t start = index;
   int accumulator = 0;
   while (index < input.length() && input[index] >= '0' && input[index] <= '9') {
@@ -59,7 +59,7 @@ int ParseState::parseInt() throw(ParseError) {
   }
   return accumulator;
 }
-std::shared_ptr<AstNode> ParseState::parseLiteral() throw(ParseError) {
+std::shared_ptr<AstNode> ParseState::parseLiteral() {
   if (this->empty()) {
     return nullptr;
   }
@@ -100,7 +100,7 @@ std::shared_ptr<AstNode> ParseState::parseLiteral() throw(ParseError) {
   return std::make_shared<
       LiteralNode<int, decltype(&make_int), &make_int, INT>>(int_value);
 }
-std::shared_ptr<AstNode> ParseState::parsePredicate() throw(ParseError) {
+std::shared_ptr<AstNode> ParseState::parsePredicate() {
   size_t start = where();
   while (!empty() &&
          ((**this >= 'a' && **this <= 'z') ||
@@ -125,7 +125,7 @@ std::shared_ptr<AstNode> ParseState::parsePredicate() throw(ParseError) {
   throw ParseError(start, errmsg.str());
 }
 
-double ParseState::parseDouble() throw(ParseError) {
+double ParseState::parseDouble() {
   size_t start = index;
   char *end_ptr = nullptr;
   auto result = strtod(input.c_str() + start, &end_ptr);
@@ -135,8 +135,7 @@ double ParseState::parseDouble() throw(ParseError) {
   }
   return result;
 }
-std::string ParseState::parseStr(const std::string &accept_chars,
-                                 bool reject) throw(ParseError) {
+std::string ParseState::parseStr(const std::string &accept_chars, bool reject) {
   size_t start = index;
   while (index < input.length() &&
          ((accept_chars.find(input[index]) != std::string::npos) ^ reject)) {
@@ -165,7 +164,7 @@ bool ParseState::parseSpace() {
   } while (again);
   return start != index;
 }
-void ParseState::parseCharInSpace(char c) throw(ParseError) {
+void ParseState::parseCharInSpace(char c) {
   parseSpace();
   if (index >= input.length() || input[index] != c) {
     std::ostringstream err_text;

@@ -72,8 +72,7 @@ public:
   std::shared_ptr<AstNode> left;
   std::shared_ptr<AstNode> right;
 
-  static std::shared_ptr<AstNode> parse(ParseState &state,
-                                        bool direction) throw(ParseError) {
+  static std::shared_ptr<AstNode> parse(ParseState &state, bool direction) {
     state.parseCharInSpace('(');
     auto node = AstNode::parse(state);
     if (node->type() != FP && node->type() != INT && node->type() != STR) {
@@ -97,10 +96,10 @@ public:
     return node;
   }
 };
-std::shared_ptr<AstNode> parseMin(ParseState &state) throw(ParseError) {
+std::shared_ptr<AstNode> parseMin(ParseState &state) {
   return ChooseBetter::parse(state, true);
 }
-std::shared_ptr<AstNode> parseMax(ParseState &state) throw(ParseError) {
+std::shared_ptr<AstNode> parseMax(ParseState &state) {
   return ChooseBetter::parse(state, false);
 }
 }

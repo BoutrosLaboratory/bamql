@@ -19,11 +19,10 @@
 #include <pcre.h>
 #include <sstream>
 
-static bamql::RegularExpression createPCRE(
-    const std::string &input,
-    bool caseless,
-    size_t start,
-    std::map<std::string, int> &names) throw(bamql::ParseError) {
+static bamql::RegularExpression createPCRE(const std::string &input,
+                                           bool caseless,
+                                           size_t start,
+                                           std::map<std::string, int> &names) {
   int erroroffset = 0;
   int flags = PCRE_NO_AUTO_CAPTURE | (caseless ? PCRE_CASELESS : 0);
   const char *error = nullptr;
@@ -81,8 +80,7 @@ static bamql::RegularExpression createPCRE(
 
 namespace bamql {
 
-RegularExpression ParseState::parseRegEx(
-    std::map<std::string, int> &names) throw(ParseError) {
+RegularExpression ParseState::parseRegEx(std::map<std::string, int> &names) {
   auto start = index;
   index++;
   while (index < input.length() && input[index] != input[start]) {
@@ -97,7 +95,7 @@ RegularExpression ParseState::parseRegEx(
                     parseKeyword("i"), start, names);
 }
 
-RegularExpression ParseState::parseRegEx() throw(ParseError) {
+RegularExpression ParseState::parseRegEx() {
   std::map<std::string, int> names;
   auto result = parseRegEx(names);
   if (names.size() > 0) {
@@ -108,7 +106,7 @@ RegularExpression ParseState::parseRegEx() throw(ParseError) {
 
 RegularExpression globToRegEx(const std::string &prefix,
                               const std::string &glob_str,
-                              const std::string &suffix) throw(ParseError) {
+                              const std::string &suffix) {
   std::map<std::string, int> names;
 
   std::stringstream regex;
@@ -136,7 +134,7 @@ RegularExpression globToRegEx(const std::string &prefix,
 
 RegularExpression setToRegEx(const std::string &prefix,
                              const std::set<std::string> &names,
-                             const std::string &suffix) throw(ParseError) {
+                             const std::string &suffix) {
   std::map<std::string, int> captures;
   std::stringstream all;
   all << prefix << "(";

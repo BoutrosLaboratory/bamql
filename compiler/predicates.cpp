@@ -29,8 +29,7 @@ class ProbabilityArg : public FunctionArg {
 public:
   void nextArg(ParseState &state,
                size_t &pos,
-               std::vector<std::shared_ptr<AstNode>> &args) const
-      throw(ParseError) {
+               std::vector<std::shared_ptr<AstNode>> &args) const {
     state.parseCharInSpace(pos == 0 ? '(' : ',');
     pos++;
     auto probability = state.parseDouble();
@@ -84,8 +83,7 @@ static const IntArg int_zero_arg(0);
 static const FixedProbabilityArg fixed_probability_arg;
 static const MappingQualityArg mapping_quality_arg;
 
-static std::shared_ptr<AstNode> parseFlag(ParseState &state,
-                                          uint32_t flag) throw(ParseError) {
+static std::shared_ptr<AstNode> parseFlag(ParseState &state, uint32_t flag) {
   std::vector<std::shared_ptr<AstNode>> args;
   auto haystack =
       std::static_pointer_cast<AstNode>(std::make_shared<ConstIntFunctionNode>(
@@ -97,8 +95,7 @@ static std::shared_ptr<AstNode> parseFlag(ParseState &state,
   return result;
 }
 
-static std::shared_ptr<AstNode> parseRawFlag(ParseState &state) throw(
-    ParseError) {
+static std::shared_ptr<AstNode> parseRawFlag(ParseState &state) {
   state.parseCharInSpace('(');
   auto needle = AstNode::parse(state);
   if (needle->type() != INT) {

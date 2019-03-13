@@ -89,18 +89,17 @@ public:
     return body->generateIndex(state, read, header, error_fn, error_ctx);
   }
 
-  void parse(ParseState &state) throw(ParseError);
+  void parse(ParseState &state);
 
   ExprType type() { return body->type(); }
 
 private:
   std::vector<std::shared_ptr<UseNode>> definitions;
   std::shared_ptr<AstNode> body;
-  friend std::shared_ptr<AstNode> parseBinding(ParseState &state) throw(
-      ParseError);
+  friend std::shared_ptr<AstNode> parseBinding(ParseState &state);
 };
 
-std::shared_ptr<AstNode> parseBinding(ParseState &state) throw(ParseError) {
+std::shared_ptr<AstNode> parseBinding(ParseState &state) {
   auto let = std::make_shared<BindingNode>(state);
   PredicateMap childPredicates;
   while (!state.empty() && (let->definitions.size() == 0 || *state == ',')) {
@@ -115,7 +114,7 @@ std::shared_ptr<AstNode> parseBinding(ParseState &state) throw(ParseError) {
     state.parseCharInSpace('=');
     auto use = std::make_shared<UseNode>(state, AstNode::parse(state));
     let->definitions.push_back(use);
-    childPredicates[name] = [=](ParseState & state) throw(ParseError) {
+    childPredicates[name] = [=](ParseState &state) {
       return std::static_pointer_cast<AstNode>(use);
     };
     state.parseSpace();

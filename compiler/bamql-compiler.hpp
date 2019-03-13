@@ -71,9 +71,7 @@ class GenerateState;
  * A predicate is a function that parses a named predicate, and, upon success,
  * returns a syntax node.
  */
-typedef std::function<std::shared_ptr<AstNode>(ParseState &state) throw(
-    ParseError)>
-    Predicate;
+typedef std::function<std::shared_ptr<AstNode>(ParseState &state)> Predicate;
 
 typedef std::function<llvm::Value *(GenerateState &state)> RegularExpression;
 
@@ -94,13 +92,13 @@ PredicateMap getDefaultPredicates();
  */
 RegularExpression globToRegEx(const std::string &prefix,
                               const std::string &glob_str,
-                              const std::string &suffix) throw(ParseError);
+                              const std::string &suffix);
 /**
  * Create a regular expression for a set of strings.
  */
 RegularExpression setToRegEx(const std::string &prefix,
                              const std::set<std::string> &names,
-                             const std::string &suffix) throw(ParseError);
+                             const std::string &suffix);
 
 class Generator {
 public:
@@ -159,15 +157,15 @@ public:
    * Parse a string into a syntax tree using the built-in logical operations and
    * the predicates provided.
    */
-  static std::shared_ptr<AstNode> parse(
-      const std::string &input, PredicateMap &predicates) throw(ParseError);
+  static std::shared_ptr<AstNode> parse(const std::string &input,
+                                        PredicateMap &predicates);
   static std::shared_ptr<AstNode> parseWithLogging(const std::string &input,
                                                    PredicateMap &predicates);
   /**
    * Parse from a parser state. This is useful for embedding in a larger
    * grammar.
    */
-  static std::shared_ptr<AstNode> parse(ParseState &state) throw(ParseError);
+  static std::shared_ptr<AstNode> parse(ParseState &state);
 
   /**
    * Render this syntax node to LLVM.
@@ -244,19 +242,19 @@ public:
   /**
    * A function to parse a valid non-empty integer.
    */
-  int parseInt() throw(ParseError);
+  int parseInt();
   /**
    * A function to parse a valid non-empty floating point value.
    */
-  double parseDouble() throw(ParseError);
+  double parseDouble();
   /**
    * Parse a literal value.
    */
-  std::shared_ptr<AstNode> parseLiteral() throw(ParseError);
+  std::shared_ptr<AstNode> parseLiteral();
   /**
    * Parse a predicate's arguments.
    */
-  std::shared_ptr<AstNode> parsePredicate() throw(ParseError);
+  std::shared_ptr<AstNode> parsePredicate();
   /**
    * A function to parse a non-empty string.
    * @param accept_chars: A list of valid characters that may be present in the
@@ -265,8 +263,7 @@ public:
    * accepting
    * any character execpt those listed.
    */
-  std::string parseStr(const std::string &accept_chars,
-                       bool reject = false) throw(ParseError);
+  std::string parseStr(const std::string &accept_chars, bool reject = false);
   /**
    * Consume whitespace in the parse stream.
    * @returns: true if any whitespace was consumed.
@@ -275,7 +272,7 @@ public:
   /**
    * Consume the specified character with optional whitespace before and after.
    */
-  void parseCharInSpace(char c) throw(ParseError);
+  void parseCharInSpace(char c);
   /**
    * Attempt to parse the supplied keyword, returing true if it could be parsed.
    */
@@ -288,12 +285,12 @@ public:
   /**
    * Match a PCRE regular expression without any group captures.
    */
-  RegularExpression parseRegEx() throw(ParseError);
+  RegularExpression parseRegEx();
 
   /**
    * Match a PCRE regular expression putting named captures in the provided map.
    */
-  RegularExpression parseRegEx(std::map<std::string, int> &) throw(ParseError);
+  RegularExpression parseRegEx(std::map<std::string, int> &);
 
   /**
   * Return the substring starting from the position to provided to the current

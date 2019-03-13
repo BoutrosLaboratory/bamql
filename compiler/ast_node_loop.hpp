@@ -27,7 +27,7 @@ public:
   LoopNode(ParseState &state,
            const std::string &var_name,
            bool all_,
-           std::vector<std::shared_ptr<AstNode>> &&values_) throw(ParseError);
+           std::vector<std::shared_ptr<AstNode>> &&values_);
   LoopNode(bool all,
            std::shared_ptr<AstNode> &body,
            std::vector<std::shared_ptr<AstNode>> &values);

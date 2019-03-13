@@ -59,7 +59,9 @@ llvm::Value *CheckChromosomeNode::generate(GenerateState &state,
                                            llvm::Value *error_ctx) {
   auto function = state.module()->getFunction("bamql_check_chromosome");
   llvm::Value *args[] = {
-    header, read, name(state),
+    header,
+    read,
+    name(state),
     mate ? llvm::ConstantInt::getTrue(state.module()->getContext())
          : llvm::ConstantInt::getFalse(state.module()->getContext())
   };
@@ -82,8 +84,8 @@ bool CheckChromosomeNode::usesIndex() { return !mate; }
 
 ExprType CheckChromosomeNode::type() { return BOOL; }
 
-std::shared_ptr<AstNode> CheckChromosomeNode::parse(
-    ParseState &state, bool mate) throw(ParseError) {
+std::shared_ptr<AstNode> CheckChromosomeNode::parse(ParseState &state,
+                                                    bool mate) {
   state.parseCharInSpace('(');
 
   auto str = state.parseStr(
