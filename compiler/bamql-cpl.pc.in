@@ -11,5 +11,7 @@ Description: Filter SAM/BAM reads using a query language
 Version: @VERSION@
 Requires:
 Requires.private: htslib libpcre
-Libs: -L${libdir} -lbamql-cpl @LLVM_CORE_LDFLAGS@ @LLVM_CORE_LIBS@
-Cflags: -I${includedir} @LLVM_CORE_CPPFLAGS@
+Libs: -L${libdir} -lbamql-cpl -L@LLVM_CORE_LIBDIR@ @LLVM_CORE_BARELIBS@
+Libs.private: -L${libdir} -lbamql-cpl -L@LLVM_CORE_LIBDIR@ @LLVM_CORE_LIBS@
+Cflags: -I${includedir} -I@LLVM_CORE_INCLUDEDIR@
+Cflags.private: -I${includedir} @LLVM_CORE_CPPFLAGS@

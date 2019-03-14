@@ -53,6 +53,9 @@ AC_ARG_WITH([llvm],
 		if test -e "$ac_llvm_config_path"; then
 			[$1]_CPPFLAGS="$($ac_llvm_config_path --cxxflags | sed -e 's/-fno-exceptions//g')"
 			[$1]_LDFLAGS="$($ac_llvm_config_path --ldflags)"
+			[$1]_BARELIBS="$($ac_llvm_config_path --libs)"
+			[$1]_INCLUDEDIR="$($ac_llvm_config_path --includedir)"
+			[$1]_LIBDIR="$($ac_llvm_config_path --libdir)"
 			LLVM_VERSION="$($ac_llvm_config_path --version | cut -f 1-2 -d .)"
 			LLVM_COMPONENTS="$2"
 			if test "x$enable_static_llvm" != "xyes" ; then
