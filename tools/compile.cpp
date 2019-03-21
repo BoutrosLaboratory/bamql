@@ -583,14 +583,23 @@ int main(int argc, char *const *argv) {
   llvm::formatted_raw_ostream raw_output_stream(output_stream);
 #endif
 
-  if (target_machine->addPassesToEmitFile(pass_man,
+  if (
+#if LLVM_VERSION_MAJOR < 7
+      target_machine->addPassesToEmitFile(pass_man,
 #if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
                                           raw_output_stream,
 #else
                                           output_stream,
 #endif
                                           llvm::TargetMachine::CGFT_ObjectFile,
-                                          false)) {
+                                          false)
+#else
+      target_machine->addPassesToEmitFile(pass_man, output_stream, nullptr,
+                                          llvm::TargetMachine::CGFT_ObjectFile,
+                                          false, nullptr)
+
+#endif
+          ) {
     std::cerr << "Cannot create object file on this architecture." << std::endl;
     return 1;
   }
