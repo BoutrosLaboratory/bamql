@@ -38,11 +38,7 @@ llvm::Value *CompareFPNode::generate(GenerateState &state,
   right->writeDebug(state);
   auto right_value = right->generate(state, read, header, error_fn, error_ctx);
   this->writeDebug(state);
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR < 7
-  return ((*state)->*comparator)(left_value, right_value, "");
-#else
   return ((*state)->*comparator)(left_value, right_value, "", nullptr);
-#endif
 }
 ExprType CompareFPNode::type() { return BOOL; }
 

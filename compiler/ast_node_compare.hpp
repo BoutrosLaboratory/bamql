@@ -22,16 +22,10 @@ namespace bamql {
 typedef llvm::Value *(llvm::IRBuilder<>::*CreateICmp)(llvm::Value *lhs,
                                                       llvm::Value *rhs,
                                                       const llvm::Twine &name);
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR < 7
-typedef llvm::Value *(llvm::IRBuilder<>::*CreateFCmp)(llvm::Value *lhs,
-                                                      llvm::Value *rhs,
-                                                      const llvm::Twine &name);
-#else
 typedef llvm::Value *(llvm::IRBuilder<>::*CreateFCmp)(llvm::Value *lhs,
                                                       llvm::Value *rhs,
                                                       const llvm::Twine &name,
                                                       llvm::MDNode *fpmathtag);
-#endif
 
 class CompareFPNode final : public DebuggableNode {
 public:

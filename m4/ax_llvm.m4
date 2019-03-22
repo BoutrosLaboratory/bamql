@@ -46,7 +46,7 @@ AC_ARG_WITH([llvm],
 
 	succeeded=no
 	if test -z "$ac_llvm_config_path"; then
-		ac_llvm_config_path=`which llvm-config llvm-config-8 llvm-config-7 llvm-config-6.0 llvm-config-5.0 llvm-config-4.0 llvm-config-3.9 llvm-config-3.8 llvm-config-3.7 llvm-config-3.6 llvm-config-3.5 llvm-config-3.4 | head -n 1`
+		ac_llvm_config_path=`which llvm-config llvm-config-8 llvm-config-7 llvm-config-6.0 llvm-config-5.0 | head -n 1`
 	fi
 
 	if test "x$want_llvm" = "xyes"; then
@@ -59,22 +59,14 @@ AC_ARG_WITH([llvm],
 			LLVM_VERSION="$($ac_llvm_config_path --version | cut -f 1-2 -d .)"
 			LLVM_COMPONENTS="$2"
 			if test "x$enable_static_llvm" != "xyes" ; then
-				if test "x${LLVM_VERSION}" = "x3.4"; then
-					AX_LLVM_SYSLIBS=""
-				else
-					AX_LLVM_SYSLIBS="--system-libs"
-				fi
-				if test "x${LLVM_VERSION}" = "x3.4" -o "x${LLVM_VERSION}" = "x3.5" && echo "${LLVM_COMPONENTS}" | grep mcjit > /dev/null ; then
-					LLVM_COMPONENTS="${LLVM_COMPONENTS} jit"
-				fi
-				[$1]_LIBS="$($ac_llvm_config_path --libs ${AX_LLVM_SYSLIBS} $LLVM_COMPONENTS | tr '\n' ' ')"
+				[$1]_LIBS="$($ac_llvm_config_path --libs --system-libs --link-static $LLVM_COMPONENTS | tr '\n' ' ')"
 			else
-				[$1]_LIBS="-lLLVM-${LLVM_VERSION}"
+				[$1]_LIBS="$($ac_llvm_config_path --libs --link-shared)"
 			fi
 
 			AC_REQUIRE([AC_PROG_CXX])
 			CPPFLAGS_SAVED="$CPPFLAGS"
-			CPPFLAGS="$CPPFLAGS $[$1]_CPPFLAGS"
+			CPPFLAGS="$CPPFLAGS $[$1]_CPPFLAGS --std=c++11"
 
 			LDFLAGS_SAVED="$LDFLAGS"
 			LDFLAGS="$LDFLAGS $[$1]_LDFLAGS"

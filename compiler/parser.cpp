@@ -27,7 +27,7 @@
 
 namespace bamql {
 
-typedef std::shared_ptr<AstNode>(*ParseFunc)(ParseState &state);
+typedef std::shared_ptr<AstNode> (*ParseFunc)(ParseState &state);
 
 /**
  * Handle terminal operators (final step in the recursive descent)
@@ -211,7 +211,7 @@ static std::shared_ptr<AstNode> parseBinary(ParseState &state) {
  */
 template <
     char S,
-    std::shared_ptr<AstNode>(*make)(std::vector<std::shared_ptr<AstNode>> &&),
+    std::shared_ptr<AstNode> (*make)(std::vector<std::shared_ptr<AstNode>> &&),
     ParseFunc N>
 static std::shared_ptr<AstNode> parseBinary(ParseState &state) {
   std::vector<std::shared_ptr<AstNode>> items;

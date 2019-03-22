@@ -18,16 +18,12 @@
 #include <exception>
 #include <functional>
 #include <llvm/Config/llvm-config.h>
+#include <llvm/IR/DIBuilder.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Module.h>
 #include <map>
 #include <memory>
 #include <set>
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
-#include <llvm/DIBuilder.h>
-#else
-#include <llvm/IR/DIBuilder.h>
-#endif
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/Module.h>
 
 #define BAMQL_COMPILER_API_VERSION 1
 namespace bamql {

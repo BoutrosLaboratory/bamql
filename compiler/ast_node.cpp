@@ -45,50 +45,23 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
 
   auto func = llvm::cast<llvm::Function>(
       generator->module()->getOrInsertFunction(name, func_ty));
-  func->addAttribute(
-#if LLVM_VERSION_MAJOR <= 4
-      llvm::AttributeSet::ReturnIndex
-#else
-      llvm::AttributeList::ReturnIndex
-#endif
-      ,
-      llvm::Attribute::ZExt);
+  func->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::ZExt);
 
   auto entry = llvm::BasicBlock::Create(generator->module()->getContext(),
                                         "entry", func);
   GenerateState state(generator, entry);
   auto args = func->arg_begin();
-  auto header_value =
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
-      args++;
-#else
-      &*args;
+  auto header_value = &*args;
   args++;
-#endif
   header_value->setName("header");
-  auto param_value =
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
-      args++;
-#else
-      &*args;
+  auto param_value = &*args;
   args++;
-#endif
   param_value->setName(param_name);
-  auto error_fn_value =
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
-      args++;
-#else
-      &*args;
+  auto error_fn_value = &*args;
   args++;
-#endif
   error_fn_value->setName("error_fn");
-  auto error_ctx_value =
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
-      args++;
-#else
-      &*args;
+  auto error_ctx_value = &*args;
   args++;
-#endif
   error_ctx_value->setName("error_ctx");
   this->writeDebug(state);
   state->CreateRet(
@@ -121,12 +94,7 @@ DebuggableNode::DebuggableNode(ParseState &state)
     : line(state.currentLine()), column(state.currentColumn()) {}
 void DebuggableNode::writeDebug(GenerateState &state) {
   if (state.debugScope() != nullptr)
-    state->SetCurrentDebugLocation(llvm::DebugLoc::get(line, column,
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-                                                       *state.debugScope()
-#else
-                                                       state.debugScope()
-#endif
-                                                           ));
+    state->SetCurrentDebugLocation(
+        llvm::DebugLoc::get(line, column, state.debugScope()));
 }
 }

@@ -22,30 +22,16 @@ namespace bamql {
 typedef void (*MemoryPolicy)(llvm::Function *func);
 static void PureReadArg(llvm::Function *func) {
   func->setOnlyReadsMemory();
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 8
-#else
   func->setOnlyAccessesArgMemory();
-#endif
 }
 static void MutateInaccessible(llvm::Function *func) {
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 8
-#else
   func->setOnlyAccessesInaccessibleMemory();
-#endif
 }
 static void PureReadArgNoRecurse(llvm::Function *func) {
   PureReadArg(func);
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 8
-#else
   func->setDoesNotRecurse();
-#endif
 }
-static void NoRecurse(llvm::Function *func) {
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 8
-#else
-  func->setDoesNotRecurse();
-#endif
-}
+static void NoRecurse(llvm::Function *func) { func->setDoesNotRecurse(); }
 
 static void createFunction(llvm::Module *module,
                            const std::string &name,
@@ -57,14 +43,7 @@ static void createFunction(llvm::Module *module,
                              llvm::GlobalValue::ExternalLinkage, name, module);
   func->setCallingConv(llvm::CallingConv::C);
   if (ret->isIntegerTy() && ret->getIntegerBitWidth() == 1) {
-    func->addAttribute(
-#if LLVM_VERSION_MAJOR <= 4
-        llvm::AttributeSet::ReturnIndex
-#else
-        llvm::AttributeList::ReturnIndex
-#endif
-        ,
-        llvm::Attribute::ZExt);
+    func->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::ZExt);
   }
   policy(func);
 }

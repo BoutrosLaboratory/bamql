@@ -14,24 +14,14 @@
  * credit be given to OICR scientists, as scientifically appropriate.
  */
 
+#include "bamql-compiler.hpp"
+#include "config.h"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <libgen.h>
-#include <llvm/IR/Module.h>
-#include <memory>
-#include <set>
-#include <sstream>
-#include <system_error>
-#include <unistd.h>
-#include <vector>
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
-#include <llvm/PassManager.h>
-#else
 #include <llvm/IR/LegacyPassManager.h>
-#endif
-#include "bamql-compiler.hpp"
-#include "config.h"
+#include <llvm/IR/Module.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/Host.h>
@@ -40,6 +30,12 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+#include <memory>
+#include <set>
+#include <sstream>
+#include <system_error>
+#include <unistd.h>
+#include <vector>
 
 std::vector<std::string> reserved = {
   "main",    "auto",     "break",  "case",     "char",   "const",    "continue",
@@ -60,14 +56,7 @@ public:
                         llvm::Value *error_context) {
     llvm::Value *args[] = { header, read, error_fn, error_context };
     auto call = state->CreateCall(main, args);
-    call->addAttribute(
-#if LLVM_VERSION_MAJOR <= 4
-        llvm::AttributeSet::ReturnIndex
-#else
-        llvm::AttributeList::ReturnIndex
-#endif
-        ,
-        llvm::Attribute::ZExt);
+    call->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::ZExt);
     return call;
   }
 
@@ -78,15 +67,10 @@ public:
                              llvm::Value *error_context) {
     llvm::Value *args[] = { header, chromosome, error_fn, error_context };
     auto call = state->CreateCall(index, args);
-    call->addAttribute(
-#if LLVM_VERSION_MAJOR <= 4
-        llvm::AttributeSet::ReturnIndex
-#else
-        llvm::AttributeList::ReturnIndex
-#endif
+    call->addAttribute(llvm::AttributeList::ReturnIndex
 
-        ,
-        llvm::Attribute::ZExt);
+                       ,
+                       llvm::Attribute::ZExt);
     return call;
   }
   bool usesIndex() { return true; }
@@ -151,14 +135,7 @@ llvm::Function *createExternFunction(
     func = llvm::Function::Create(func_type, llvm::GlobalValue::ExternalLinkage,
                                   name, generator->module());
     func->setCallingConv(llvm::CallingConv::C);
-    func->addAttribute(
-#if LLVM_VERSION_MAJOR <= 4
-        llvm::AttributeSet::ReturnIndex
-#else
-        llvm::AttributeList::ReturnIndex
-#endif
-        ,
-        llvm::Attribute::ZExt);
+    func->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::ZExt);
   }
   return func;
 }
@@ -244,25 +221,6 @@ int main(int argc, char *const *argv) {
   llvm::LLVMContext context;
   auto module = std::make_shared<llvm::Module>(argv[optind], context);
   std::shared_ptr<llvm::DIBuilder> debug_builder;
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
-  llvm::DIFile diFile;
-  llvm::DIType diInt32;
-  llvm::DIType diBam1;
-  llvm::DIType diBamHdr;
-  llvm::DIType diErrorFunc;
-  llvm::DIType diVoidP;
-  llvm::DICompositeType diFilterFunc;
-  llvm::DICompositeType diIndexFunc;
-#elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 6
-  llvm::DIFile diFile;
-  llvm::DIType diInt32;
-  llvm::DIType diBam1;
-  llvm::DIType diBamHdr;
-  llvm::DIType diErrorFunc;
-  llvm::DIType diVoidP;
-  llvm::DISubroutineType diFilterFunc;
-  llvm::DISubroutineType diIndexFunc;
-#else
   llvm::DIFile *diFile = nullptr;
   llvm::DIType *diInt32 = nullptr;
   llvm::DIType *diBam1 = nullptr;
@@ -271,53 +229,22 @@ int main(int argc, char *const *argv) {
   llvm::DIType *diVoidP = nullptr;
   llvm::DISubroutineType *diFilterFunc = nullptr;
   llvm::DISubroutineType *diIndexFunc = nullptr;
-#endif
   if (debug) {
     debug_builder = std::make_shared<llvm::DIBuilder>(*module);
     diFile = debug_builder->createFile(base_name, dir_name);
-#if LLVM_VERSION_MAJOR < 4
-    debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C, base_name,
-                                     dir_name, PACKAGE_STRING, false, "", 0);
-#else
     debug_builder->createCompileUnit(llvm::dwarf::DW_LANG_C, diFile,
                                      PACKAGE_STRING, false, "", 0);
-#endif
-    diInt32 = debug_builder->createBasicType("uint32", 32, 32
-#if LLVM_VERSION_MAJOR < 4
-                                             ,
-                                             llvm::dwarf::DW_ATE_unsigned
-#endif
-                                             );
+    diInt32 = debug_builder->createBasicType("uint32", 32, 32);
     diBamHdr = debug_builder->createUnspecifiedType("bam_hdr_t");
     diBam1 = debug_builder->createUnspecifiedType("bam1_t");
     diErrorFunc = debug_builder->createUnspecifiedType("bamql_error_handler");
     diVoidP = debug_builder->createUnspecifiedType("void");
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
-    llvm::Value *diFilterArgs[] = { diBamHdr, diBam1 };
-    llvm::Value *diIndexArgs[] = { diBamHdr, diInt32 };
-    auto diFilterSignature = debug_builder->getOrCreateArray(diFilterArgs);
-    auto diIndexSignature = debug_builder->getOrCreateArray(diIndexArgs);
-#elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR == 6
-    llvm::Metadata *diFilterArgs[] = { diBamHdr, diBam1, diErrorFunc, diVoidP };
-    llvm::Metadata *diIndexArgs[] = { diBamHdr, diInt32, diErrorFunc, diVoidP };
-    auto diFilterSignature = debug_builder->getOrCreateTypeArray(diFilterArgs);
-    auto diIndexSignature = debug_builder->getOrCreateTypeArray(diIndexArgs);
-#else
     auto diFilterSignature = debug_builder->getOrCreateTypeArray(
         { diBamHdr, diBam1, diErrorFunc, diVoidP });
     auto diIndexSignature = debug_builder->getOrCreateTypeArray(
         { diBamHdr, diInt32, diErrorFunc, diVoidP });
-#endif
-    diFilterFunc = debug_builder->createSubroutineType(
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
-        diFile,
-#endif
-        diFilterSignature);
-    diIndexFunc = debug_builder->createSubroutineType(
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
-        diFile,
-#endif
-        diIndexSignature);
+    diFilterFunc = debug_builder->createSubroutineType(diFilterSignature);
+    diIndexFunc = debug_builder->createSubroutineType(diIndexSignature);
   }
   std::string header_filename(
       createFileName(argv[optind], output_header, ".h"));
@@ -413,50 +340,34 @@ int main(int argc, char *const *argv) {
                      "void*);"
                   << std::endl;
 
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-      llvm::DISubprogram filter_scope;
-      llvm::DISubprogram index_scope;
-#else
       llvm::DISubprogram *filter_scope = nullptr;
       llvm::DISubprogram *index_scope = nullptr;
-#endif
       if (debug) {
-        filter_scope =
-            debug_builder->createFunction(diFile, name, name, diFile, startLine,
-                                          diFilterFunc, false, true, startLine);
+        filter_scope = debug_builder->createFunction(
+            diFile, name, name, diFile, startLine, diFilterFunc,
+#if LLVM_VERSION_MAJOR < 8
+            false, true,
+#endif
+            startLine
+#if LLVM_VERSION_MAJOR >= 8
+            ,
+            llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition
+#endif
+            );
 
         index_scope = debug_builder->createFunction(
-            diFile, index_name.str(), index_name.str(), diFile, startLine,
-            diIndexFunc, false, true, startLine);
+            diFile, name, index_name.str(), diFile, startLine, diIndexFunc,
+#if LLVM_VERSION_MAJOR < 8
+            false, true,
+#endif
+            startLine
+#if LLVM_VERSION_MAJOR >= 8
+            ,
+            llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition
+#endif
+            );
       }
       if (debug) {
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 7
-        debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter, filter_scope, "header",
-            diFile, startLine, diBamHdr);
-        debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter, filter_scope, "read", diFile,
-            startLine, diBam1);
-        debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter, filter_scope, "error_func",
-            diFile, startLine, diErrorFunc);
-        debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter, filter_scope,
-            "error_context", diFile, startLine, diVoidP);
-
-        debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter, index_scope, "header",
-            diFile, startLine, diBamHdr);
-        debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter, index_scope, "tid", diFile,
-            startLine, diInt32);
-        debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter, index_scope, "error_func",
-            diFile, startLine, diErrorFunc);
-        debug_builder->createLocalVariable(
-            llvm::dwarf::DW_AT_variable_parameter, index_scope, "error_context",
-            diFile, startLine, diVoidP);
-#else
         debug_builder->createParameterVariable(
             filter_scope, "header", 1, diFile, startLine, diBamHdr, true);
         debug_builder->createParameterVariable(filter_scope, "read", 2, diFile,
@@ -475,27 +386,11 @@ int main(int argc, char *const *argv) {
             index_scope, "error_func", 3, diFile, startLine, diErrorFunc, true);
         debug_builder->createParameterVariable(
             index_scope, "error_context", 4, diFile, startLine, diVoidP, true);
-#endif
       }
 
-      generator->setDebugScope(
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-
-          &filter_scope
-#else
-          filter_scope
-#endif
-          );
+      generator->setDebugScope(filter_scope);
       auto filter_func = ast->createFilterFunction(generator, name);
-      generator->setDebugScope(
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-
-          &index_scope
-#else
-          index_scope
-#endif
-
-          );
+      generator->setDebugScope(index_scope);
 
       auto index_func = ast->createIndexFunction(generator, index_name.str());
       auto node = std::make_shared<ExistingFunction>(filter_func, index_func);
@@ -517,11 +412,7 @@ int main(int argc, char *const *argv) {
     debug_builder->finalize();
   }
   if (dump) {
-#if LLVM_VERSION_MAJOR <= 4
-    module->dump();
-#else
     module->print(llvm::errs(), nullptr);
-#endif
   }
 
   // Create the output object file.
@@ -538,11 +429,7 @@ int main(int argc, char *const *argv) {
   std::shared_ptr<llvm::TargetMachine> target_machine(
       target->createTargetMachine(target_triple, llvm::sys::getHostCPUName(),
                                   "", llvm::TargetOptions(), llvm::Reloc::PIC_,
-#if LLVM_VERSION_MAJOR <= 4
-                                  llvm::CodeModel::Default
-#else
                                   llvm::CodeModel::Small
-#endif
 
                                   ));
   if (!target_machine) {
@@ -550,27 +437,9 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
-  llvm::PassManager pass_man;
-  pass_man.add(new llvm::DataLayout(*target_machine->getDataLayout()));
-#elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
-  llvm::legacy::PassManager pass_man;
-  pass_man.add(new llvm::DataLayoutPass(*target_machine->getDataLayout()));
-#elif LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-  llvm::legacy::PassManager pass_man;
-  auto dlp = new llvm::DataLayoutPass();
-  dlp->doInitialization(*module);
-  pass_man.add(dlp);
-#else
   module->setDataLayout(target_machine->createDataLayout());
   llvm::legacy::PassManager pass_man;
-#endif
-
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
-  std::string error_c;
-#else
   std::error_code error_c;
-#endif
   llvm::raw_fd_ostream output_stream(
       createFileName(argv[optind], output, ".o").c_str(), error_c,
       llvm::sys::fs::F_None);
@@ -579,20 +448,10 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-  llvm::formatted_raw_ostream raw_output_stream(output_stream);
-#endif
-
   if (
 #if LLVM_VERSION_MAJOR < 7
-      target_machine->addPassesToEmitFile(pass_man,
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-                                          raw_output_stream,
-#else
-                                          output_stream,
-#endif
-                                          llvm::TargetMachine::CGFT_ObjectFile,
-                                          false)
+      target_machine->addPassesToEmitFile(
+          pass_man, output_stream, llvm::TargetMachine::CGFT_ObjectFile, false)
 #else
       target_machine->addPassesToEmitFile(pass_man, output_stream, nullptr,
                                           llvm::TargetMachine::CGFT_ObjectFile,

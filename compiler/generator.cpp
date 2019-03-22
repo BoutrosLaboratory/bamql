@@ -36,21 +36,15 @@ Generator::~Generator() {
   std::map<std::string, llvm::IRBuilder<> *> tors = {
     { "llvm.global_ctors", ctor }, { "llvm.global_dtors", dtor }
   };
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
-#else
   auto base_str =
       llvm::PointerType::get(llvm::Type::getInt8Ty(mod->getContext()), 0);
-#endif
   auto int32_ty = llvm::Type::getInt32Ty(mod->getContext());
   llvm::Type *struct_elements[] = {
     int32_ty,
     llvm::PointerType::get(llvm::FunctionType::get(
                                llvm::Type::getVoidTy(mod->getContext()), false),
                            0),
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
-#else
     base_str
-#endif
   };
   auto struct_ty = llvm::StructType::create(struct_elements);
   auto array_ty = llvm::ArrayType::get(struct_ty, 1);
@@ -59,21 +53,10 @@ Generator::~Generator() {
     auto link = new llvm::GlobalVariable(*mod, array_ty, false,
                                          llvm::GlobalVariable::AppendingLinkage,
                                          0, tor.first);
-    llvm::Constant *constants[] = {
-      llvm::ConstantStruct::get(struct_ty,
-                                llvm::ConstantInt::get(int32_ty, 65535),
-                                tor.second->GetInsertBlock()->getParent()
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 4
-#else
-                                    ,
-                                llvm::ConstantPointerNull::get(base_str)
-#endif
-#if LLVM_VERSION_MAJOR <= 4
-                                    ,
-                                nullptr
-#endif
-                                )
-    };
+    llvm::Constant *constants[] = { llvm::ConstantStruct::get(
+        struct_ty, llvm::ConstantInt::get(int32_ty, 65535),
+        tor.second->GetInsertBlock()->getParent(),
+        llvm::ConstantPointerNull::get(base_str)) };
     link->setInitializer(llvm::ConstantArray::get(array_ty, constants));
     delete tor.second;
   }
@@ -104,11 +87,7 @@ llvm::Constant *Generator::createString(const std::string &str) {
   indicies.push_back(zero);
   indicies.push_back(zero);
   auto result = llvm::ConstantExpr::getGetElementPtr(
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 6
-#else
-      global_variable->getValueType(),
-#endif
-      global_variable, indicies);
+      global_variable->getValueType(), global_variable, indicies);
   constant_pool[str] = result;
   return result;
 }

@@ -65,21 +65,12 @@ std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
                            // routine. In particular, it makes Valgrind not
                            // work.
   std::shared_ptr<llvm::ExecutionEngine> engine(
-      llvm::EngineBuilder(
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
-          module.release()
-#else
-          std::move(module)
-#endif
+      llvm::EngineBuilder(std::move(module)
 
-              )
+                              )
           .setEngineKind(llvm::EngineKind::JIT)
           .setErrorStr(&error)
           .setMAttrs(attrs)
-#if LLVM_VERSION_MAJOR == 3 && LLVM_VERSION_MINOR <= 5
-          .setUseMCJIT(true)
-#endif
-
           .create());
   if (!engine) {
     std::cerr << error << std::endl;
