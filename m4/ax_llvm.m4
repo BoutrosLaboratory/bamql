@@ -46,7 +46,7 @@ AC_ARG_WITH([llvm],
 
 	succeeded=no
 	if test -z "$ac_llvm_config_path"; then
-		ac_llvm_config_path=`which llvm-config llvm-config-4.0 llvm-config-3.9 llvm-config-3.8 llvm-config-3.7 llvm-config-3.6 llvm-config-3.5 llvm-config-3.4 | head -n 1`
+		ac_llvm_config_path=`which llvm-config llvm-config-8 llvm-config-7 llvm-config-6.0 llvm-config-5.0 llvm-config-4.0 llvm-config-3.9 llvm-config-3.8 llvm-config-3.7 llvm-config-3.6 llvm-config-3.5 llvm-config-3.4 | head -n 1`
 	fi
 
 	if test "x$want_llvm" = "xyes"; then

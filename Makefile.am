@@ -65,7 +65,7 @@ libbamql_cpl_la_LIBADD = \
 	$(NULL)
 libbamql_cpl_la_LDFLAGS = \
 	$(LLVM_CORE_LDFLAGS) \
-	-version-info 0:0:0 \
+	-version-info 1:0:0 \
 	-no-undefined \
 	$(NULL)
 libbamql_cpl_la_SOURCES = \
@@ -103,7 +103,7 @@ libbamql_rt_la_LIBADD = \
 	$(HTS_LIBS) \
 	$(NULL)
 libbamql_rt_la_LDFLAGS = \
-	-version-info 0:0:0 \
+	-version-info 1:0:1 \
 	-no-undefined \
 	$(NULL)
 libbamql_rt_la_SOURCES = \

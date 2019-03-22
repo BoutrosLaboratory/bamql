@@ -1,3 +1,12 @@
+bamql (1.6~ppa0) xenial; urgency=medium
+
+  * [dev] Add LLVM 7 and 8 support
+  * [dev] Improve use of LLVM flags and dependencies
+  * [lang] Add `insert_reversed` predicate
+  * [lang] Add `mate_begin` and `insert_size` predicates
+
+ -- Andre Masella <andre@masella.name>  Fri, 22 Mar 2019 06:47:26 -0400
+
 bamql (1.5~ppa0) xenial; urgency=medium
 
   * [tool] Avoid deep nesting of short circuited nodes

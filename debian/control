@@ -1,7 +1,7 @@
 Source: bamql
 Section: science
 Maintainer: Andre Masella <andre@masella.name>
-Build-Depends: debhelper (>= 7.0.50~), automake, libhts-dev, libtool, libpcre++-dev, llvm-dev, pkg-config, uuid-dev, zlib1g-dev
+Build-Depends: debhelper (>= 7.0.50~), automake, libhts-dev, libtool, libpcre++-dev, llvm-3.8-dev, pkg-config, uuid-dev, zlib1g-dev
 Priority: extra
 Standards-Version: 3.9.7
 Homepage: http://github.com/BoutrosLabratory/bamql
@@ -12,7 +12,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: BAM read filtering tool
  Filter BAM reads using simple queries
 
-Package: libbamqlcpl0
+Package: libbamqlcpl1
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: BAM read filtering compiler library
@@ -30,7 +30,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: BAM read filtering JIT library
  Filter BAM reads using simple queries
 
-Package: libbamqlrt0
+Package: libbamqlrt1
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: BAM read filtering runtime library
@@ -38,7 +38,7 @@ Description: BAM read filtering runtime library
 
 Package: bamql-dev
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libbamqlcpl0 (= ${binary:Version}), libbamqlitr0 (= ${binary:Version}), libbamqljit0 (= ${binary:Version}), libbamqlrt0 (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, libbamqlcpl1 (= ${binary:Version}), libbamqlitr0 (= ${binary:Version}), libbamqljit0 (= ${binary:Version}), libbamqlrt1 (= ${binary:Version})
 Description: BAM read filtering -- Development tools
  Filter BAM reads using simple queries
  .
