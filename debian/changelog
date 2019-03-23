@@ -1,10 +1,4 @@
-bamql (1.6~ppa1) xenial; urgency=medium
-
-  * Resubmit
-
- -- Andre Masella <andre@masella.name>  Fri, 22 Mar 2019 09:29:48 -0400
-
-bamql (1.6~ppa0) xenial; urgency=medium
+bamql (1.6~ppa5) bionic; urgency=medium
 
   * [dev] Add LLVM 7 and 8 support
   * [dev] Improve use of LLVM flags and dependencies
