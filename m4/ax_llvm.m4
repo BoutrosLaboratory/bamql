@@ -56,7 +56,7 @@ AC_ARG_WITH([llvm-config],
 		if test "x$enable_static_llvm" != "xyes" ; then
 			[$1]_LIBS="$($ac_llvm_config_path --libs --system-libs --link-static $LLVM_COMPONENTS | tr '\n' ' ')"
 		else
-			[$1]_LIBS="$($ac_llvm_config_path --libs --link-shared)"
+			[$1]_LIBS="$($ac_llvm_config_path --libs --link-shared $LLVM_COMPONENTS | tr '\n' ' ')"
 		fi
 
 		AC_REQUIRE([AC_PROG_CXX])
