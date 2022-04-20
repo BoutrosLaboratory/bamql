@@ -83,4 +83,4 @@ std::shared_ptr<AstNode> parseBED(ParseState &state) {
   }
   return makeOr(std::move(result));
 }
-}
+} // namespace bamql

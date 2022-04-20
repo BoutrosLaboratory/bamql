@@ -43,13 +43,13 @@ static void createFunction(llvm::Module *module,
                              llvm::GlobalValue::ExternalLinkage, name, module);
   func->setCallingConv(llvm::CallingConv::C);
   if (ret->isIntegerTy() && ret->getIntegerBitWidth() == 1) {
-    func->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::ZExt);
+    func->addRetAttr(llvm::Attribute::ZExt);
   }
   policy(func);
 }
 
 llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
-  auto struct_ty = module->getTypeByName(name);
+  auto struct_ty = llvm::StructType::getTypeByName(module->getContext(), name);
   if (struct_ty == nullptr) {
     auto struct_bam1_t =
         llvm::StructType::create(module->getContext(), "struct.bam1_t");
@@ -127,7 +127,7 @@ llvm::Type *getRuntimeType(llvm::Module *module, llvm::StringRef name) {
         llvm::FunctionType::get(base_bool, re_bind_args, true),
         llvm::GlobalValue::ExternalLinkage, "bamql_re_bind", module);
 
-    struct_ty = module->getTypeByName(name);
+    struct_ty = llvm::StructType::getTypeByName(module->getContext(), name);
     if (struct_ty == nullptr) {
       abort();
     }
@@ -144,13 +144,15 @@ llvm::Type *getBamHeaderType(llvm::Module *module) {
 }
 
 llvm::Type *getErrorHandlerType(llvm::Module *module) {
+  return llvm::PointerType::get(getErrorHandlerFunctionType(module), 0);
+}
+
+llvm::FunctionType *getErrorHandlerFunctionType(llvm::Module *module) {
   auto base_str = llvm::PointerType::get(
       llvm::IntegerType::get(module->getContext(), 8), 0);
   std::vector<llvm::Type *> args{ base_str, base_str };
-  return llvm::PointerType::get(
-      llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()), args,
-                              false),
-      0);
+  return llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()),
+                                 args, false);
 }
 llvm::Type *getReifiedType(ExprType type, llvm::LLVMContext &context) {
   switch (type) {
@@ -166,4 +168,4 @@ llvm::Type *getReifiedType(ExprType type, llvm::LLVMContext &context) {
     return nullptr;
   }
 }
-}
+} // namespace bamql

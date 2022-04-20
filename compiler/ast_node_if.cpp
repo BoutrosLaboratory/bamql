@@ -171,4 +171,4 @@ llvm::Value *ConditionalNode::generateIndex(GenerateState &state,
   return llvm::ConstantInt::getTrue(state.module()->getContext());
 }
 void ConditionalNode::writeDebug(GenerateState &) {}
-}
+} // namespace bamql

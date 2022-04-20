@@ -235,4 +235,4 @@ void ParseState::pop(const PredicateMap &map) {
   assert(&predicates.back().get() == &map);
   predicates.pop_back();
 }
-}
+} // namespace bamql

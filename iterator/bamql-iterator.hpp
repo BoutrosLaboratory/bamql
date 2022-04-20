@@ -92,4 +92,4 @@ int main(int argc,
          IndexFunction index_function,
          const std::string &headerName,
          const std::string &version);
-}
+} // namespace bamql

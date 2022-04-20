@@ -127,4 +127,4 @@ std::shared_ptr<AstNode> parseBinding(ParseState &state) {
   state.pop(childPredicates);
   return let;
 }
-}
+} // namespace bamql

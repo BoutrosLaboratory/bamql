@@ -192,8 +192,9 @@ int main(int argc, char *const *argv) {
     }
   }
   if (help) {
-    std::cout << argv[0] << " [-b] [-c] [-I] [-v] -f input.bam "
-                            " query1 output1.bam ..."
+    std::cout << argv[0]
+              << " [-b] [-c] [-I] [-v] -f input.bam "
+                 " query1 output1.bam ..."
               << std::endl;
     std::cout << "Filter a BAM/SAM file based on the provided query. For "
                  "details, see the man page."

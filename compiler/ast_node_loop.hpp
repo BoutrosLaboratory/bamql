@@ -51,4 +51,4 @@ private:
   std::vector<std::shared_ptr<AstNode>> values;
   std::shared_ptr<LoopVar> var;
 };
-}
+} // namespace bamql

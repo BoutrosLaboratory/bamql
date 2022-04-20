@@ -210,4 +210,4 @@ PredicateMap getDefaultPredicates() {
                                                 { fixed_probability_arg }) },
   };
 }
-}
+} // namespace bamql

@@ -56,4 +56,4 @@ typedef LiteralNode<bool, decltype(&make_bool), &make_bool, BOOL> BoolConst;
 typedef LiteralNode<char, decltype(&make_char), &make_char, INT> CharConst;
 typedef LiteralNode<double, decltype(&make_dbl), &make_dbl, FP> DblConst;
 typedef LiteralNode<int, decltype(&make_int), &make_int, INT> IntConst;
-}
+} // namespace bamql

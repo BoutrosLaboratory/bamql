@@ -24,9 +24,13 @@ Generator::Generator(llvm::Module *module, llvm::DIScope *debug_scope_)
   std::map<std::string, llvm::IRBuilder<> **> tors = { { "__ctor", &ctor },
                                                        { "__dtor", &dtor } };
   for (auto &tor : tors) {
-    auto func = llvm::cast<llvm::Function>(module->getOrInsertFunction(
-        tor.first, llvm::FunctionType::get(
-                       llvm::Type::getVoidTy(module->getContext()), false)));
+    auto func = llvm::cast<llvm::Function>(
+        module
+            ->getOrInsertFunction(
+                tor.first,
+                llvm::FunctionType::get(
+                    llvm::Type::getVoidTy(module->getContext()), false))
+            .getCallee());
     func->setLinkage(llvm::GlobalValue::InternalLinkage);
     *tor.second = new llvm::IRBuilder<>(
         llvm::BasicBlock::Create(module->getContext(), "entry", func));
@@ -76,10 +80,11 @@ llvm::Constant *Generator::createString(const std::string &str) {
 
   auto array = llvm::ConstantDataArray::getString(mod->getContext(), str);
   auto global_variable = new llvm::GlobalVariable(
-      *mod, llvm::ArrayType::get(llvm::Type::getInt8Ty(mod->getContext()),
-                                 str.length() + 1),
+      *mod,
+      llvm::ArrayType::get(llvm::Type::getInt8Ty(mod->getContext()),
+                           str.length() + 1),
       true, llvm::GlobalValue::PrivateLinkage, 0, ".str");
-  global_variable->setAlignment(1);
+  global_variable->setAlignment(llvm::MaybeAlign(1));
   global_variable->setInitializer(array);
   auto zero =
       llvm::ConstantInt::get(llvm::Type::getInt8Ty(mod->getContext()), 0);
@@ -106,4 +111,4 @@ llvm::DIScope *GenerateState::debugScope() const {
 llvm::Constant *GenerateState::createString(const std::string &str) {
   return generator->createString(str);
 }
-}
+} // namespace bamql

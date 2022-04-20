@@ -84,8 +84,8 @@ private:
     auto original_block = state->GetInsertBlock();
 
     /* Merge from the paths we are going to generate, selecting the correct
-* value through a PHI node.
-*/
+     * value through a PHI node.
+     */
     state->SetInsertPoint(merge_block);
     auto phi = state->CreatePHI(
         llvm::Type::getInt1Ty(state.module()->getContext()), terms.size() + 1);
@@ -105,7 +105,7 @@ private:
       auto value = ((*term).*member)(state, param, header, error_fn, error_ctx);
       auto short_circuit_value = state->CreateICmpEQ(value, reference);
       /* If short circuiting, jump to the final block, otherwise, do the
-                   * next expression. */
+       * next expression. */
       state->CreateCondBr(short_circuit_value, merge_block, next_block);
       phi->addIncoming(value, state->GetInsertBlock());
       state->SetInsertPoint(next_block);
@@ -231,7 +231,7 @@ std::shared_ptr<AstNode> makeAnd(
   auto result = std::make_shared<AndNode>(std::move(terms));
   return result;
 }
-}
+} // namespace bamql
 
 namespace std {
 std::shared_ptr<bamql::AstNode> operator&(
@@ -263,4 +263,4 @@ std::shared_ptr<bamql::AstNode> operator~(
   auto result = std::make_shared<bamql::NotNode>(expr);
   return result;
 }
-}
+} // namespace std

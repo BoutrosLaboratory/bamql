@@ -42,7 +42,7 @@ AC_ARG_WITH([llvm-config],
 
 	succeeded=no
 	if test -z "$ac_llvm_config_path"; then
-		ac_llvm_config_path=`which llvm-config llvm-config-8 llvm-config-7 llvm-config-6.0 llvm-config-5.0 | head -n 1`
+		ac_llvm_config_path=`which llvm-config llvm-config-14 | head -n 1`
 	fi
 
 	if test -e "$ac_llvm_config_path"; then
@@ -51,7 +51,7 @@ AC_ARG_WITH([llvm-config],
 		[$1]_BARELIBS="$($ac_llvm_config_path --libs)"
 		[$1]_INCLUDEDIR="$($ac_llvm_config_path --includedir)"
 		[$1]_LIBDIR="$($ac_llvm_config_path --libdir)"
-		LLVM_VERSION="$($ac_llvm_config_path --version | cut -f 1-2 -d .)"
+		LLVM_VERSION="$($ac_llvm_config_path --version | cut -f 1 -d .)"
 		LLVM_COMPONENTS="$2"
 		if test "x$enable_static_llvm" != "xyes" ; then
 			[$1]_LIBS="$($ac_llvm_config_path --libs --system-libs --link-static $LLVM_COMPONENTS | tr '\n' ' ')"
@@ -61,7 +61,7 @@ AC_ARG_WITH([llvm-config],
 
 		AC_REQUIRE([AC_PROG_CXX])
 		CPPFLAGS_SAVED="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $[$1]_CPPFLAGS --std=c++11"
+		CPPFLAGS="$CPPFLAGS $[$1]_CPPFLAGS"
 
 		LDFLAGS_SAVED="$LDFLAGS"
 		LDFLAGS="$LDFLAGS $[$1]_LDFLAGS"

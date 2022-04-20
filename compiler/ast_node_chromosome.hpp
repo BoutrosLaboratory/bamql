@@ -53,4 +53,4 @@ private:
   bool mate;
   RegularExpression name;
 };
-}
+} // namespace bamql

@@ -47,4 +47,4 @@ private:
   std::shared_ptr<AstNode> operand;
   RegularExpression pattern;
 };
-}
+} // namespace bamql

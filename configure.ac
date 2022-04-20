@@ -18,6 +18,9 @@ AC_LANG_POP([C++])
 CPPFLAGS="${SAVED_CPPFLAGS}"
 
 AX_LLVM(LLVM_CORE, [core])
+if test ${LLVM_VERSION} -lt 14 ; then
+	AC_MSG_ERROR([[LLVM 14 or newer is required, but detected ${LLVM_VERSION}.]])
+fi
 AX_LLVM(LLVM_WRITE, [core nativecodegen])
 AX_LLVM(LLVM_RUN, [core executionengine native mcjit])
 PKG_CHECK_MODULES(UUID, [ uuid ], [], [PKG_CHECK_MODULES(UUID, [ ossp-uuid ])])

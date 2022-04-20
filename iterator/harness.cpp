@@ -170,8 +170,9 @@ int main(int argc,
     }
   }
   if (help) {
-    std::cout << argv[0] << " [-b] [-I] [-o accepted_reads.bam] [-O "
-                            "rejected_reads.bam] [-v] -f input.bam"
+    std::cout << argv[0]
+              << " [-b] [-I] [-o accepted_reads.bam] [-O "
+                 "rejected_reads.bam] [-v] -f input.bam"
               << std::endl;
     std::cout << "Filter a BAM/SAM file based on the built-in query."
               << std::endl;
@@ -202,4 +203,4 @@ int main(int argc,
     return 1;
   }
 }
-}
+} // namespace bamql

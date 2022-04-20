@@ -88,9 +88,10 @@ llvm::Value *CompareStrNode::generate(GenerateState &state,
   llvm::Value *args[] = { left_value, right_value };
   auto result = state->CreateCall(function, args);
   return ((*state)->*comparator)(
-      result, llvm::ConstantInt::get(
-                  llvm::Type::getInt32Ty(state.module()->getContext()), 0),
+      result,
+      llvm::ConstantInt::get(
+          llvm::Type::getInt32Ty(state.module()->getContext()), 0),
       "");
 }
 ExprType CompareStrNode::type() { return BOOL; }
-}
+} // namespace bamql

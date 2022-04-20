@@ -83,4 +83,4 @@ private:
   std::shared_ptr<AstNode> left;
   std::shared_ptr<AstNode> right;
 };
-}
+} // namespace bamql

@@ -96,4 +96,4 @@ std::shared_ptr<AstNode> CheckChromosomeNode::parse(ParseState &state,
   state.parseCharInSpace(')');
   return std::make_shared<CheckChromosomeNode>(str, mate, state);
 }
-}
+} // namespace bamql

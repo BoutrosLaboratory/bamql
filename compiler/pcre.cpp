@@ -74,7 +74,7 @@ static bamql::RegularExpression createPCRE(const std::string &input,
     llvm::Value *free_args[] = { var };
     state.getGenerator().destructor()->CreateCall(free_func, free_args);
 
-    return state->CreateLoad(var);
+    return state->CreateLoad(base_str, var);
   };
 }
 
@@ -150,4 +150,4 @@ RegularExpression setToRegEx(const std::string &prefix,
   all << ")" << suffix;
   return createPCRE(all.str().c_str(), true, 0, captures);
 }
-}
+} // namespace bamql

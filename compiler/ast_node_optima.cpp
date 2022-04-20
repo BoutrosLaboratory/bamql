@@ -102,4 +102,4 @@ std::shared_ptr<AstNode> parseMin(ParseState &state) {
 std::shared_ptr<AstNode> parseMax(ParseState &state) {
   return ChooseBetter::parse(state, false);
 }
-}
+} // namespace bamql

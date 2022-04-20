@@ -38,7 +38,6 @@ std::shared_ptr<bam_hdr_t> bamql::appendProgramToHeader(
   copy->n_targets = original->n_targets;
   copy->ignore_sam_err = original->ignore_sam_err;
   copy->l_text = text_str.length();
-  copy->cigar_tab = nullptr;
   copy->sdict = nullptr;
   copy->text = strdup(text_str.c_str());
   copy->target_len = (uint32_t *)calloc(original->n_targets, sizeof(uint32_t));

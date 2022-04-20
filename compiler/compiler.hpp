@@ -55,4 +55,4 @@ std::shared_ptr<AstNode> parseBinding(ParseState &state);
 std::shared_ptr<AstNode> parseMatchBinding(ParseState &state);
 std::shared_ptr<AstNode> parseMax(ParseState &state);
 std::shared_ptr<AstNode> parseMin(ParseState &state);
-}
+} // namespace bamql

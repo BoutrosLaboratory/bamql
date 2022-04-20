@@ -56,7 +56,6 @@ libbamql_cpl_la_CPPFLAGS = \
 	$(LLVM_CORE_CPPFLAGS) \
 	$(HTS_CFLAGS) \
 	$(PCRE_CFLAGS) \
-	-std=c++11 \
 	-g -O2 \
 	$(NULL)
 libbamql_cpl_la_LIBADD = \
@@ -113,7 +112,7 @@ libbamql_rt_la_SOURCES = \
 libbamql_itr_la_CPPFLAGS = \
 	$(HTS_CFLAGS) \
 	$(UUID_CFLAGS) \
-	-std=c++11 \
+	-std=c++14 \
 	-g -O2 \
 	$(NULL)
 libbamql_itr_la_LIBADD = \
@@ -133,7 +132,6 @@ libbamql_itr_la_SOURCES = \
 libbamql_jit_la_CPPFLAGS = \
 	$(LLVM_RUN_CPPFLAGS) \
 	$(HTS_CFLAGS) -g -O2 \
-	-std=c++11 \
 	-Icompiler \
 	-Iiterator \
 	-Iruntime \
@@ -162,7 +160,6 @@ bamql_pairs_CPPFLAGS = \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) \
 	$(UUID_CFLAGS) \
-	-std=c++11 \
 	-Icompiler \
 	-Iiterator \
 	-Ijit \
@@ -187,7 +184,6 @@ bamql_CPPFLAGS = \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) \
 	$(UUID_CFLAGS) \
-	-std=c++11 \
 	-Icompiler \
 	-Iiterator \
 	-Ijit \
@@ -212,7 +208,6 @@ bamql_chain_CPPFLAGS = \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) \
 	$(UUID_CFLAGS) \
-	-std=c++11 \
 	-Icompiler \
 	-Iiterator \
 	-Ijit \
@@ -236,7 +231,6 @@ bamql_compile_SOURCES = \
 bamql_compile_CPPFLAGS = \
 	$(LLVM_WRITE_CPPFLAGS) \
 	-g -O2 \
-	-std=c++11 \
 	-Icompiler \
 	$(NULL)
 bamql_compile_LDFLAGS =\
@@ -260,7 +254,6 @@ check_bamql_SOURCES = \
 check_bamql_CPPFLAGS = \
 	$(HTS_CFLAGS) -g -O2 \
 	$(LLVM_RUN_CPPFLAGS) \
-	-std=c++11 \
 	-Icompiler \
 	-Iiterator \
 	-Ijit \

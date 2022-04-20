@@ -78,8 +78,8 @@ llvm::Value *LoopNode::generate(GenerateState &state,
       llvm::BasicBlock::Create(state.module()->getContext(), "next", function);
   state->CreateBr(next_block);
   state->SetInsertPoint(next_block);
-  auto switch_inst =
-      state->CreateSwitch(state->CreateLoad(index), merge_block, values.size());
+  auto switch_inst = state->CreateSwitch(state->CreateLoad(type, index),
+                                         merge_block, values.size());
   std::map<llvm::BasicBlock *, llvm::Value *> results;
   for (size_t it = 0; it < values.size(); it++) {
     auto case_block = llvm::BasicBlock::Create(state.module()->getContext(),
@@ -99,7 +99,7 @@ llvm::Value *LoopNode::generate(GenerateState &state,
   }
   state.definitions[&*var] = phi;
   auto body_result = body->generate(state, read, header, error_fn, error_ctx);
-  state->CreateStore(state->CreateAdd(state->CreateLoad(index),
+  state->CreateStore(state->CreateAdd(state->CreateLoad(type, index),
                                       llvm::ConstantInt::get(type, 1)),
                      index);
   state->CreateCondBr(body_result, all ? next_block : merge_block,
@@ -125,4 +125,4 @@ llvm::Value *LoopNode::generateIndex(GenerateState &state,
 bool LoopNode::usesIndex() { return false; }
 ExprType LoopNode::type() { return BOOL; }
 void LoopNode::writeDebug(GenerateState &state) {}
-}
+} // namespace bamql

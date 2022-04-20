@@ -19,4 +19,4 @@
 
 namespace bamql {
 std::string version() { return std::string(VERSION); }
-}
+} // namespace bamql

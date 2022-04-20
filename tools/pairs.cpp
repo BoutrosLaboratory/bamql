@@ -158,8 +158,9 @@ int main(int argc, char *const *argv) {
     }
   }
   if (help) {
-    std::cout << argv[0] << " [-b] [-I] [-o accepted_pairs.bam] -f input.bam "
-                            "{query | -q query.bamql}"
+    std::cout << argv[0]
+              << " [-b] [-I] [-o accepted_pairs.bam] -f input.bam "
+                 "{query | -q query.bamql}"
               << std::endl;
     std::cout << "Filter a BAM/SAM file based on the provided query and keep "
                  "read pairs if either is accepted. For "

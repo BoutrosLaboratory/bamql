@@ -354,4 +354,4 @@ std::shared_ptr<AstNode> AstNode::parseWithLogging(const std::string &input,
   }
   return ast;
 }
-}
+} // namespace bamql

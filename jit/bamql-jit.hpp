@@ -74,4 +74,4 @@ private:
   llvm::Function *filter_func = nullptr;
   llvm::Function *index_func = nullptr;
 };
-}
+} // namespace bamql

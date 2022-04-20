@@ -39,6 +39,7 @@ llvm::Type *getBamType(llvm::Module *module);
 llvm::Type *getBamHeaderType(llvm::Module *module);
 
 llvm::Type *getErrorHandlerType(llvm::Module *module);
+llvm::FunctionType *getErrorHandlerFunctionType(llvm::Module *module);
 
 /**
  * The exception thrown when a parse error occurs.
@@ -289,14 +290,14 @@ public:
   RegularExpression parseRegEx(std::map<std::string, int> &);
 
   /**
-  * Return the substring starting from the position to provided to the current
-  * position in the input string.
-  */
+   * Return the substring starting from the position to provided to the current
+   * position in the input string.
+   */
   std::string strFrom(size_t start) const;
 
   /**
-  * Obtain the current position in the input string.
-  */
+   * Obtain the current position in the input string.
+   */
   size_t where() const;
 
   /**
@@ -334,7 +335,7 @@ std::shared_ptr<AstNode> makeAnd(std::vector<std::shared_ptr<AstNode>> &&terms);
  * The current version of the library.
  */
 std::string version();
-}
+} // namespace bamql
 namespace std {
 std::shared_ptr<bamql::AstNode> operator&(std::shared_ptr<bamql::AstNode>,
                                           std::shared_ptr<bamql::AstNode>);
@@ -343,4 +344,4 @@ std::shared_ptr<bamql::AstNode> operator|(std::shared_ptr<bamql::AstNode>,
 std::shared_ptr<bamql::AstNode> operator^(std::shared_ptr<bamql::AstNode>,
                                           std::shared_ptr<bamql::AstNode>);
 std::shared_ptr<bamql::AstNode> operator~(std::shared_ptr<bamql::AstNode>);
-}
+} // namespace std

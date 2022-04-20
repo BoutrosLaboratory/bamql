@@ -44,4 +44,4 @@ llvm::Value *BitwiseContainsNode::generate(GenerateState &state,
 }
 
 ExprType BitwiseContainsNode::type() { return BOOL; }
-}
+} // namespace bamql

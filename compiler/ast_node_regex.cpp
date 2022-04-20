@@ -47,4 +47,4 @@ llvm::Value *RegexNode::generateIndex(GenerateState &state,
 }
 bool RegexNode::usesIndex() { return false; }
 ExprType RegexNode::type() { return BOOL; }
-}
+} // namespace bamql

@@ -25,7 +25,7 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormattedStream.h>
 #include <llvm/Support/Host.h>
-#include <llvm/Support/TargetRegistry.h>
+#include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
@@ -56,7 +56,7 @@ public:
                         llvm::Value *error_context) {
     llvm::Value *args[] = { header, read, error_fn, error_context };
     auto call = state->CreateCall(main, args);
-    call->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::ZExt);
+    call->addRetAttr(llvm::Attribute::ZExt);
     return call;
   }
 
@@ -67,10 +67,7 @@ public:
                              llvm::Value *error_context) {
     llvm::Value *args[] = { header, chromosome, error_fn, error_context };
     auto call = state->CreateCall(index, args);
-    call->addAttribute(llvm::AttributeList::ReturnIndex
-
-                       ,
-                       llvm::Attribute::ZExt);
+    call->addRetAttr(llvm::Attribute::ZExt);
     return call;
   }
   bool usesIndex() { return true; }
@@ -135,7 +132,7 @@ llvm::Function *createExternFunction(
     func = llvm::Function::Create(func_type, llvm::GlobalValue::ExternalLinkage,
                                   name, generator->module());
     func->setCallingConv(llvm::CallingConv::C);
-    func->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::ZExt);
+    func->addRetAttr(llvm::Attribute::ZExt);
   }
   return func;
 }
@@ -344,28 +341,13 @@ int main(int argc, char *const *argv) {
       llvm::DISubprogram *index_scope = nullptr;
       if (debug) {
         filter_scope = debug_builder->createFunction(
-            diFile, name, name, diFile, startLine, diFilterFunc,
-#if LLVM_VERSION_MAJOR < 8
-            false, true,
-#endif
-            startLine
-#if LLVM_VERSION_MAJOR >= 8
-            ,
-            llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition
-#endif
-            );
+            diFile, name, name, diFile, startLine, diFilterFunc, startLine,
+            llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition);
 
         index_scope = debug_builder->createFunction(
             diFile, name, index_name.str(), diFile, startLine, diIndexFunc,
-#if LLVM_VERSION_MAJOR < 8
-            false, true,
-#endif
-            startLine
-#if LLVM_VERSION_MAJOR >= 8
-            ,
-            llvm::DINode::FlagPrototyped, llvm::DISubprogram::SPFlagDefinition
-#endif
-            );
+            startLine, llvm::DINode::FlagPrototyped,
+            llvm::DISubprogram::SPFlagDefinition);
       }
       if (debug) {
         debug_builder->createParameterVariable(
@@ -441,24 +423,16 @@ int main(int argc, char *const *argv) {
   llvm::legacy::PassManager pass_man;
   std::error_code error_c;
   llvm::raw_fd_ostream output_stream(
-      createFileName(argv[optind], output, ".o").c_str(), error_c,
-      llvm::sys::fs::F_None);
+      createFileName(argv[optind], output, ".o").c_str(), error_c);
   if (error.length() > 0) {
     std::cerr << error << std::endl;
     return 1;
   }
 
-  if (
-#if LLVM_VERSION_MAJOR < 7
-      target_machine->addPassesToEmitFile(
-          pass_man, output_stream, llvm::TargetMachine::CGFT_ObjectFile, false)
-#else
-      target_machine->addPassesToEmitFile(pass_man, output_stream, nullptr,
-                                          llvm::TargetMachine::CGFT_ObjectFile,
-                                          false, nullptr)
+  if (target_machine->addPassesToEmitFile(pass_man, output_stream, nullptr,
+                                          llvm::CGFT_ObjectFile, false, nullptr)
 
-#endif
-          ) {
+  ) {
     std::cerr << "Cannot create object file on this architecture." << std::endl;
     return 1;
   }

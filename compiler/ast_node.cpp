@@ -44,8 +44,8 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
       false);
 
   auto func = llvm::cast<llvm::Function>(
-      generator->module()->getOrInsertFunction(name, func_ty));
-  func->addAttribute(llvm::AttributeList::ReturnIndex, llvm::Attribute::ZExt);
+      generator->module()->getOrInsertFunction(name, func_ty).getCallee());
+  func->addRetAttr(llvm::Attribute::ZExt);
 
   auto entry = llvm::BasicBlock::Create(generator->module()->getContext(),
                                         "entry", func);
@@ -94,7 +94,7 @@ DebuggableNode::DebuggableNode(ParseState &state)
     : line(state.currentLine()), column(state.currentColumn()) {}
 void DebuggableNode::writeDebug(GenerateState &state) {
   if (state.debugScope() != nullptr)
-    state->SetCurrentDebugLocation(
-        llvm::DebugLoc::get(line, column, state.debugScope()));
+    state->SetCurrentDebugLocation(llvm::DILocation::get(
+        state.module()->getContext(), line, column, state.debugScope()));
 }
-}
+} // namespace bamql

@@ -34,4 +34,4 @@ llvm::Value *make_int(llvm::LLVMContext &context, int value) {
 llvm::Value *make_dbl(llvm::LLVMContext &context, double value) {
   return llvm::ConstantFP::get(llvm::Type::getDoubleTy(context), value);
 }
-}
+} // namespace bamql

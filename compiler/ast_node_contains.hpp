@@ -34,4 +34,4 @@ private:
   std::shared_ptr<AstNode> haystack;
   std::shared_ptr<AstNode> needle;
 };
-}
+} // namespace bamql
