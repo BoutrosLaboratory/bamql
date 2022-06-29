@@ -6,6 +6,7 @@
 *.pc
 *.swp
 *.trs
+*.yaml
 *~
 .deps
 .dirstamp
