@@ -17,35 +17,20 @@
 #include "bamql-jit.hpp"
 #include <sstream>
 
-static void error_wrapper(const char *message, void *context) {
-  ((bamql::CompileIterator *)context)->handleError(message);
-}
-
 bamql::CompileIterator::CompileIterator(
-    std::shared_ptr<llvm::ExecutionEngine> &e,
-    std::shared_ptr<Generator> &generator,
-    std::shared_ptr<AstNode> &node,
-    const std::string &name)
-    : engine(e), filter_func(node->createFilterFunction(generator, name)) {
-  // Compile the query into native functions. We must hold a reference to the
-  // execution engine as long as we intend for these pointers to be valid.
-  std::stringstream index_function_name;
-  index_function_name << name << "_index";
-  index_func = node->createIndexFunction(generator, index_function_name.str());
-}
-
-void bamql::CompileIterator::prepareExecution() {
-  filter = getNativeFunction<FilterFunction>(engine, filter_func);
-  index = getNativeFunction<IndexFunction>(engine, index_func);
-}
+    std::shared_ptr<CompiledPredicate> &predicate_)
+    : predicate(predicate_) {}
 
 bool bamql::CompileIterator::wantChromosome(std::shared_ptr<bam_hdr_t> &header,
                                             uint32_t tid) {
-  return index(header.get(), tid, error_wrapper, this);
+  return predicate->wantChromosome(
+      header, tid, [&](const char *message) { this->handleError(message); });
 }
 
 void bamql::CompileIterator::processRead(std::shared_ptr<bam_hdr_t> &header,
                                          std::shared_ptr<bam1_t> &read) {
-  readMatch(filter(header.get(), read.get(), error_wrapper, this), header,
-            read);
+  readMatch(predicate->wantRead(
+                header, read,
+                [&](const char *message) { this->handleError(message); }),
+            header, read);
 }

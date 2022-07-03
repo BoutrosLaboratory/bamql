@@ -18,8 +18,6 @@
 #include "bamql-jit.hpp"
 #include <fstream>
 #include <iostream>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/Support/TargetSelect.h>
 #include <map>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -30,14 +28,11 @@
  */
 class PairCollector : public bamql::CompileIterator {
 public:
-  PairCollector(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                std::shared_ptr<bamql::Generator> &generator,
-                std::shared_ptr<bamql::AstNode> &node,
+  PairCollector(std::shared_ptr<bamql::CompiledPredicate> predicate,
                 std::set<std::string> &matched_,
                 std::set<uint32_t> &matched_tids_)
-      : bamql::CompileIterator::CompileIterator(
-            engine, generator, node, "filter"),
-        matched(matched_), matched_tids(matched_tids_) {}
+      : bamql::CompileIterator::CompileIterator(predicate), matched(matched_),
+        matched_tids(matched_tids_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {}
   void readMatch(bool matches,
                  std::shared_ptr<bam_hdr_t> &header,
@@ -218,42 +213,22 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
-  // Create a new LLVM module and our function
-  LLVMInitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmParser();
-  llvm::InitializeNativeTargetAsmPrinter();
-  llvm::LLVMContext context;
-  std::unique_ptr<llvm::Module> module(new llvm::Module("bamql", context));
-
-  auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
-
-  auto engine = bamql::createEngine(std::move(module));
-  if (!engine) {
-    std::cerr << "Failed to initialise LLVM." << std::endl;
-    return 1;
-  }
+  auto jit = bamql::JIT::create();
 
   // Process the input file.
   std::set<std::string> matched;
   std::set<uint32_t> matched_tids;
 
-  PairCollector collectNames(engine, generator, ast, matched, matched_tids);
-  generator = nullptr;
-  engine->finalizeObject();
-  engine->runStaticConstructorsDestructors(false);
-  collectNames.prepareExecution();
-
+  PairCollector collectNames(bamql::JIT::compile(jit, ast, "matched"), matched,
+                             matched_tids);
   if (!collectNames.processFile(bam_filename, binary, ignore_index)) {
-    engine->runStaticConstructorsDestructors(true);
     return 1;
   }
   collectNames.writeSummary();
   OutputPairs matchNames(matched, matched_tids, query_content, output);
   if (!matchNames.processFile(bam_filename, binary, ignore_index)) {
-    engine->runStaticConstructorsDestructors(true);
     return 1;
   }
 
-  engine->runStaticConstructorsDestructors(true);
   return 0;
 }

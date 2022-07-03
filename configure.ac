@@ -22,7 +22,7 @@ if test ${LLVM_VERSION} -lt 14 ; then
 	AC_MSG_ERROR([[LLVM 14 or newer is required, but detected ${LLVM_VERSION}.]])
 fi
 AX_LLVM(LLVM_WRITE, [core nativecodegen])
-AX_LLVM(LLVM_RUN, [core executionengine native mcjit])
+AX_LLVM(LLVM_RUN, [core executionengine native orcjit])
 PKG_CHECK_MODULES(UUID, [ uuid ], [], [PKG_CHECK_MODULES(UUID, [ ossp-uuid ])])
 PKG_CHECK_MODULES(PCRE, [ libpcre ])
 PKG_CHECK_MODULES(HTS, [ htslib ], [], [

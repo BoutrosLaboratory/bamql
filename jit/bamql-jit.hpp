@@ -17,40 +17,62 @@
 #pragma once
 #include <bamql-compiler.hpp>
 #include <bamql-iterator.hpp>
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm/ExecutionEngine/Orc/LLJIT.h>
+#include <llvm/IR/LLVMContext.h>
 
-#define BAMQL_JIT_API_VERSION 1
+#define BAMQL_JIT_API_VERSION 2
 namespace bamql {
 
-/**
- * Call the JITer on a function and return it as the correct type.
- */
-template <typename T>
-T getNativeFunction(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                    llvm::Function *function) {
-  union {
-    T func;
-    void *ptr;
-  } result;
-  result.ptr = engine->getPointerToFunction(function);
-  return result.func;
-}
+class CompiledPredicate;
 
+class JIT {
+public:
+  /**
+   * Create a JIT.
+   */
+  static std::shared_ptr<JIT> create();
+  static std::shared_ptr<CompiledPredicate> compile(
+      std::shared_ptr<JIT> &jit,
+      std::shared_ptr<AstNode> &node,
+      const std::string &name,
+      llvm::DIScope *debug_scope = nullptr);
+  ~JIT();
+
+private:
+  JIT();
+  std::unique_ptr<llvm::orc::LLJIT> lljit;
+  friend class CompiledPredicate;
+};
 /**
- * Create a JIT.
+ * Check if a read matches a dynamically compiled predicate
  */
-std::shared_ptr<llvm::ExecutionEngine> createEngine(
-    std::unique_ptr<llvm::Module> module);
+class CompiledPredicate {
+public:
+  CompiledPredicate(std::shared_ptr<JIT> &jit,
+                    std::string name,
+                    bamql::FilterFunction filter,
+                    bamql::IndexFunction index);
+  ~CompiledPredicate();
+  bool wantChromosome(std::shared_ptr<bam_hdr_t> &header,
+                      uint32_t tid,
+                      std::function<void(const char *)> error_handler);
+  bool wantRead(std::shared_ptr<bam_hdr_t> &header,
+                std::shared_ptr<bam1_t> &read,
+                std::function<void(const char *)> error_handler);
+
+private:
+  std::shared_ptr<JIT> jit;
+  std::string name;
+  bamql::FilterFunction filter;
+  bamql::IndexFunction index;
+};
+
 /**
  * Iterate over the reads in a BAM file, preselecting those through a filter.
  */
 class CompileIterator : public ReadIterator {
 public:
-  CompileIterator(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                  std::shared_ptr<Generator> &generator,
-                  std::shared_ptr<AstNode> &node,
-                  const std::string &name);
-  virtual void prepareExecution();
+  CompileIterator(std::shared_ptr<CompiledPredicate> &predicate);
   virtual bool wantChromosome(std::shared_ptr<bam_hdr_t> &header, uint32_t tid);
   virtual void processRead(std::shared_ptr<bam_hdr_t> &header,
                            std::shared_ptr<bam1_t> &read);
@@ -68,10 +90,6 @@ public:
                          std::shared_ptr<bam1_t> &read) = 0;
 
 private:
-  std::shared_ptr<llvm::ExecutionEngine> engine;
-  bamql::FilterFunction filter = nullptr;
-  bamql::IndexFunction index = nullptr;
-  llvm::Function *filter_func = nullptr;
-  llvm::Function *index_func = nullptr;
+  std::shared_ptr<CompiledPredicate> predicate;
 };
 } // namespace bamql

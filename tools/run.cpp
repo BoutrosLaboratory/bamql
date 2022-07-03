@@ -18,8 +18,6 @@
 #include "bamql-jit.hpp"
 #include <fstream>
 #include <iostream>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/Support/TargetSelect.h>
 #include <map>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -30,16 +28,13 @@
  */
 class DataCollector : public bamql::CompileIterator {
 public:
-  DataCollector(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                std::shared_ptr<bamql::Generator> &generator,
+  DataCollector(std::shared_ptr<bamql::CompiledPredicate> predicate,
                 std::string &query_,
-                std::shared_ptr<bamql::AstNode> &node,
                 bool verbose_,
                 std::shared_ptr<htsFile> &a,
                 std::shared_ptr<htsFile> &r)
-      : bamql::CompileIterator::CompileIterator(
-            engine, generator, node, "filter"),
-        accept(a), query(query_), reject(r), verbose(verbose_) {}
+      : bamql::CompileIterator::CompileIterator(predicate), accept(a),
+        query(query_), reject(r), verbose(verbose_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {
     auto version = bamql::version();
     auto id_str = bamql::makeUuid();
@@ -228,35 +223,16 @@ int main(int argc, char *const *argv) {
     return 1;
   }
 
-  // Create a new LLVM module and our function
-  LLVMInitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmParser();
-  llvm::InitializeNativeTargetAsmPrinter();
-  llvm::LLVMContext context;
-  std::unique_ptr<llvm::Module> module(new llvm::Module("bamql", context));
-
-  auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
-
-  auto engine = bamql::createEngine(std::move(module));
-  if (!engine) {
-    std::cerr << "Failed to initialise LLVM." << std::endl;
-    return 1;
-  }
+  auto jit = bamql::JIT::create();
 
   // Process the input file.
-  DataCollector stats(engine, generator, query_content, ast, verbose, accept,
-                      reject);
-  generator = nullptr;
-  engine->finalizeObject();
-  engine->runStaticConstructorsDestructors(false);
-  stats.prepareExecution();
+  DataCollector stats(bamql::JIT::compile(jit, ast, "filter"), query_content,
+                      verbose, accept, reject);
 
   if (stats.processFile(bam_filename, binary, ignore_index)) {
     stats.writeSummary();
-    engine->runStaticConstructorsDestructors(true);
     return 0;
   } else {
-    engine->runStaticConstructorsDestructors(true);
     return 1;
   }
 }

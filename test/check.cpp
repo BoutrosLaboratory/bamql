@@ -18,8 +18,6 @@
 #include "bamql-jit.hpp"
 #include <iomanip>
 #include <iostream>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/Support/TargetSelect.h>
 #include <set>
 #include <sstream>
 #include <utility>
@@ -30,6 +28,7 @@
  * match.
  */
 std::vector<std::pair<std::string, std::set<std::string>>> queries = {
+  { "true", { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J" } },
   { "mapping_quality(0.5)", { "E", "F" } },
   { "before(10060)", { "A", "B", "C", "D" } },
   { "let x = before(10060), y = mapping_quality(0.5) in x | y",
@@ -80,13 +79,9 @@ std::vector<std::pair<std::string, std::set<std::string>>> queries = {
 
 class Checker final : public bamql::CompileIterator {
 public:
-  Checker(std::shared_ptr<llvm::ExecutionEngine> &engine,
-          std::shared_ptr<bamql::Generator> &generator,
-          std::shared_ptr<bamql::AstNode> &node,
-          std::string name,
-          int index_)
-      : bamql::CompileIterator::CompileIterator(engine, generator, node, name),
-        correct(true), index(index_) {}
+  Checker(std::shared_ptr<bamql::CompiledPredicate> predicate, int index_)
+      : bamql::CompileIterator::CompileIterator(predicate), correct(true),
+        index(index_) {}
   void ingestHeader(std::shared_ptr<bam_hdr_t> &header) {}
   void readMatch(bool matches,
                  std::shared_ptr<bam_hdr_t> &header,
@@ -109,17 +104,7 @@ private:
 
 int main(int argc, char *const *argv) {
   bool success = true;
-  LLVMInitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmParser();
-  llvm::InitializeNativeTargetAsmPrinter();
-  llvm::LLVMContext context;
-  std::unique_ptr<llvm::Module> module(new llvm::Module("bamql", context));
-  auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
-  auto engine = bamql::createEngine(std::move(module));
-  if (!engine) {
-    std::cerr << "Failed to initialise LLVM." << std::endl;
-    return 1;
-  }
+  auto jit = bamql::JIT::create();
 
   auto predicates = bamql::getDefaultPredicates();
   std::vector<Checker> checkers;
@@ -130,19 +115,14 @@ int main(int argc, char *const *argv) {
     if (!ast) {
       std::cerr << "Could not compile test: " << queries[index].first
                 << std::endl;
-      generator = nullptr;
       return 1;
     }
     std::stringstream name;
     name << "test" << index;
-    checkers.push_back(Checker(engine, generator, ast, name.str(), index));
+    checkers.emplace_back(bamql::JIT::compile(jit, ast, name.str()), index);
   }
-  generator = nullptr;
-  engine->finalizeObject();
-  engine->runStaticConstructorsDestructors(false);
 
   for (size_t index = 0; index < queries.size(); index++) {
-    checkers[index].prepareExecution();
     bool test_success =
         checkers[index].processFile("test/test.sam", false, false) &&
         checkers[index].isCorrect();
@@ -151,6 +131,5 @@ int main(int argc, char *const *argv) {
               << std::endl;
     success &= test_success;
   }
-  engine->runStaticConstructorsDestructors(true);
   return success ? 0 : 1;
 }

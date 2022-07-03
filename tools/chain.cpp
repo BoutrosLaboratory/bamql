@@ -17,8 +17,6 @@
 #include "bamql-compiler.hpp"
 #include "bamql-jit.hpp"
 #include <iostream>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/Support/TargetSelect.h>
 #include <sstream>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -47,26 +45,18 @@ bool checkChain(ChainPattern chain, bool matches) {
  */
 class OutputWrangler final : public bamql::CompileIterator {
 public:
-  OutputWrangler(std::shared_ptr<llvm::ExecutionEngine> &engine,
-                 std::shared_ptr<bamql::Generator> &generator,
-                 std::string &query_,
-                 std::shared_ptr<bamql::AstNode> &node,
-                 std::string name,
-                 ChainPattern c,
-                 std::string file_name_,
-                 std::shared_ptr<htsFile> &o,
-                 std::shared_ptr<OutputWrangler> &n,
-                 std::shared_ptr<std::map<const char *, size_t>> &errors_)
-      : bamql::CompileIterator::CompileIterator(engine, generator, node, name),
-        chain(c), errors(errors_), file_name(file_name_), output_file(o),
-        next(n), query(query_) {}
-  virtual void prepareExecution() {
-    CompileIterator::prepareExecution();
-    if (next) {
-      next->prepareExecution();
-    }
-  }
+  OutputWrangler(
 
+      std::shared_ptr<bamql::CompiledPredicate> predicate,
+      std::string query_,
+      ChainPattern c,
+      std::string file_name_,
+      std::shared_ptr<htsFile> &o,
+      std::shared_ptr<OutputWrangler> &n,
+      std::shared_ptr<std::map<const char *, size_t>> &errors_)
+      : bamql::CompileIterator::CompileIterator(predicate), chain(c),
+        errors(errors_), file_name(file_name_), output_file(o), next(n),
+        query(query_) {}
   /**
    * We want this chromosome if our query is interested or the next link can
    * make use of it _if_ it will see it upon failure (otherwise, its behaviour
@@ -220,17 +210,7 @@ int main(int argc, char *const *argv) {
     std::cout << "An input file is required." << std::endl;
     return 1;
   }
-  // Create a new LLVM module and JIT
-  LLVMInitializeNativeTarget();
-  llvm::InitializeNativeTargetAsmParser();
-  llvm::InitializeNativeTargetAsmPrinter();
-  llvm::LLVMContext context;
-  std::unique_ptr<llvm::Module> module(new llvm::Module("bamql", context));
-  auto generator = std::make_shared<bamql::Generator>(module.get(), nullptr);
-  auto engine = bamql::createEngine(std::move(module));
-  if (!engine) {
-    return 1;
-  }
+  auto jit = bamql::JIT::create();
 
   // Prepare a chain of wranglers.
   std::shared_ptr<OutputWrangler> output;
@@ -258,13 +238,9 @@ int main(int argc, char *const *argv) {
     std::stringstream function_name;
     function_name << "filter" << it;
     output = std::make_shared<OutputWrangler>(
-        engine, generator, query, ast, function_name.str(), chain,
+        bamql::JIT::compile(jit, ast, function_name.str()), query, chain,
         std::string(argv[it + 1]), output_file, output, errors);
   }
-  generator = nullptr;
-  engine->finalizeObject();
-  output->prepareExecution();
-  engine->runStaticConstructorsDestructors(false);
 
   // Run the chain.
   int exitcode;
@@ -279,6 +255,5 @@ int main(int argc, char *const *argv) {
               << std::endl;
   }
 
-  engine->runStaticConstructorsDestructors(true);
   return exitcode;
 }

@@ -17,8 +17,13 @@
 #include "bamql-jit.hpp"
 #include "bamql-runtime.h"
 #include <iostream>
+#include <llvm/ExecutionEngine/JITSymbol.h>
+#include <llvm/ExecutionEngine/Orc/Core.h>
+#include <llvm/ExecutionEngine/SectionMemoryManager.h>
 #include <llvm/Support/DynamicLibrary.h>
+#include <llvm/Support/TargetSelect.h>
 #include <pcre.h>
+#include <sstream>
 
 std::map<std::string, void (*)()> known = {
   { "bamql_aux_fp", (void (*)())bamql_aux_fp },
@@ -47,42 +52,102 @@ std::map<std::string, void (*)()> known = {
   { "pcre_free_substring", (void (*)())pcre_free_substring },
 };
 
-std::shared_ptr<llvm::ExecutionEngine> bamql::createEngine(
-    std::unique_ptr<llvm::Module> module) {
-
-  std::map<llvm::Function *, void (*)()> required;
-  for (auto &known_func : known) {
-    auto func = module->getFunction(known_func.first);
-    if (func != nullptr) {
-      required[func] = known_func.second;
-    }
+bamql::JIT::JIT() : lljit(llvm::cantFail(llvm::orc::LLJITBuilder().create())) {
+  for (auto &entry : known) {
+    llvm::cantFail(lljit->getMainJITDylib().define(llvm::orc::absoluteSymbols(
+        { { lljit->getExecutionSession().intern(entry.first),
+            llvm::JITEvaluatedSymbol::fromPointer((void *)entry.second) } })));
   }
-  std::string error;
-  std::vector<std::string> attrs;
-  attrs.push_back("-avx"); // The AVX support (auto-vectoring) should be
-                           // disabled since the JIT isn't smart enough to
-                           // detect this, even though there is a detection
-                           // routine. In particular, it makes Valgrind not
-                           // work.
-  std::shared_ptr<llvm::ExecutionEngine> engine(
-      llvm::EngineBuilder(std::move(module)
+}
 
-                              )
-          .setEngineKind(llvm::EngineKind::JIT)
-          .setErrorStr(&error)
-          .setMAttrs(attrs)
-          .create());
-  if (!engine) {
-    std::cerr << error << std::endl;
-  } else {
-    for (auto &required_func : required) {
-      union {
-        void (*func)();
-        void *ptr;
-      } convert;
-      convert.func = required_func.second;
-      engine->addGlobalMapping(required_func.first, convert.ptr);
-    }
-  }
-  return engine;
+bamql::JIT::~JIT() {}
+
+std::shared_ptr<bamql::JIT> bamql::JIT::create() {
+  llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmPrinter();
+  llvm::InitializeNativeTargetAsmParser();
+  return std::shared_ptr<bamql::JIT>(new bamql::JIT());
+}
+
+std::shared_ptr<bamql::CompiledPredicate> bamql::JIT::compile(
+    std::shared_ptr<JIT> &jit,
+    std::shared_ptr<AstNode> &node,
+    const std::string &name,
+    llvm::DIScope *debug_scope) {
+  auto context = std::make_unique<llvm::LLVMContext>();
+
+  auto module = std::make_unique<llvm::Module>(name, *context);
+  auto generator =
+      std::make_shared<bamql::Generator>(module.get(), debug_scope);
+  auto filter_func = node->createFilterFunction(generator, name);
+  std::stringstream index_function_name;
+  index_function_name << name << "_index";
+  auto index_func =
+      node->createIndexFunction(generator, index_function_name.str());
+
+  generator = nullptr;
+  auto &dylib = llvm::cantFail(jit->lljit->createJITDylib(name));
+  dylib.addToLinkOrder(jit->lljit->getMainJITDylib());
+  llvm::cantFail(jit->lljit->addIRModule(
+      dylib,
+
+      llvm::orc::ThreadSafeModule(std::move(module), std::move(context))));
+
+  union {
+    llvm::JITTargetAddress ptr;
+    FilterFunction func;
+  } filter;
+  filter.ptr = llvm::cantFail(jit->lljit->lookup(dylib, name)).getAddress();
+  union {
+    llvm::JITTargetAddress ptr;
+    IndexFunction func;
+  } index;
+  index.ptr =
+      llvm::cantFail(jit->lljit->lookup(dylib, index_function_name.str()))
+          .getAddress();
+
+  llvm::cantFail(jit->lljit->initialize(dylib));
+
+  return std::make_shared<bamql::CompiledPredicate>(jit, name, filter.func,
+                                                    index.func);
+}
+
+bamql::CompiledPredicate::CompiledPredicate(std::shared_ptr<JIT> &jit_,
+                                            std::string name_,
+                                            bamql::FilterFunction filter_,
+                                            bamql::IndexFunction index_)
+    : jit(jit_), name(name_), filter(filter_), index(index_) {}
+bamql::CompiledPredicate::~CompiledPredicate() {
+  auto dylib = jit->lljit->getJITDylibByName(name);
+  llvm::cantFail(jit->lljit->deinitialize(*dylib));
+  llvm::cantFail(jit->lljit->getExecutionSession().removeJITDylib(*dylib));
+}
+
+struct ErrorHolder {
+  std::function<void(const char *)> error_handler;
+};
+bool bamql::CompiledPredicate::wantChromosome(
+    std::shared_ptr<bam_hdr_t> &header,
+    uint32_t tid,
+    std::function<void(const char *)> error_handler) {
+  ErrorHolder h{ error_handler };
+  return index(
+      header.get(), tid,
+      [](const char *message, void *v) {
+        ((ErrorHolder *)v)->error_handler(message);
+      },
+      &h);
+}
+bool bamql::CompiledPredicate::wantRead(
+    std::shared_ptr<bam_hdr_t> &header,
+    std::shared_ptr<bam1_t> &read,
+    std::function<void(const char *)> error_handler) {
+  ErrorHolder h{ error_handler };
+
+  return filter(
+      header.get(), read.get(),
+      [](const char *message, void *v) {
+        ((ErrorHolder *)v)->error_handler(message);
+      },
+      &h);
 }
