@@ -16,6 +16,7 @@
 
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
+#include <llvm/Support/Alignment.h>
 
 namespace bamql {
 
@@ -24,14 +25,10 @@ Generator::Generator(llvm::Module *module, llvm::DIScope *debug_scope_)
   std::map<std::string, llvm::IRBuilder<> **> tors = { { "__ctor", &ctor },
                                                        { "__dtor", &dtor } };
   for (auto &tor : tors) {
-    auto func = llvm::cast<llvm::Function>(
-        module
-            ->getOrInsertFunction(
-                tor.first,
-                llvm::FunctionType::get(
-                    llvm::Type::getVoidTy(module->getContext()), false))
-            .getCallee());
-    func->setLinkage(llvm::GlobalValue::InternalLinkage);
+    auto func = llvm::Function::Create(
+        llvm::FunctionType::get(llvm::Type::getVoidTy(module->getContext()),
+                                false),
+        llvm::Function::InternalLinkage, tor.first, module);
     *tor.second = new llvm::IRBuilder<>(
         llvm::BasicBlock::Create(module->getContext(), "entry", func));
   }

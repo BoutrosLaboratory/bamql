@@ -95,8 +95,7 @@ llvm::Value *FunctionNode::generate(GenerateState &state,
       }
     }
   }
-  return generateCall(state, function->getFunctionType(), function, arg_values,
-                      error_fn, error_ctx);
+  return generateCall(state, function, arg_values, error_fn, error_ctx);
 }
 BoolFunctionNode::BoolFunctionNode(
     const std::string &name_,
@@ -105,12 +104,11 @@ BoolFunctionNode::BoolFunctionNode(
     ParseState &state)
     : FunctionNode(name_, std::move(arguments_), rawArguments_, state) {}
 llvm::Value *BoolFunctionNode::generateCall(GenerateState &state,
-                                            llvm::FunctionType *functionType,
                                             llvm::Function *func,
                                             std::vector<llvm::Value *> &args,
                                             llvm::Value *error_fun,
                                             llvm::Value *error_ctx) {
-  auto call = state->CreateCall(functionType, func, args);
+  auto call = state->CreateCall(&*func, args);
   call->addRetAttr(llvm::Attribute::ZExt);
   return call;
 }
@@ -124,12 +122,11 @@ ConstIntFunctionNode::ConstIntFunctionNode(
     : FunctionNode(name_, std::move(arguments_), rawArguments_, state) {}
 llvm::Value *ConstIntFunctionNode::generateCall(
     GenerateState &state,
-    llvm::FunctionType *functionType,
     llvm::Function *func,
     std::vector<llvm::Value *> &args,
     llvm::Value *error_fun,
     llvm::Value *error_ctx) {
-  return state->CreateCall(functionType, func, args);
+  return state->CreateCall(func, args);
 }
 ExprType ConstIntFunctionNode::type() { return INT; }
 
@@ -142,14 +139,13 @@ ErrorFunctionNode::ErrorFunctionNode(
     : FunctionNode(name_, std::move(arguments_), rawArguments_, state),
       error_message(state.createRuntimeError(error_message_)) {}
 llvm::Value *ErrorFunctionNode::generateCall(GenerateState &state,
-                                             llvm::FunctionType *functionType,
                                              llvm::Function *func,
                                              std::vector<llvm::Value *> &args,
                                              llvm::Value *error_fun,
                                              llvm::Value *error_ctx) {
   llvm::Value *success = nullptr;
   llvm::Value *result = nullptr;
-  generateRead(state, functionType, func, args, success, result);
+  generateRead(state, func, args, success, result);
 
   auto function = state->GetInsertBlock()->getParent();
   auto error_block =
@@ -178,8 +174,7 @@ DblFunctionNode::DblFunctionNode(
     : ErrorFunctionNode(
           name_, std::move(arguments_), rawArguments_, state, error_message) {}
 void DblFunctionNode::generateRead(GenerateState &state,
-                                   llvm::FunctionType *functionType,
-                                   llvm::Value *function,
+                                   llvm::Function *function,
                                    std::vector<llvm::Value *> &args,
                                    llvm::Value *&success,
                                    llvm::Value *&result) {
@@ -189,7 +184,7 @@ void DblFunctionNode::generateRead(GenerateState &state,
       llvm::ConstantFP::get(type, std::numeric_limits<double>::quiet_NaN()),
       box);
   args.push_back(box);
-  success = state->CreateCall(functionType, function, args);
+  success = state->CreateCall(function, args);
   result = state->CreateLoad(type, box);
 }
 ExprType DblFunctionNode::type() { return FP; }
@@ -203,8 +198,7 @@ IntFunctionNode::IntFunctionNode(
     : ErrorFunctionNode(
           name_, std::move(arguments_), rawArguments_, state, error_message) {}
 void IntFunctionNode::generateRead(GenerateState &state,
-                                   llvm::FunctionType *functionType,
-                                   llvm::Value *function,
+                                   llvm::Function *function,
                                    std::vector<llvm::Value *> &args,
                                    llvm::Value *&success,
                                    llvm::Value *&result) {
@@ -212,7 +206,7 @@ void IntFunctionNode::generateRead(GenerateState &state,
   auto box = state->CreateAlloca(type);
   state->CreateStore(llvm::ConstantInt::get(type, 0), box);
   args.push_back(box);
-  success = state->CreateCall(functionType, function, args);
+  success = state->CreateCall(function, args);
   result = state->CreateLoad(type, box);
 }
 ExprType IntFunctionNode::type() { return INT; }
@@ -226,12 +220,11 @@ StrFunctionNode::StrFunctionNode(
     : ErrorFunctionNode(
           name_, std::move(arguments_), rawArguments_, state, error_message) {}
 void StrFunctionNode::generateRead(GenerateState &state,
-                                   llvm::FunctionType *functionType,
-                                   llvm::Value *function,
+                                   llvm::Function *function,
                                    std::vector<llvm::Value *> &args,
                                    llvm::Value *&success,
                                    llvm::Value *&result) {
-  result = state->CreateCall(functionType, function, args);
+  result = state->CreateCall(function, args);
   success = state->CreateICmpNE(
       result, llvm::ConstantPointerNull::get(llvm::PointerType::get(
                   llvm::Type::getInt8Ty(state.module()->getContext()), 0)));

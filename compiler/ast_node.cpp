@@ -43,8 +43,8 @@ llvm::Function *AstNode::createFunction(std::shared_ptr<Generator> &generator,
       llvm::Type::getInt1Ty(generator->module()->getContext()), func_args_ty,
       false);
 
-  auto func = llvm::cast<llvm::Function>(
-      generator->module()->getOrInsertFunction(name, func_ty).getCallee());
+  auto func = llvm::Function::Create(func_ty, llvm::Function::ExternalLinkage,
+                                     name, generator->module());
   func->addRetAttr(llvm::Attribute::ZExt);
 
   auto entry = llvm::BasicBlock::Create(generator->module()->getContext(),

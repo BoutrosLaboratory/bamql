@@ -15,14 +15,14 @@
  */
 #define _XOPEN_SOURCE
 
+#include "bamql-runtime.h"
 #include <math.h>
+#include <pcre.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <pcre.h>
-#include "bamql-runtime.h"
 
 /*
  * This file contains the runtime library for BAMQL.
@@ -69,7 +69,7 @@ bool bamql_aux_fp(bam1_t *read, char group1, char group2, double *out)
 	return true;
 }
 
-bool bamql_aux_int(bam1_t *read, char group1, char group2, int32_t * out)
+bool bamql_aux_int(bam1_t *read, char group1, char group2, int32_t *out)
 {
 	char const id[] = { group1, group2 };
 	uint8_t const *value = bam_aux_get(read, id);
@@ -100,21 +100,20 @@ const char *bamql_aux_str(bam1_t *read, char group1, char group2)
 	return bam_aux2Z(value);
 }
 
-bool bamql_check_chromosome(bam_hdr_t *header, bam1_t *read,
-			    const char *pattern, bool mate)
+bool bamql_check_chromosome(bam_hdr_t *header,
+			    bam1_t *read, const char *pattern, bool mate)
 {
 	uint32_t tid = mate ? read->core.mtid : read->core.tid;
 	return bamql_check_chromosome_id(header, tid, pattern);
 }
 
-bool bamql_check_chromosome_id(bam_hdr_t *header, uint32_t chr_id,
-			       const char *pattern)
+bool bamql_check_chromosome_id(bam_hdr_t *header,
+			       uint32_t chr_id, const char *pattern)
 {
 	if (chr_id >= header->n_targets) {
 		return false;
 	}
-	return bamql_re_match(pattern, header->target_name[chr_id]
-	    );
+	return bamql_re_match(pattern, header->target_name[chr_id]);
 }
 
 bool bamql_check_mapping_quality(bam1_t *read, uint8_t quality)
@@ -122,8 +121,8 @@ bool bamql_check_mapping_quality(bam1_t *read, uint8_t quality)
 	return read->core.qual != 255 && read->core.qual >= quality;
 }
 
-bool bamql_check_nt(bam1_t *read, int32_t position, unsigned char nt,
-		    bool exact)
+bool bamql_check_nt(bam1_t *read,
+		    int32_t position, unsigned char nt, bool exact)
 {
 	unsigned char read_nt;
 	int32_t mapped_position;
@@ -167,8 +166,8 @@ bool bamql_check_nt(bam1_t *read, int32_t position, unsigned char nt,
 	return exact ? (read_nt == nt) : ((read_nt & nt) != 0);
 }
 
-bool bamql_check_position(bam_hdr_t *header, bam1_t *read, uint32_t start,
-			  uint32_t end)
+bool bamql_check_position(bam_hdr_t *header,
+			  bam1_t *read, uint32_t start, uint32_t end)
 {
 	uint32_t mapped_start = read->core.pos + 1;
 	uint32_t mapped_end;
@@ -176,15 +175,15 @@ bool bamql_check_position(bam_hdr_t *header, bam1_t *read, uint32_t start,
 		return false;
 	}
 	mapped_end = compute_mapped_end(read);
-	return (mapped_start <= start && mapped_end >= start)
-	    || (mapped_start <= end && mapped_end >= end)
-	    || (mapped_start >= start && mapped_end <= end);
+	return (mapped_start <= start && mapped_end >= start) ||
+	    (mapped_start <= end && mapped_end >= end) ||
+	    (mapped_start >= start && mapped_end <= end);
 }
 
 bool bamql_check_split_pair(bam_hdr_t *header, bam1_t *read)
 {
-	if (read->core.tid < header->n_targets
-	    && read->core.mtid < header->n_targets) {
+	if (read->core.tid < header->n_targets &&
+	    read->core.mtid < header->n_targets) {
 		return read->core.tid != read->core.mtid;
 	}
 	return false;
@@ -217,23 +216,24 @@ const char *bamql_header(bam1_t *read)
 bool bamql_insert_reversed(bam1_t *read)
 {
 	return *((int32_t *) & read->core.isize) < 0;
-
 }
 
-uint32_t bamql_insert_size(bam1_t *read, bamql_error_handler error_fn,
-			   void *error_ctx)
+uint32_t bamql_insert_size(bam1_t *read,
+			   bamql_error_handler error_fn, void *error_ctx)
 {
 	int32_t isize;
 	if (read->core.isize == 0) {
 		error_fn("No insert size is provided in BAM.", error_ctx);
 		return 0;
 	}
-	/* Access this memory as aliased because although it claims to be unsigned, it's signed. */
+	/* Access this memory as aliased because although it claims to be unsigned,
+	 * it's signed. */
 	isize = *((int32_t *) & read->core.isize);
 	return isize < 0 ? -isize : isize;
 }
 
-uint32_t bamql_mate_position_begin(bam_hdr_t *header, bam1_t *read,
+uint32_t bamql_mate_position_begin(bam_hdr_t *header,
+				   bam1_t *read,
 				   bamql_error_handler error_fn,
 				   void *error_ctx)
 {
@@ -244,7 +244,7 @@ uint32_t bamql_mate_position_begin(bam_hdr_t *header, bam1_t *read,
 	return read->core.mpos + 1;
 }
 
-bool bamql_position_begin(bam_hdr_t *header, bam1_t *read, uint32_t * out)
+bool bamql_position_begin(bam_hdr_t *header, bam1_t *read, uint32_t *out)
 {
 	if (read->core.tid >= header->n_targets) {
 		return false;
@@ -253,7 +253,7 @@ bool bamql_position_begin(bam_hdr_t *header, bam1_t *read, uint32_t * out)
 	return true;
 }
 
-bool bamql_position_end(bam_hdr_t *header, bam1_t *read, uint32_t * out)
+bool bamql_position_end(bam_hdr_t *header, bam1_t *read, uint32_t *out)
 {
 	uint32_t mapped_start = read->core.pos + 1;
 	if (read->core.tid >= header->n_targets) {
@@ -269,9 +269,10 @@ bool bamql_randomly(double probability)
 	return probability >= drand48();
 }
 
-bool bamql_re_bind(const char *pattern, uint32_t count,
-		   bamql_error_handler error_fn, void *error_ctx,
-		   const char *input, ...)
+bool bamql_re_bind(const char *pattern,
+		   uint32_t count,
+		   bamql_error_handler error_fn,
+		   void *error_ctx, const char *input, ...)
 {
 	int vect[3 * (count + 1)];
 	int strnum;
@@ -280,9 +281,9 @@ bool bamql_re_bind(const char *pattern, uint32_t count,
 		return false;
 	}
 
-	if ((strnum = pcre_exec
-	     ((const pcre *)pattern, NULL, input, strlen(input), 0, 0, vect,
-	      3 * (count + 1))) < 0) {
+	if ((strnum =
+	     pcre_exec((const pcre *)pattern, NULL, input, strlen(input), 0, 0,
+		       vect, 3 * (count + 1))) < 0) {
 		return false;
 	}
 	va_start(args, input);
@@ -295,8 +296,7 @@ bool bamql_re_bind(const char *pattern, uint32_t count,
 		int32_t *out_int;
 		char *end;
 
-		if (pcre_get_substring
-		    (input, vect, strnum, number, &result) < 0
+		if (pcre_get_substring(input, vect, strnum, number, &result) < 0
 		    || result == NULL) {
 			error_fn(error_text, error_ctx);
 		}
@@ -349,8 +349,8 @@ bool bamql_re_bind(const char *pattern, uint32_t count,
 	return true;
 }
 
-const char *bamql_re_compile(const char *pattern, uint32_t flags,
-			     uint32_t count)
+const char *bamql_re_compile(const char *pattern,
+			     uint32_t flags, uint32_t count)
 {
 	const char *errptr;
 	int erroffset;
@@ -364,8 +364,8 @@ const char *bamql_re_compile(const char *pattern, uint32_t flags,
 		fprintf(stderr, "%s: %s\n", errptr, pattern);
 		abort();
 	}
-	if (pcre_fullinfo(result, NULL, PCRE_INFO_NAMECOUNT, &name_count) <
-	    0 || name_count != count) {
+	if (pcre_fullinfo(result, NULL, PCRE_INFO_NAMECOUNT, &name_count) < 0 ||
+	    name_count != count) {
 		fprintf(stderr,
 			"There should be %d captures but there are %d: %s\n",
 			count, name_count, pattern);

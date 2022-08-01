@@ -7,7 +7,7 @@ dnl
 AC_DEFUN([ACX_PTHREAD], [
 AC_REQUIRE([AC_CANONICAL_HOST])
 AC_LANG_SAVE
-AC_LANG_C
+AC_LANG([C])
 acx_pthread_ok=no
 
 # We used to check for pthread.h first, but this fails if pthread.h
@@ -123,11 +123,15 @@ for flag in $acx_pthread_flags; do
         # pthread_cleanup_push because it is one of the few pthread
         # functions on Solaris that doesn't have a non-functional libc stub.
         # We try pthread_create on general principles.
-        AC_TRY_LINK([#include <pthread.h>],
-                    [pthread_t th; pthread_join(th, 0);
-                     pthread_attr_init(0); pthread_cleanup_push(0, 0);
-                     pthread_create(0,0,0,0); pthread_cleanup_pop(0); ],
-                    [acx_pthread_ok=yes; acx_pthread_msg=yes], [acx_pthread_msg=no])
+        AC_LINK_IFELSE([
+          AC_LANG_PROGRAM(
+             [#include <pthread.h>],
+             [pthread_t th; pthread_join(th, 0);
+              pthread_attr_init(0); pthread_cleanup_push(0, 0);
+              pthread_create(0,0,0,0); pthread_cleanup_pop(0); ]
+          )],
+          [acx_pthread_ok=yes; acx_pthread_msg=yes],
+          [acx_pthread_msg=no])
 
         if test "x$acx_pthread_ok" = xyes; then
             # Don't use options that are ignored by the compiler.
@@ -170,13 +174,21 @@ if test "x$acx_pthread_ok" = xyes; then
         # Detect AIX lossage: threads are created detached by default
         # and the JOINABLE attribute has a nonstandard name (UNDETACHED).
         AC_MSG_CHECKING([for joinable pthread attribute])
-        AC_TRY_LINK([#include <pthread.h>],
-                    [int attr=PTHREAD_CREATE_JOINABLE;],
-                    ok=PTHREAD_CREATE_JOINABLE, ok=unknown)
+        AC_LINK_IFELSE([
+           AC_LANG_PROGRAM(
+             [#include <pthread.h>],
+             [int attr=PTHREAD_CREATE_JOINABLE;]
+           )],
+           [ok=PTHREAD_CREATE_JOINABLE],
+           [ok=unknown])
         if test x"$ok" = xunknown; then
-                AC_TRY_LINK([#include <pthread.h>],
-                            [int attr=PTHREAD_CREATE_UNDETACHED;],
-                            ok=PTHREAD_CREATE_UNDETACHED, ok=unknown)
+                AC_LINK_IFELSE([
+                  AC_LANG_PROGRAM(
+                    [#include <pthread.h>],
+                    [int attr=PTHREAD_CREATE_UNDETACHED;]
+                  )],
+                  [ok=PTHREAD_CREATE_UNDETACHED],
+                  [ok=unknown])
         fi
         if test x"$ok" != xPTHREAD_CREATE_JOINABLE; then
                 AC_DEFINE(PTHREAD_CREATE_JOINABLE, $ok,

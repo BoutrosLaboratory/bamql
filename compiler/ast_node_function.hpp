@@ -85,7 +85,6 @@ public:
                const std::vector<RawFunctionArg> &rawArguments_,
                ParseState &state);
   virtual llvm::Value *generateCall(GenerateState &state,
-                                    llvm::FunctionType *functionType,
                                     llvm::Function *func,
                                     std::vector<llvm::Value *> &args,
                                     llvm::Value *error_fun,
@@ -109,7 +108,6 @@ public:
                    const std::vector<RawFunctionArg> &rawArguments_,
                    ParseState &state);
   llvm::Value *generateCall(GenerateState &state,
-                            llvm::FunctionType *functionType,
                             llvm::Function *func,
                             std::vector<llvm::Value *> &args,
                             llvm::Value *error_fun,
@@ -123,7 +121,6 @@ public:
                        const std::vector<RawFunctionArg> &rawArguments_,
                        ParseState &state);
   llvm::Value *generateCall(GenerateState &state,
-                            llvm::FunctionType *functionType,
                             llvm::Function *func,
                             std::vector<llvm::Value *> &args,
                             llvm::Value *error_fun,
@@ -140,14 +137,12 @@ public:
                     const std::string &error_message_);
 
   virtual void generateRead(GenerateState &state,
-                            llvm::FunctionType *functionType,
-                            llvm::Value *function,
+                            llvm::Function *function,
                             std::vector<llvm::Value *> &args,
                             llvm::Value *&out_success,
                             llvm::Value *&out_result) = 0;
   llvm::Value *generateCall(GenerateState &state,
-                            llvm::FunctionType *functionType,
-                            llvm::Function *func,
+                            llvm::Function *function,
                             std::vector<llvm::Value *> &args,
                             llvm::Value *error_fun,
                             llvm::Value *error_ctx);
@@ -164,8 +159,7 @@ public:
                   ParseState &state,
                   const std::string &error_message);
   void generateRead(GenerateState &state,
-                    llvm::FunctionType *functionType,
-                    llvm::Value *function,
+                    llvm::Function *function,
                     std::vector<llvm::Value *> &args,
                     llvm::Value *&out_success,
                     llvm::Value *&out_result);
@@ -179,8 +173,7 @@ public:
                   ParseState &state,
                   const std::string &error_message);
   void generateRead(GenerateState &state,
-                    llvm::FunctionType *functionType,
-                    llvm::Value *function,
+                    llvm::Function *function,
                     std::vector<llvm::Value *> &args,
                     llvm::Value *&out_success,
                     llvm::Value *&out_result);
@@ -196,8 +189,7 @@ public:
                   ParseState &state,
                   const std::string &error_message);
   void generateRead(GenerateState &state,
-                    llvm::FunctionType *functionType,
-                    llvm::Value *function,
+                    llvm::Function *function,
                     std::vector<llvm::Value *> &args,
                     llvm::Value *&out_success,
                     llvm::Value *&out_result);

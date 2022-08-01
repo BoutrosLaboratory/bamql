@@ -59,11 +59,13 @@ std::shared_ptr<htsFile> bamql::open(const char *filename, const char *mode) {
 }
 
 std::string bamql::makeUuid() {
-#ifdef _UUID_UUID_H
+#if defined(_UUID_UUID_H) || defined(_UL_LIBUUID_UUID_H)
   uuid_t uuid;
   char id_buf[sizeof(uuid_t) * 2 + 1];
   uuid_generate(uuid);
   uuid_unparse(uuid, id_buf);
+  std::string id_str(id_buf);
+  return id_str;
 #elif defined(__UUID_H__)
   uuid_t *uuid = nullptr;
   char id_buf[UUID_LEN_STR + 1];
@@ -80,6 +82,4 @@ std::string bamql::makeUuid() {
 #else
 #error "Cannot determine UUID library calls."
 #endif
-  std::string id_str(id_buf);
-  return id_str;
 }

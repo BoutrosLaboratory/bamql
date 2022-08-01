@@ -38,6 +38,13 @@ llvm::Type *getBamType(llvm::Module *module);
  */
 llvm::Type *getBamHeaderType(llvm::Module *module);
 
+/**
+ *Get the function type for an error callback.
+ */
+llvm::FunctionType *getErrorHandlerFunctionType(llvm::Module *module);
+/**
+ * Get the type for a pointer to an error handler callback.
+ */
 llvm::Type *getErrorHandlerType(llvm::Module *module);
 llvm::FunctionType *getErrorHandlerFunctionType(llvm::Module *module);
 

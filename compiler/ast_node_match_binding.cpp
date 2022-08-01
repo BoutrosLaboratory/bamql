@@ -38,29 +38,14 @@ public:
                  const std::string &error_)
       : DebuggableNode(state), decode(decode_), error(error_), exprType(type_),
         number(number_) {}
-  llvm::Type *boxType(GenerateState &state) {
-    switch (exprType) {
-    case STR:
-      return llvm::PointerType::get(
-          llvm::Type::getInt8Ty(state.module()->getContext()), 0);
-      break;
-    case FP:
-      return llvm::Type::getDoubleTy(state.module()->getContext());
-      break;
-    case INT:
-      return llvm::Type::getInt32Ty(state.module()->getContext());
-      break;
-    default:
-      std::cerr << "Invalid box type: " << exprType << std::endl;
-      abort();
-    }
-  }
   llvm::Value *generate(GenerateState &state,
                         llvm::Value *read,
                         llvm::Value *header,
                         llvm::Value *error_fn,
                         llvm::Value *error_ctx) {
-    return state->CreateLoad(boxType(state), state.definitions[this]);
+    return state->CreateLoad(
+        getReifiedType(exprType, state.module()->getContext()),
+        state.definitions[this]);
   }
   llvm::Value *generateIndex(GenerateState &state,
                              llvm::Value *read,
@@ -74,8 +59,8 @@ public:
     arg_values.push_back(llvm::ConstantInt::get(base_int32, number));
     arg_values.push_back(state.createString(error));
     arg_values.push_back(llvm::ConstantInt::get(base_int32, decode));
-
-    auto box = state->CreateAlloca(boxType(state));
+    auto box = state->CreateAlloca(
+        getReifiedType(exprType, state.module()->getContext()));
     state.definitions[this] = box;
     arg_values.push_back(box);
   }
@@ -84,8 +69,9 @@ public:
     std::vector<llvm::Value *> arg_values;
     if (exprType == STR) {
       auto function = state.module()->getFunction("pcre_free_substring");
-      arg_values.push_back(
-          state->CreateLoad(boxType(state), state.definitions[this]));
+      arg_values.push_back(state->CreateLoad(
+          getReifiedType(exprType, state.module()->getContext()),
+          state.definitions[this]));
       state->CreateCall(function, arg_values);
     }
   }
