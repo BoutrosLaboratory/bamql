@@ -118,23 +118,15 @@ std::shared_ptr<bamql::CompiledPredicate> bamql::JIT::compile(
 
       llvm::orc::ThreadSafeModule(std::move(module), std::move(context))));
 
-  union {
-    llvm::JITTargetAddress ptr;
-    FilterFunction func;
-  } filter;
-  filter.ptr = llvm::cantFail(jit->lljit->lookup(dylib, name)).getAddress();
-  union {
-    llvm::JITTargetAddress ptr;
-    IndexFunction func;
-  } index;
-  index.ptr =
+  auto filter =
+      llvm::cantFail(jit->lljit->lookup(dylib, name)).toPtr<FilterFunction>();
+  auto index =
       llvm::cantFail(jit->lljit->lookup(dylib, index_function_name.str()))
-          .getAddress();
+          .toPtr<IndexFunction>();
 
   llvm::cantFail(jit->lljit->initialize(dylib));
 
-  return std::make_shared<bamql::CompiledPredicate>(jit, name, filter.func,
-                                                    index.func);
+  return std::make_shared<bamql::CompiledPredicate>(jit, name, filter, index);
 }
 
 bamql::CompiledPredicate::CompiledPredicate(std::shared_ptr<JIT> &jit_,
