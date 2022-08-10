@@ -19,6 +19,7 @@
 #include <iostream>
 #include <llvm/ExecutionEngine/JITSymbol.h>
 #include <llvm/ExecutionEngine/Orc/Core.h>
+#include <llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h>
 #include <llvm/ExecutionEngine/SectionMemoryManager.h>
 #include <llvm/Support/DynamicLibrary.h>
 #include <llvm/Support/TargetSelect.h>
@@ -52,7 +53,31 @@ std::map<std::string, void (*)()> known = {
   { "pcre_free_substring", (void (*)())pcre_free_substring },
 };
 
-bamql::JIT::JIT() : lljit(llvm::cantFail(llvm::orc::LLJITBuilder().create())) {
+bamql::JIT::JIT()
+    : lljit(llvm::cantFail(
+          llvm::orc::LLJITBuilder()
+
+              .setObjectLinkingLayerCreator([&](llvm::orc::ExecutionSession
+                                                    &session,
+                                                const llvm::Triple &triple)
+                                                -> std::unique_ptr<
+                                                    llvm::orc::ObjectLayer> {
+                auto linkingLayer =
+                    std::make_unique<llvm::orc::RTDyldObjectLinkingLayer>(
+                        session, []() {
+                          return std::make_unique<llvm::SectionMemoryManager>();
+                        });
+                if (triple.isOSBinFormatCOFF()) {
+                  linkingLayer->setOverrideObjectFlagsWithResponsibilityFlags(
+                      true);
+                  linkingLayer->setAutoClaimResponsibilityForObjectSymbols(
+                      true);
+                }
+                linkingLayer->registerJITEventListener(
+                    *llvm::JITEventListener::createGDBRegistrationListener());
+                return linkingLayer;
+              })
+              .create())) {
   for (auto &entry : known) {
     llvm::cantFail(lljit->getMainJITDylib().define(llvm::orc::absoluteSymbols(
         { { lljit->getExecutionSession().intern(entry.first),

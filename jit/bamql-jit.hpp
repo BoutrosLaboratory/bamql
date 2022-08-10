@@ -17,6 +17,7 @@
 #pragma once
 #include <bamql-compiler.hpp>
 #include <bamql-iterator.hpp>
+#include <llvm/ExecutionEngine/JITEventListener.h>
 #include <llvm/ExecutionEngine/Orc/LLJIT.h>
 #include <llvm/IR/LLVMContext.h>
 
@@ -40,6 +41,7 @@ public:
 
 private:
   JIT();
+  llvm::JITEventListener gdbListener;
   std::unique_ptr<llvm::orc::LLJIT> lljit;
   friend class CompiledPredicate;
 };

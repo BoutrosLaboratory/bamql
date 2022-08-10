@@ -23,7 +23,6 @@
 #include <llvm/IR/LLVMRemarkStreamer.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
-#include <llvm/IR/RemarkStreamer.h>
 #include <llvm/Remarks/RemarkStreamer.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormattedStream.h>
