@@ -1,11 +1,11 @@
-AC_INIT([bamql], [1.6], [paul.boutros@oicr.on.ca])
+AC_INIT([bamql],[1.6],[paul.boutros@oicr.on.ca])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS(config.h)
 m4_pattern_allow([AM_PROG_AR])
 AM_PROG_AR
 AC_PROG_CXX_C_O
-AC_PROG_LIBTOOL
+LT_INIT
 AC_LANG_PUSH([C++])
 
 # Parameter pack bug in GCC 4.8
@@ -21,7 +21,7 @@ AX_LLVM(LLVM_CORE, [core])
 if test ${LLVM_VERSION} -lt 14 ; then
 	AC_MSG_ERROR([[LLVM 14 or newer is required, but detected ${LLVM_VERSION}.]])
 fi
-AX_LLVM(LLVM_WRITE, [core nativecodegen])
+AX_LLVM(LLVM_WRITE, [core nativecodegen passes])
 AX_LLVM(LLVM_RUN, [core executionengine native orcjit])
 PKG_CHECK_MODULES(UUID, [ uuid ], [], [PKG_CHECK_MODULES(UUID, [ ossp-uuid ])])
 PKG_CHECK_MODULES(PCRE, [ libpcre ])

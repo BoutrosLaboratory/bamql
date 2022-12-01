@@ -20,9 +20,12 @@
 #include <fstream>
 #include <iostream>
 #include <libgen.h>
+#include <llvm/Analysis/CGSCCPassManager.h>
+#include <llvm/Analysis/LoopAnalysisManager.h>
 #include <llvm/IR/LLVMRemarkStreamer.h>
-#include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
+#include <llvm/Passes/OptimizationLevel.h>
+#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Remarks/RemarkStreamer.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormattedStream.h>
@@ -431,7 +434,6 @@ int main(int argc, char *const *argv) {
   }
 
   module->setDataLayout(target_machine->createDataLayout());
-  llvm::legacy::PassManager pass_man;
   std::error_code error_c;
   llvm::raw_fd_ostream output_stream(
       createFileName(argv[optind], output, ".o").c_str(), error_c);
@@ -439,14 +441,23 @@ int main(int argc, char *const *argv) {
     std::cerr << error << std::endl;
     return 1;
   }
+  llvm::LoopAnalysisManager loop_analysis_manager;
+  llvm::FunctionAnalysisManager function_analysis_manager;
+  llvm::CGSCCAnalysisManager cgscc_analysis_manager;
+  llvm::ModuleAnalysisManager module_analysis_manager;
 
-  if (target_machine->addPassesToEmitFile(pass_man, output_stream, nullptr,
-                                          llvm::CGFT_ObjectFile, false, nullptr)
+  llvm::PassBuilder pass_builder(target_machine.get());
 
-  ) {
-    std::cerr << "Cannot create object file on this architecture." << std::endl;
-    return 1;
-  }
+  pass_builder.registerModuleAnalyses(module_analysis_manager);
+  pass_builder.registerCGSCCAnalyses(cgscc_analysis_manager);
+  pass_builder.registerFunctionAnalyses(function_analysis_manager);
+  pass_builder.registerLoopAnalyses(loop_analysis_manager);
+  pass_builder.crossRegisterProxies(
+      loop_analysis_manager, function_analysis_manager, cgscc_analysis_manager,
+      module_analysis_manager);
+
+  auto module_pass_manager =
+      pass_builder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
 
   std::unique_ptr<llvm::ToolOutputFile> optimisationFile;
   if (remarks) {
@@ -458,7 +469,7 @@ int main(int argc, char *const *argv) {
     }
     optimisationFile = std::move(*setupResult);
   }
-  pass_man.run(*module);
+  module_pass_manager.run(*module, module_analysis_manager);
   context.setMainRemarkStreamer(nullptr);
   context.setLLVMRemarkStreamer(nullptr);
   if (optimisationFile) {
