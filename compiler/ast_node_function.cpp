@@ -65,8 +65,10 @@ void AuxArg::nextArg(ParseState &state,
 FunctionNode::FunctionNode(
     const std::string &name_,
     const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    const std::vector<RawFunctionArg> &rawArguments_,
     ParseState &state)
-    : DebuggableNode(state), arguments(std::move(arguments_)), name(name_) {}
+    : DebuggableNode(state), arguments(std::move(arguments_)),
+      rawArguments(rawArguments_), name(name_) {}
 llvm::Value *FunctionNode::generate(GenerateState &state,
                                     llvm::Value *read,
                                     llvm::Value *header,
@@ -74,30 +76,23 @@ llvm::Value *FunctionNode::generate(GenerateState &state,
                                     llvm::Value *error_ctx) {
   auto function = state.module()->getFunction(name);
   std::vector<llvm::Value *> arg_values;
-  auto user_args = arguments.begin();
-  for (auto arg = function->arg_begin(); arg != function->arg_end(); arg++) {
-    if (arg->getType() == read->getType()) {
+  for (auto raw_arg : rawArguments) {
+    switch (raw_arg) {
+    case READ:
       arg_values.push_back(read);
-    } else if (arg->getType() == header->getType()) {
-      arg_values.push_back(header);
-    } else if (arg->getType() == error_fn->getType()) {
-      arg_values.push_back(error_fn);
-      arg++;
-      arg_values.push_back(error_ctx);
-    } else if (user_args != arguments.end()) {
-      arg_values.push_back(
-          (*user_args)->generate(state, read, header, error_fn, error_ctx));
-      user_args++;
-    } else if (arg->getType()->isPointerTy()) {
-      // If there are no more user argument and this is a pointer, it's probably
-      // an out parameter.
       break;
-    } else {
-      std::cerr << "Mismatched arguments in for function `" << name
-                << "': have " << arguments.size()
-                << " user arguments and function takes " << function->arg_size()
-                << std::endl;
-      abort();
+    case HEADER:
+      arg_values.push_back(header);
+      break;
+    case ERROR:
+      arg_values.push_back(error_fn);
+      arg_values.push_back(error_ctx);
+      break;
+    case USER:
+      for (auto &arg : arguments) {
+        arg_values.push_back(
+            arg->generate(state, read, header, error_fn, error_ctx));
+      }
     }
   }
   return generateCall(state, function->getFunctionType(), function, arg_values,
@@ -106,8 +101,9 @@ llvm::Value *FunctionNode::generate(GenerateState &state,
 BoolFunctionNode::BoolFunctionNode(
     const std::string &name_,
     const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    const std::vector<RawFunctionArg> &rawArguments_,
     ParseState &state)
-    : FunctionNode(name_, std::move(arguments_), state) {}
+    : FunctionNode(name_, std::move(arguments_), rawArguments_, state) {}
 llvm::Value *BoolFunctionNode::generateCall(GenerateState &state,
                                             llvm::FunctionType *functionType,
                                             llvm::Function *func,
@@ -123,8 +119,9 @@ ExprType BoolFunctionNode::type() { return BOOL; }
 ConstIntFunctionNode::ConstIntFunctionNode(
     const std::string &name_,
     const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    const std::vector<RawFunctionArg> &rawArguments_,
     ParseState &state)
-    : FunctionNode(name_, std::move(arguments_), state) {}
+    : FunctionNode(name_, std::move(arguments_), rawArguments_, state) {}
 llvm::Value *ConstIntFunctionNode::generateCall(
     GenerateState &state,
     llvm::FunctionType *functionType,
@@ -139,9 +136,10 @@ ExprType ConstIntFunctionNode::type() { return INT; }
 ErrorFunctionNode::ErrorFunctionNode(
     const std::string &name_,
     const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    const std::vector<RawFunctionArg> &rawArguments_,
     ParseState &state,
     const std::string &error_message_)
-    : FunctionNode(name_, std::move(arguments_), state),
+    : FunctionNode(name_, std::move(arguments_), rawArguments_, state),
       error_message(state.createRuntimeError(error_message_)) {}
 llvm::Value *ErrorFunctionNode::generateCall(GenerateState &state,
                                              llvm::FunctionType *functionType,
@@ -174,9 +172,11 @@ llvm::Value *ErrorFunctionNode::generateCall(GenerateState &state,
 DblFunctionNode::DblFunctionNode(
     const std::string &name_,
     const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    const std::vector<RawFunctionArg> &rawArguments_,
     ParseState &state,
     const std::string &error_message)
-    : ErrorFunctionNode(name_, std::move(arguments_), state, error_message) {}
+    : ErrorFunctionNode(
+          name_, std::move(arguments_), rawArguments_, state, error_message) {}
 void DblFunctionNode::generateRead(GenerateState &state,
                                    llvm::FunctionType *functionType,
                                    llvm::Value *function,
@@ -197,9 +197,11 @@ ExprType DblFunctionNode::type() { return FP; }
 IntFunctionNode::IntFunctionNode(
     const std::string &name_,
     const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    const std::vector<RawFunctionArg> &rawArguments_,
     ParseState &state,
     const std::string &error_message)
-    : ErrorFunctionNode(name_, std::move(arguments_), state, error_message) {}
+    : ErrorFunctionNode(
+          name_, std::move(arguments_), rawArguments_, state, error_message) {}
 void IntFunctionNode::generateRead(GenerateState &state,
                                    llvm::FunctionType *functionType,
                                    llvm::Value *function,
@@ -218,9 +220,11 @@ ExprType IntFunctionNode::type() { return INT; }
 StrFunctionNode::StrFunctionNode(
     const std::string &name_,
     const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+    const std::vector<RawFunctionArg> &rawArguments_,
     ParseState &state,
     const std::string &error_message)
-    : ErrorFunctionNode(name_, std::move(arguments_), state, error_message) {}
+    : ErrorFunctionNode(
+          name_, std::move(arguments_), rawArguments_, state, error_message) {}
 void StrFunctionNode::generateRead(GenerateState &state,
                                    llvm::FunctionType *functionType,
                                    llvm::Value *function,

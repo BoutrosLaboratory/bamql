@@ -82,12 +82,15 @@ static const IntArg int_max_arg(INT32_MAX);
 static const IntArg int_zero_arg(0);
 static const FixedProbabilityArg fixed_probability_arg;
 static const MappingQualityArg mapping_quality_arg;
+static const std::vector<bamql::RawFunctionArg> RAW_FLAG_ARGS{
+  bamql::RawFunctionArg::READ
+};
 
 static std::shared_ptr<AstNode> parseFlag(ParseState &state, uint32_t flag) {
   std::vector<std::shared_ptr<AstNode>> args;
   auto haystack =
       std::static_pointer_cast<AstNode>(std::make_shared<ConstIntFunctionNode>(
-          "bamql_flags", std::move(args), state));
+          "bamql_flags", std::move(args), RAW_FLAG_ARGS, state));
   auto needle =
       std::static_pointer_cast<AstNode>(std::make_shared<IntConst>(flag));
   auto result = std::static_pointer_cast<AstNode>(
@@ -105,7 +108,7 @@ static std::shared_ptr<AstNode> parseRawFlag(ParseState &state) {
   std::vector<std::shared_ptr<AstNode>> args;
   auto haystack =
       std::static_pointer_cast<AstNode>(std::make_shared<ConstIntFunctionNode>(
-          "bamql_flags", std::move(args), state));
+          "bamql_flags", std::move(args), RAW_FLAG_ARGS, state));
   auto result = std::static_pointer_cast<AstNode>(
       std::make_shared<BitwiseContainsNode>(haystack, needle, state));
   return result;
@@ -120,16 +123,20 @@ PredicateMap getDefaultPredicates() {
     // Auxiliary data
     { "read_group",
       parseFunction<StrFunctionNode, const std::string &>(
-          "bamql_aux_str", { char_r, char_g }, "Read group not available.") },
+          "bamql_aux_str", { RawFunctionArg::READ, RawFunctionArg::USER },
+          { char_r, char_g }, "Read group not available.") },
     { "aux_str",
       parseFunction<StrFunctionNode, const std::string &>(
-          "bamql_aux_str", { aux_arg }, "Auxiliary string not available.") },
+          "bamql_aux_str", { RawFunctionArg::READ, RawFunctionArg::USER },
+          { aux_arg }, "Auxiliary string not available.") },
     { "aux_int",
       parseFunction<IntFunctionNode, const std::string &>(
-          "bamql_aux_int", { aux_arg }, "Auxiliary integer not available.") },
+          "bamql_aux_int", { RawFunctionArg::READ, RawFunctionArg::USER },
+          { aux_arg }, "Auxiliary integer not available.") },
     { "aux_dbl",
       parseFunction<DblFunctionNode, const std::string &>(
-          "bamql_aux_fp", { aux_arg }, "Auxiliary double not available.") },
+          "bamql_aux_fp", { RawFunctionArg::READ, RawFunctionArg::USER },
+          { aux_arg }, "Auxiliary double not available.") },
 
     // Chromosome information
     { "chr",
@@ -137,10 +144,15 @@ PredicateMap getDefaultPredicates() {
     { "mate_chr",
       std::bind(CheckChromosomeNode::parse, std::placeholders::_1, true) },
     { "chr_name", parseFunction<StrFunctionNode, const std::string &>(
-                      "bamql_chr", { false_arg }, "Read not mapped.") },
-    { "mate_chr_name",
-      parseFunction<StrFunctionNode, const std::string &>(
-          "bamql_chr", { true_arg }, "Read's mate not mapped.") },
+                      "bamql_chr",
+                      { RawFunctionArg::HEADER, RawFunctionArg::READ,
+                        RawFunctionArg::USER },
+                      { false_arg }, "Read not mapped.") },
+    { "mate_chr_name", parseFunction<StrFunctionNode, const std::string &>(
+                           "bamql_chr",
+                           { RawFunctionArg::HEADER, RawFunctionArg::READ,
+                             RawFunctionArg::USER },
+                           { true_arg }, "Read's mate not mapped.") },
 
     // Flags
     { "duplicate?", std::bind(parseFlag, std::placeholders::_1, BAM_FDUP) },
@@ -164,7 +176,10 @@ PredicateMap getDefaultPredicates() {
     { "supplementary?",
       std::bind(parseFlag, std::placeholders::_1, BAM_FSUPPLEMENTARY) },
     { "unmapped?", std::bind(parseFlag, std::placeholders::_1, BAM_FUNMAP) },
-    { "flags", parseFunction<ConstIntFunctionNode>("bamql_flags", {}) },
+    { "flags",
+      parseFunction<ConstIntFunctionNode>("bamql_flags",
+
+                                          { RawFunctionArg::READ }, {}) },
 
     // Constants
     { "false", [](ParseState &state) { return falseNode; } },
@@ -172,41 +187,69 @@ PredicateMap getDefaultPredicates() {
 
     // Position
     { "after", parseFunction<BoolFunctionNode>("bamql_check_position",
+                                               { RawFunctionArg::HEADER,
+                                                 RawFunctionArg::READ,
+                                                 RawFunctionArg::USER },
                                                { int_arg, int_max_arg }) },
     { "before", parseFunction<BoolFunctionNode>("bamql_check_position",
+                                                { RawFunctionArg::HEADER,
+                                                  RawFunctionArg::READ,
+                                                  RawFunctionArg::USER },
                                                 { int_zero_arg, int_arg }) },
     { "position", parseFunction<BoolFunctionNode>("bamql_check_position",
+                                                  { RawFunctionArg::HEADER,
+                                                    RawFunctionArg::READ,
+                                                    RawFunctionArg::USER },
                                                   { int_arg, int_arg }) },
 
     { "begin", parseFunction<IntFunctionNode, const std::string &>(
-                   "bamql_position_begin", {}, "Read is not mapped.") },
-    { "end", parseFunction<IntFunctionNode, const std::string &>(
-                 "bamql_position_end", {}, "Read is not mapped.") },
+                   "bamql_position_begin",
+                   { RawFunctionArg::HEADER, RawFunctionArg::READ },
 
-    { "mate_begin",
-      parseFunction<ConstIntFunctionNode>("bamql_mate_position_begin", {}) },
+                   {}, "Read is not mapped.") },
+    { "end", parseFunction<IntFunctionNode, const std::string &>(
+                 "bamql_position_end",
+                 { RawFunctionArg::HEADER, RawFunctionArg::READ }, {},
+                 "Read is not mapped.") },
+
+    { "mate_begin", parseFunction<ConstIntFunctionNode>(
+                        "bamql_mate_position_begin",
+                        { RawFunctionArg::HEADER, RawFunctionArg::READ,
+                          RawFunctionArg::ERROR },
+                        {}) },
 
     // Miscellaneous
     { "bed", parseBED },
-    { "mapping_quality",
-      parseFunction<BoolFunctionNode>("bamql_check_mapping_quality",
-                                      { mapping_quality_arg }) },
+    { "mapping_quality", parseFunction<BoolFunctionNode>(
+                             "bamql_check_mapping_quality",
+                             { RawFunctionArg::READ, RawFunctionArg::USER },
+                             { mapping_quality_arg }) },
     { "max", parseMax },
     { "min", parseMin },
     { "header", parseFunction<StrFunctionNode, const std::string &>(
-                    "bamql_header", {}, "Header not available.") },
-    { "insert_size",
-      parseFunction<ConstIntFunctionNode>("bamql_insert_size", {}) },
+                    "bamql_header", { RawFunctionArg::READ }, {},
+                    "Header not available.") },
+    { "insert_size", parseFunction<ConstIntFunctionNode>(
+                         "bamql_insert_size",
+                         { RawFunctionArg::READ, RawFunctionArg::ERROR }, {}) },
     { "insert_reversed",
-      parseFunction<BoolFunctionNode>("bamql_insert_reversed", {}) },
-    { "nt", parseFunction<BoolFunctionNode>(
-                "bamql_check_nt", { int_arg, nucleotide_arg, false_arg }) },
+      parseFunction<BoolFunctionNode>("bamql_insert_reversed",
+
+                                      { RawFunctionArg::READ }, {}) },
+    { "nt",
+      parseFunction<BoolFunctionNode>(
+          "bamql_check_nt", { RawFunctionArg::READ, RawFunctionArg::USER },
+          { int_arg, nucleotide_arg, false_arg }) },
     { "nt_exact",
-      parseFunction<BoolFunctionNode>("bamql_check_nt",
-                                      { int_arg, nucleotide_arg, true_arg }) },
+      parseFunction<BoolFunctionNode>(
+          "bamql_check_nt", { RawFunctionArg::READ, RawFunctionArg::USER },
+          { int_arg, nucleotide_arg, true_arg }) },
     { "split_pair?",
-      parseFunction<BoolFunctionNode>("bamql_check_split_pair", {}) },
+      parseFunction<BoolFunctionNode>(
+          "bamql_check_split_pair",
+          { RawFunctionArg::HEADER, RawFunctionArg::READ }, {}) },
     { "random", parseFunction<BoolFunctionNode>("bamql_randomly",
+                                                { RawFunctionArg::USER },
                                                 { fixed_probability_arg }) },
   };
 }

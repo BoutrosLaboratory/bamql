@@ -26,6 +26,10 @@
 #include <vector>
 
 static const std::string CHR_PREFIX("chr");
+static const std::vector<bamql::RawFunctionArg> RAW_ARGS{
+  bamql::RawFunctionArg::HEADER, bamql::RawFunctionArg::READ,
+  bamql::RawFunctionArg::USER
+};
 namespace bamql {
 typedef std::map<std::string, std::vector<std::shared_ptr<AstNode>>> CheckMap;
 
@@ -64,7 +68,7 @@ std::shared_ptr<AstNode> parseBED(ParseState &state) {
       std::make_shared<IntConst>(start + 1), std::make_shared<IntConst>(end + 1)
     };
     std::shared_ptr<AstNode> check = std::make_shared<BoolFunctionNode>(
-        "bamql_check_position", std::move(args), state);
+        "bamql_check_position", std::move(args), RAW_ARGS, state);
 
     CheckMap::iterator lb = chromosomes.lower_bound(chr);
 

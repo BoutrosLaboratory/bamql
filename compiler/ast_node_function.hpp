@@ -20,6 +20,8 @@
 
 namespace bamql {
 
+enum RawFunctionArg { READ, HEADER, ERROR, USER };
+
 class FunctionArg {
 public:
   virtual void nextArg(ParseState &state,
@@ -80,6 +82,7 @@ class FunctionNode : public DebuggableNode {
 public:
   FunctionNode(const std::string &name_,
                const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+               const std::vector<RawFunctionArg> &rawArguments_,
                ParseState &state);
   virtual llvm::Value *generateCall(GenerateState &state,
                                     llvm::FunctionType *functionType,
@@ -95,6 +98,7 @@ public:
 
 private:
   const std::vector<std::shared_ptr<AstNode>> arguments;
+  const std::vector<RawFunctionArg> &rawArguments;
   const std::string name;
 };
 
@@ -102,6 +106,7 @@ class BoolFunctionNode final : public FunctionNode {
 public:
   BoolFunctionNode(const std::string &name_,
                    const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+                   const std::vector<RawFunctionArg> &rawArguments_,
                    ParseState &state);
   llvm::Value *generateCall(GenerateState &state,
                             llvm::FunctionType *functionType,
@@ -115,6 +120,7 @@ class ConstIntFunctionNode final : public FunctionNode {
 public:
   ConstIntFunctionNode(const std::string &name_,
                        const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+                       const std::vector<RawFunctionArg> &rawArguments_,
                        ParseState &state);
   llvm::Value *generateCall(GenerateState &state,
                             llvm::FunctionType *functionType,
@@ -129,6 +135,7 @@ class ErrorFunctionNode : public FunctionNode {
 public:
   ErrorFunctionNode(const std::string &name_,
                     const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+                    const std::vector<RawFunctionArg> &rawArguments_,
                     ParseState &state,
                     const std::string &error_message_);
 
@@ -153,6 +160,7 @@ class DblFunctionNode final : public ErrorFunctionNode {
 public:
   DblFunctionNode(const std::string &name_,
                   const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+                  const std::vector<RawFunctionArg> &rawArguments_,
                   ParseState &state,
                   const std::string &error_message);
   void generateRead(GenerateState &state,
@@ -167,6 +175,7 @@ class IntFunctionNode final : public ErrorFunctionNode {
 public:
   IntFunctionNode(const std::string &name_,
                   const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+                  const std::vector<RawFunctionArg> &rawArguments_,
                   ParseState &state,
                   const std::string &error_message);
   void generateRead(GenerateState &state,
@@ -182,6 +191,8 @@ class StrFunctionNode final : public ErrorFunctionNode {
 public:
   StrFunctionNode(const std::string &name_,
                   const std::vector<std::shared_ptr<AstNode>> &&arguments_,
+                  const std::vector<RawFunctionArg> &rawArguments_,
+
                   ParseState &state,
                   const std::string &error_message);
   void generateRead(GenerateState &state,
@@ -196,19 +207,20 @@ public:
 template <typename T, typename... Config>
 Predicate parseFunction(
     const std::string &name,
+    const std::vector<RawFunctionArg> rawArguments,
     const std::vector<std::reference_wrapper<const FunctionArg>> args,
     Config... extra_config) {
   return [=](ParseState &state) {
     std::vector<std::shared_ptr<AstNode>> arguments;
     size_t pos = 0;
-    for (auto arg = args.begin(); arg != args.end(); arg++) {
-      arg->get().nextArg(state, pos, arguments);
+    for (auto &arg : args) {
+      arg.get().nextArg(state, pos, arguments);
     }
     if (pos > 0) {
       state.parseCharInSpace(')');
     }
 
-    return std::make_shared<T>(name, std::move(arguments), state,
+    return std::make_shared<T>(name, std::move(arguments), rawArguments, state,
                                extra_config...);
   };
 }
