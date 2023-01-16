@@ -4,10 +4,6 @@ This software is a simple query language for filtering SAM/BAM sequences.
 
 ## Installation
 
-Ubuntu users can install from the PPA by executing:
-
-    sudo apt-add-repository ppa:boutroslab/ppa && sudo apt-get update && sudo apt-get install bamql
-
 In order to compile, [LLVM](http://llvm.org/) 14, [HTSlib](https://github.com/samtools/htslib/), and libuuid are required.
 
 On Debian/Ubuntu, these can be installed by:
