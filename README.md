@@ -21,6 +21,10 @@ In the source directory,
 
     autoreconf -i && ./configure && make && sudo make install
 
+If you do not have static LLVM libraries available and the configure step above fails, try
+
+    autoreconf -i && ./configure --enable-static=no --enable-static-llvm=no && make && sudo make install
+
 ## The Query Language
 
 The language consists of a number of predicates, things which match sequences, and connectives, which compose predicates.
