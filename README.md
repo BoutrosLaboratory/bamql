@@ -8,7 +8,7 @@ In order to compile, [LLVM](http://llvm.org/) 14, [HTSlib](https://github.com/sa
 
 On Debian/Ubuntu, these can be installed by:
 
-    sudo apt-get install autotools-dev build-essential libhts-dev libtool libpcre++-dev llvm-dev pkg-config uuid-dev zlib1g-dev
+    sudo apt-get install autotools-dev build-essential libhts-dev libtool libpcre++-dev llvm-dev pkg-config uuid-dev zlib1g-dev libossp-uuid-dev
 
 On RedHat/Fedora, these can be installed by:
 
