@@ -4,7 +4,7 @@ This software is a simple query language for filtering SAM/BAM sequences.
 
 ## Installation
 
-In order to compile, [LLVM](http://llvm.org/) 15-18, [HTSlib](https://github.com/samtools/htslib/), and libuuid are required.
+In order to compile, [LLVM](http://llvm.org/) 15-20, [HTSlib](https://github.com/samtools/htslib/), and libuuid are required.
 
 On Debian/Ubuntu, these can be installed by:
 
