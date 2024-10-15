@@ -11,7 +11,7 @@ Description: Filter SAM/BAM reads using a query language
 Version: @VERSION@
 Requires: bamql-cpl bamql-itr
 Requires.private: bamql-rt
-Libs: -L${libdir} -lbamql-jit -L@LLVM_RUN_LIBDIR@ @LLVM_RUN_BARELIBS@
+Libs: -L${libdir} -lbamql-jit
 Libs.private: -L${libdir} -lbamql-jit @LLVM_RUN_LDFLAGS@ @LLVM_RUN_LIBS@
-Cflags: -I${includedir} -I@LLVM_RUN_INCLUDEDIR@
+Cflags: -I${includedir}
 Cflags.private: -I${includedir} @LLVM_RUN_CPPFLAGS@ -fexceptions
