@@ -17,6 +17,7 @@
 #include "bamql-jit.hpp"
 #include "bamql-runtime.h"
 #include <iostream>
+#include <llvm/Config/llvm-config.h>
 #include <llvm/ExecutionEngine/JITSymbol.h>
 #include <llvm/ExecutionEngine/Orc/Core.h>
 #include <llvm/ExecutionEngine/Orc/RTDyldObjectLinkingLayer.h>
@@ -78,11 +79,23 @@ bamql::JIT::JIT()
                 return linkingLayer;
               })
               .create())) {
+  llvm::orc::SymbolMap symbols;
+
   for (auto &entry : known) {
-    llvm::cantFail(lljit->getMainJITDylib().define(llvm::orc::absoluteSymbols(
-        { { lljit->getExecutionSession().intern(entry.first),
-            llvm::JITEvaluatedSymbol::fromPointer((void *)entry.second) } })));
+
+    symbols.try_emplace(
+        lljit->getExecutionSession().intern(entry.first),
+#if LLVM_VERSION_MAJOR < 17
+        llvm::JITEvaluatedSymbol::fromPointer((void *)entry.second)
+#else
+        llvm::orc::ExecutorAddr::fromPtr(entry.second),
+        llvm::JITSymbolFlags::Callable
+#endif
+    );
   }
+
+  llvm::cantFail(
+      lljit->getMainJITDylib().define(llvm::orc::absoluteSymbols(symbols)));
 }
 
 bamql::JIT::~JIT() {}

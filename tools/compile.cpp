@@ -22,6 +22,7 @@
 #include <libgen.h>
 #include <llvm/Analysis/CGSCCPassManager.h>
 #include <llvm/Analysis/LoopAnalysisManager.h>
+#include <llvm/Config/llvm-config.h>
 #include <llvm/IR/LLVMRemarkStreamer.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Passes/OptimizationLevel.h>
@@ -29,7 +30,6 @@
 #include <llvm/Remarks/RemarkStreamer.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormattedStream.h>
-#include <llvm/Support/Host.h>
 #include <llvm/Support/ToolOutputFile.h>
 #include <llvm/Support/YAMLTraits.h>
 
@@ -38,6 +38,11 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+#if LLVM_VERSION_MAJOR < 17
+#include <llvm/Support/Host.h>
+#else
+#include <llvm/TargetParser/Host.h>
+#endif
 #include <memory>
 #include <set>
 #include <sstream>

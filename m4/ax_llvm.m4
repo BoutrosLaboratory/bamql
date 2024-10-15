@@ -42,7 +42,7 @@ AC_ARG_WITH([llvm-config],
 
 	succeeded=no
 	if test -z "$ac_llvm_config_path"; then
-		ac_llvm_config_path=`which llvm-config llvm-config-14 | head -n 1`
+		ac_llvm_config_path=`which llvm-config-18 llvm-config-17 llvm-config-16 llvm-config-15 llvm-config | head -n 1`
 	fi
 
 	if test -e "$ac_llvm_config_path"; then

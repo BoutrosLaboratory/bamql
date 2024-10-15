@@ -19,6 +19,7 @@
 #include "ast_node_function.hpp"
 #include "bamql-compiler.hpp"
 #include "compiler.hpp"
+#include <cmath>
 #include <cstdint>
 #include <htslib/sam.h>
 
@@ -62,7 +63,7 @@ protected:
   std::shared_ptr<AstNode> makeAst(double probability) const {
     return std::make_shared<
         LiteralNode<char, decltype(&make_char), &make_char, INT>>(
-        -10 * log(probability));
+        -10 * std::log(probability));
   }
 };
 

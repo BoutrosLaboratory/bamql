@@ -19,6 +19,7 @@
 #include <cassert>
 #include <iostream>
 #include <limits>
+#include <llvm/ADT/DenseMap.h>
 
 namespace bamql {
 UserArg::UserArg(ExprType type_) : type(type_) {}
