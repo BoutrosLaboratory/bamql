@@ -1,0 +1,19 @@
+name: Build and test
+
+on: [push]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        llvm: [15, 16, 17, 18]
+    runs-on: ubuntu-24.04
+    name: Build and Test with LLVM ${{matrix.llvm}}
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Dependencies
+      run: sudo apt install -y autotools-dev build-essential libhts-dev libtool libpcre3-dev llvm-${{matrix.llvm}}-dev pkg-config uuid-dev zlib1g-dev libossp-uuid-dev
+    - name: Configure
+      run: "autoreconf -i && ./configure --with-llvm-config=/usr/bin/llvm-config-${{matrix.llvm}}"
+    - name: Build
+      run: make all check
